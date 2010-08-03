@@ -100,16 +100,25 @@ public class Stackiter extends JComponent implements ActionListener {
 
 	protected void mousePressed(MouseEvent event) {
 		try {
+			if (heldBlock != null) {
+				heldBlock.removeJoints();
+				heldBlock = null;
+			}
 			Point2D point = new Point2D.Double();
 			AffineTransform transform = worldToDisplayTransform();
 			transform.inverseTransform(new Point2D.Double(event.getX(), event.getY()), point);
 			for (Block block: blocks) {
 				if (block.contains(point)) {
 					heldBlock = block;
-					// Don't break. Make the last drawn have priority for clicking.
+					// Don't break from loop. Make the last drawn have priority for clicking.
 					// That's more intuitive when blocks overlap.
 					// But how often will that be when physics tries to avoid it?
 				}
+			}
+			if (heldBlock != null) {
+				// TODO Build constraint.
+				//Weld
+				heldBlock.addJoint(ground, point);
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);

@@ -8,6 +8,7 @@ import org.jbox2d.collision.*;
 import org.jbox2d.collision.shapes.*;
 import org.jbox2d.common.*;
 import org.jbox2d.dynamics.*;
+import org.jbox2d.dynamics.joints.*;
 
 public class Block {
 
@@ -30,6 +31,23 @@ public class Block {
 		shapeDef.friction = 0.5f;
 	}
 
+	public void addJoint(Block other, Point2D point) {
+		try {
+			Point2D point1 = getTransform().inverseTransform(point, null);
+			Point2D point2 = other.getTransform().inverseTransform(point, null);
+			RevoluteJointDef jointDef = new RevoluteJointDef();
+			jointDef.body1 = body;
+			jointDef.body2 = other.body;
+			jointDef.localAnchor1.x = (float)point1.getX();
+			jointDef.localAnchor1.y = (float)point1.getY();
+			jointDef.localAnchor2.x = (float)point2.getX();
+			jointDef.localAnchor2.y = (float)point2.getY();
+			body.getWorld().createJoint(jointDef);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public void addTo(World world) {
 		body = world.createBody(bodyDef);
 		body.createShape(shapeDef);
@@ -43,6 +61,20 @@ public class Block {
 
 	public Color getColor() {
 		return color;
+	}
+
+	private AffineTransform getTransform() {
+		return getTransform(null);
+	}
+
+	private AffineTransform getTransform(AffineTransform transform) {
+		if (transform == null) {
+			transform = new AffineTransform();
+		} else {
+			transform.setToIdentity();
+		}
+		worldToBlockTransform(transform);
+		return transform;
 	}
 
 	private double inverseTransformedWidth(AffineTransform transform, double width) {
@@ -81,6 +113,12 @@ public class Block {
 		}
 	}
 
+	public void removeJoints() {
+		while (body.getJointList() != null) {
+			body.getWorld().destroyJoint(body.getJointList().joint);
+		}
+	}
+
 	public void setColor(Color color) {
 		this.color = color;
 	}
@@ -110,13 +148,9 @@ public class Block {
 	 * @param inset in the display frame.
 	 */
 	private Shape transformedShape(AffineTransform transform, double inset) {
-		// Position.
-		Vec2 pos = body.getPosition();
-		transform.translate(pos.x, pos.y);
-		// Rotation.
-		XForm xForm = body.getXForm();
-		transform.concatenate(new AffineTransform(new double[] {xForm.R.col1.x, xForm.R.col1.y, xForm.R.col2.x, xForm.R.col2.y}));
+		worldToBlockTransform(transform);
 		// Size, including stroke size.
+		XForm xForm = new XForm();
 		xForm.setIdentity();
 		AABB bounds = new AABB();
 		body.getShapeList().computeAABB(bounds, xForm);
@@ -127,6 +161,14 @@ public class Block {
 		GeneralPath path = new GeneralPath(new Rectangle2D.Double(-width / 2, -height / 2, width, height));
 		Shape shape = path.createTransformedShape(transform);
 		return shape;
+	}
+
+	private void worldToBlockTransform(AffineTransform transform) {
+		// Position.
+		XForm xForm = body.getXForm();
+		transform.translate(xForm.position.x, xForm.position.y);
+		// Rotation.
+		transform.concatenate(new AffineTransform(new double[] {xForm.R.col1.x, xForm.R.col1.y, xForm.R.col2.x, xForm.R.col2.y}));
 	}
 
 }
