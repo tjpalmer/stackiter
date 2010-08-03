@@ -3,11 +3,13 @@ package stackiter;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
+import java.util.*;
+import java.util.List;
 
 import javax.swing.*;
+import javax.swing.Timer;
 
 import org.jbox2d.collision.*;
-import org.jbox2d.collision.shapes.*;
 import org.jbox2d.common.*;
 import org.jbox2d.dynamics.*;
 
@@ -28,7 +30,7 @@ public class Stackiter extends JComponent implements ActionListener {
 		stackiter.start();
 	}
 
-	private Block block;
+	private List<Block> blocks;
 
 	private Block ground;
 
@@ -39,11 +41,13 @@ public class Stackiter extends JComponent implements ActionListener {
 	private World world;
 
 	public Stackiter() {
+		blocks = new ArrayList<Block>();
 		timer = new Timer(10, this);
 		viewRect = new Rectangle2D.Double(-20, -5, 40, 25);
 		world = new World(new AABB(new Vec2(-100,-100), new Vec2(100,100)), new Vec2(0, -10), true);
 		addGround();
-		addBlock();
+		addBlock(10);
+		addBlock(14);
 	}
 
 	@Override
@@ -54,13 +58,14 @@ public class Stackiter extends JComponent implements ActionListener {
 		repaint();
 	}
 
-	private void addBlock() {
-		block = new Block();
+	private void addBlock(double y) {
+		Block block = new Block();
 		block.setColor(Color.getHSBColor(2/3f, 0.7f, 1f));
 		block.setExtent(1, 1);
-		block.setPosition(0, 10);
+		block.setPosition(0, y);
 		block.setRotation(2 * Math.random() - 1);
 		block.addTo(world);
+		blocks.add(block);
 	}
 
 	private void addGround() {
@@ -86,7 +91,11 @@ public class Stackiter extends JComponent implements ActionListener {
 			g.scale(scale, -scale);
 			g.translate(-viewRect.getCenterX(), -viewRect.getCenterY());
 			ground.paint(g);
-			block.paint(g);
+			// Seems a bit too slow to do antialiasing.
+			// g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			for (Block block: blocks) {
+				block.paint(g);
+			}
 		} finally {
 			g.dispose();
 		}
