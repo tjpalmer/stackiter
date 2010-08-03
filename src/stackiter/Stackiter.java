@@ -33,6 +33,8 @@ public class Stackiter extends JComponent implements ActionListener {
 
 	private Block ground;
 
+	private Block heldBlock;
+
 	private Timer timer;
 
 	private Rectangle2D viewRect;
@@ -43,12 +45,18 @@ public class Stackiter extends JComponent implements ActionListener {
 		setPreferredSize(new Dimension(600, 400));
 		timer = new Timer(10, this);
 		viewRect = new Rectangle2D.Double(-20, -5, 40, 25);
-		addMouseListener(new MouseAdapter() {
+		MouseAdapter mouseAdapter = new MouseAdapter() {
+			@Override
+			public void mouseMoved(MouseEvent event) {
+				Stackiter.this.mouseMoved(event);
+			}
 			@Override
 			public void mousePressed(MouseEvent event) {
 				Stackiter.this.mousePressed(event);
 			}
-		});
+		};
+		addMouseListener(mouseAdapter);
+		addMouseMotionListener(mouseAdapter);
 		// TODO Move out domain from display.
 		blocks = new ArrayList<Block>();
 		world = new World(new AABB(new Vec2(-100,-100), new Vec2(100,100)), new Vec2(0, -10), true);
@@ -84,12 +92,25 @@ public class Stackiter extends JComponent implements ActionListener {
 		ground.addTo(world);
 	}
 
+	protected void mouseMoved(MouseEvent event) {
+		if (heldBlock != null) {
+			// TODO How's the right way to do this? Constraints?
+		}
+	}
+
 	protected void mousePressed(MouseEvent event) {
 		try {
 			Point2D point = new Point2D.Double();
 			AffineTransform transform = worldToDisplayTransform();
 			transform.inverseTransform(new Point2D.Double(event.getX(), event.getY()), point);
-			System.out.println("Pressed at " + point.getX() + ", " + point.getY());
+			for (Block block: blocks) {
+				if (block.contains(point)) {
+					heldBlock = block;
+					// Don't break. Make the last drawn have priority for clicking.
+					// That's more intuitive when blocks overlap.
+					// But how often will that be when physics tries to avoid it?
+				}
+			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

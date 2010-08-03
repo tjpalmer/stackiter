@@ -36,6 +36,11 @@ public class Block {
 		body.setMassFromShapes();
 	}
 
+	public boolean contains(Point2D point) {
+		Shape shape = transformedShape();
+		return shape.contains(point);
+	}
+
 	public Color getColor() {
 		return color;
 	}
@@ -56,24 +61,11 @@ public class Block {
 	public void paint(Graphics2D graphics, AffineTransform transform) {
 		Graphics2D g = (Graphics2D)graphics.create();
 		try {
+			// Shape information.
 			double strokeWidth = 2;
-			AABB bounds = new AABB();
 			XForm xForm = body.getXForm();
-			// Position.
-			Vec2 pos = body.getPosition();
-			transform.translate(pos.x, pos.y);
-			// Rotation.
-			transform.concatenate(new AffineTransform(new double[] {xForm.R.col1.x, xForm.R.col1.y, xForm.R.col2.x, xForm.R.col2.y}));
 			boolean anyRotation = !(xForm.R.col1.y == 0 && xForm.R.col2.x == 0);
-			// Size, including stroke size.
-			xForm.setIdentity();
-			body.getShapeList().computeAABB(bounds, xForm);
-			double strokeInv = inverseTransformedWidth(transform, strokeWidth);
-			double width = bounds.upperBound.x - bounds.lowerBound.x - strokeInv;
-			double height = bounds.upperBound.y - bounds.lowerBound.y - strokeInv;
-			// Transformed rectangle.
-			GeneralPath path = new GeneralPath(new Rectangle2D.Double(-width / 2, -height / 2, width, height));
-			Shape shape = path.createTransformedShape(transform);
+			Shape shape = transformedShape(transform, strokeWidth);
 			// Draw the block.
 			g.setColor(color);
 			g.fill(shape);
@@ -107,6 +99,34 @@ public class Block {
 
 	public void setRotation(double rotation) {
 		bodyDef.angle = (float)(rotation * Math.PI);
+	}
+
+	public Shape transformedShape() {
+		return transformedShape(new AffineTransform(), 0);
+	}
+
+	/**
+	 * @param transform from display to block. Will be modified!
+	 * @param inset in the display frame.
+	 */
+	private Shape transformedShape(AffineTransform transform, double inset) {
+		// Position.
+		Vec2 pos = body.getPosition();
+		transform.translate(pos.x, pos.y);
+		// Rotation.
+		XForm xForm = body.getXForm();
+		transform.concatenate(new AffineTransform(new double[] {xForm.R.col1.x, xForm.R.col1.y, xForm.R.col2.x, xForm.R.col2.y}));
+		// Size, including stroke size.
+		xForm.setIdentity();
+		AABB bounds = new AABB();
+		body.getShapeList().computeAABB(bounds, xForm);
+		inset = inverseTransformedWidth(transform, inset);
+		double width = bounds.upperBound.x - bounds.lowerBound.x - inset;
+		double height = bounds.upperBound.y - bounds.lowerBound.y - inset;
+		// Transformed rectangle.
+		GeneralPath path = new GeneralPath(new Rectangle2D.Double(-width / 2, -height / 2, width, height));
+		Shape shape = path.createTransformedShape(transform);
+		return shape;
 	}
 
 }
