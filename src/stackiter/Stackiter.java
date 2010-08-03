@@ -79,22 +79,16 @@ public class Stackiter extends JComponent implements ActionListener {
 
 	@Override
 	protected void paintComponent(Graphics graphics) {
-		Dimension size = getSize();
-		double xScale = size.getWidth() / viewRect.getWidth();
-		double yScale = size.getHeight() / viewRect.getHeight();
-		double scale = xScale * viewRect.getHeight() > size.getHeight() ? yScale : xScale;
 		Graphics2D g = (Graphics2D)graphics.create();
 		try {
 			g.setColor(Color.WHITE);
 			g.fill(getBounds());
-			g.translate(0.5 * size.getWidth(), 0.5 * size.getHeight());
-			g.scale(scale, -scale);
-			g.translate(-viewRect.getCenterX(), -viewRect.getCenterY());
-			ground.paint(g);
+			AffineTransform transform = worldToDisplayTransform();
+			ground.paint(g, (AffineTransform)transform.clone());
 			// Seems a bit too slow to do antialiasing.
 			// g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			for (Block block: blocks) {
-				block.paint(g);
+				block.paint(g, (AffineTransform)transform.clone());
 			}
 		} finally {
 			g.dispose();
@@ -103,6 +97,23 @@ public class Stackiter extends JComponent implements ActionListener {
 
 	private void start() {
 		timer.start();
+	}
+
+	private double worldToDisplayScale() {
+		Dimension size = getSize();
+		double xScale = size.getWidth() / viewRect.getWidth();
+		double yScale = size.getHeight() / viewRect.getHeight();
+		double scale = xScale * viewRect.getHeight() > size.getHeight() ? yScale : xScale;
+		return scale;
+	}
+
+	private AffineTransform worldToDisplayTransform() {
+		AffineTransform transform = new AffineTransform();
+		transform.translate(0.5 * getWidth(), 0.5 * getHeight());
+		double scale = worldToDisplayScale();
+		transform.scale(scale, -scale);
+		transform.translate(-viewRect.getCenterX(), -viewRect.getCenterY());
+		return transform;
 	}
 
 }

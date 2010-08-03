@@ -39,7 +39,7 @@ public class Block {
 		return color;
 	}
 
-	public void paint(Graphics2D graphics) {
+	public void paint(Graphics2D graphics, AffineTransform transform) {
 		Graphics2D g = (Graphics2D)graphics.create();
 		try {
 			double strokeWidth = 0.2;
@@ -47,15 +47,19 @@ public class Block {
 			XForm xForm = body.getXForm();
 			// Position.
 			Vec2 pos = body.getPosition();
-			g.translate(pos.x, pos.y);
+			transform.translate(pos.x, pos.y);
 			// Rotation.
-			g.transform(new AffineTransform(new double[] {xForm.R.col1.x, xForm.R.col1.y, xForm.R.col2.x, xForm.R.col2.y}));
+			transform.concatenate(new AffineTransform(new double[] {xForm.R.col1.x, xForm.R.col1.y, xForm.R.col2.x, xForm.R.col2.y}));
+			g.transform(transform);
 			// Size.
 			xForm.setIdentity();
 			body.getShapeList().computeAABB(bounds, xForm);
 			double width = bounds.upperBound.x - bounds.lowerBound.x - strokeWidth;
 			double height = bounds.upperBound.y - bounds.lowerBound.y - strokeWidth;
 			Rectangle2D.Double shape = new Rectangle2D.Double(-width / 2, -height / 2, width, height);
+			//double[] transformed = new double[4];
+			//transform.transform(new double[] {shape.getMinX(), shape.getMinY(), shape.getMaxX(), shape.getMaxY()}, 0, transformed, 0, transformed.length / 2);
+			//shape.setFrameFromDiagonal(transformed[0], transformed[1], transformed[2], transformed[3]);
 			// Draw the block.
 			g.setColor(color);
 			g.fill(shape);
