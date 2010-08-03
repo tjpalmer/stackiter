@@ -64,6 +64,7 @@ public class Block {
 			transform.translate(pos.x, pos.y);
 			// Rotation.
 			transform.concatenate(new AffineTransform(new double[] {xForm.R.col1.x, xForm.R.col1.y, xForm.R.col2.x, xForm.R.col2.y}));
+			boolean anyRotation = !(xForm.R.col1.y == 0 && xForm.R.col2.x == 0);
 			// Size, including stroke size.
 			xForm.setIdentity();
 			body.getShapeList().computeAABB(bounds, xForm);
@@ -78,6 +79,10 @@ public class Block {
 			g.fill(shape);
 			g.setColor(color.darker());
 			g.setStroke(new BasicStroke((float)strokeWidth));
+			if (anyRotation) {
+				// Seems a bit too slow to do antialiasing. Even in this specific context.
+				// g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			}
 			g.draw(shape);
 		} finally {
 			g.dispose();

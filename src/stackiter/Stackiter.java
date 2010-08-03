@@ -20,7 +20,6 @@ public class Stackiter extends JComponent implements ActionListener {
 		JFrame frame = new JFrame("Stackiter");
 		frame.setLayout(new BorderLayout());
 		Stackiter stackiter = new Stackiter();
-		stackiter.setPreferredSize(new Dimension(600, 400));
 		frame.add(stackiter, BorderLayout.CENTER);
 		frame.pack();
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -41,9 +40,17 @@ public class Stackiter extends JComponent implements ActionListener {
 	private World world;
 
 	public Stackiter() {
-		blocks = new ArrayList<Block>();
+		setPreferredSize(new Dimension(600, 400));
 		timer = new Timer(10, this);
 		viewRect = new Rectangle2D.Double(-20, -5, 40, 25);
+		addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent event) {
+				Stackiter.this.mousePressed(event);
+			}
+		});
+		// TODO Move out domain from display.
+		blocks = new ArrayList<Block>();
 		world = new World(new AABB(new Vec2(-100,-100), new Vec2(100,100)), new Vec2(0, -10), true);
 		addGround();
 		addBlock(10);
@@ -77,6 +84,17 @@ public class Stackiter extends JComponent implements ActionListener {
 		ground.addTo(world);
 	}
 
+	protected void mousePressed(MouseEvent event) {
+		try {
+			Point2D point = new Point2D.Double();
+			AffineTransform transform = worldToDisplayTransform();
+			transform.inverseTransform(new Point2D.Double(event.getX(), event.getY()), point);
+			System.out.println("Pressed at " + point.getX() + ", " + point.getY());
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	@Override
 	protected void paintComponent(Graphics graphics) {
 		Graphics2D g = (Graphics2D)graphics.create();
@@ -85,8 +103,6 @@ public class Stackiter extends JComponent implements ActionListener {
 			g.fill(getBounds());
 			AffineTransform transform = worldToDisplayTransform();
 			ground.paint(g, (AffineTransform)transform.clone());
-			// Seems a bit too slow to do antialiasing.
-			// g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			for (Block block: blocks) {
 				block.paint(g, (AffineTransform)transform.clone());
 			}
