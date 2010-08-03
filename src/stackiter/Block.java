@@ -1,6 +1,7 @@
 package stackiter;
 
 import java.awt.*;
+import java.awt.Shape;
 import java.awt.geom.*;
 
 import org.jbox2d.collision.*;
@@ -10,9 +11,9 @@ import org.jbox2d.dynamics.*;
 
 public class Block {
 
-	private BodyDef bodyDef;
-
 	private Body body;
+
+	private BodyDef bodyDef;
 
 	private Color color;
 
@@ -39,10 +40,23 @@ public class Block {
 		return color;
 	}
 
+	private double inverseTransformedWidth(AffineTransform transform, double width) {
+		try {
+			// TODO Look for an easier way.
+			double[] out = new double[4];
+			transform.inverseTransform(new double[] {0, 0, width, 0}, 0, out, 0, 2);
+			double dX = out[2] - out[0];
+			double dY = out[3] - out[1];
+			return Math.sqrt(dX * dX + dY * dY);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public void paint(Graphics2D graphics, AffineTransform transform) {
 		Graphics2D g = (Graphics2D)graphics.create();
 		try {
-			double strokeWidth = 0.2;
+			double strokeWidth = 2;
 			AABB bounds = new AABB();
 			XForm xForm = body.getXForm();
 			// Position.
@@ -50,16 +64,15 @@ public class Block {
 			transform.translate(pos.x, pos.y);
 			// Rotation.
 			transform.concatenate(new AffineTransform(new double[] {xForm.R.col1.x, xForm.R.col1.y, xForm.R.col2.x, xForm.R.col2.y}));
-			g.transform(transform);
-			// Size.
+			// Size, including stroke size.
 			xForm.setIdentity();
 			body.getShapeList().computeAABB(bounds, xForm);
-			double width = bounds.upperBound.x - bounds.lowerBound.x - strokeWidth;
-			double height = bounds.upperBound.y - bounds.lowerBound.y - strokeWidth;
-			Rectangle2D.Double shape = new Rectangle2D.Double(-width / 2, -height / 2, width, height);
-			//double[] transformed = new double[4];
-			//transform.transform(new double[] {shape.getMinX(), shape.getMinY(), shape.getMaxX(), shape.getMaxY()}, 0, transformed, 0, transformed.length / 2);
-			//shape.setFrameFromDiagonal(transformed[0], transformed[1], transformed[2], transformed[3]);
+			double strokeInv = inverseTransformedWidth(transform, strokeWidth);
+			double width = bounds.upperBound.x - bounds.lowerBound.x - strokeInv;
+			double height = bounds.upperBound.y - bounds.lowerBound.y - strokeInv;
+			// Transformed rectangle.
+			GeneralPath path = new GeneralPath(new Rectangle2D.Double(-width / 2, -height / 2, width, height));
+			Shape shape = path.createTransformedShape(transform);
 			// Draw the block.
 			g.setColor(color);
 			g.fill(shape);
