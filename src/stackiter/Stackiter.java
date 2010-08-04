@@ -54,6 +54,10 @@ public class Stackiter extends JComponent implements ActionListener {
 			public void mousePressed(MouseEvent event) {
 				Stackiter.this.mousePressed(event);
 			}
+			@Override
+			public void mouseReleased(MouseEvent event) {
+				Stackiter.this.mouseReleased(event);
+			}
 		};
 		addMouseListener(mouseAdapter);
 		addMouseMotionListener(mouseAdapter);
@@ -107,10 +111,6 @@ public class Stackiter extends JComponent implements ActionListener {
 
 	protected void mousePressed(MouseEvent event) {
 		try {
-			if (heldBlock != null) {
-				heldBlock.release();
-				heldBlock = null;
-			}
 			Point2D point = new Point2D.Double();
 			AffineTransform transform = worldToDisplayTransform();
 			transform.inverseTransform(new Point2D.Double(event.getX(), event.getY()), point);
@@ -127,6 +127,13 @@ public class Stackiter extends JComponent implements ActionListener {
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	protected void mouseReleased(MouseEvent event) {
+		if (heldBlock != null) {
+			heldBlock.release();
+			heldBlock = null;
 		}
 	}
 

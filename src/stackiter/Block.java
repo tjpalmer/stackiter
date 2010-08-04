@@ -18,6 +18,8 @@ public class Block {
 
 	private Color color;
 
+	private Point2D otherGraspPointOffset;
+
 	private PolygonDef shapeDef;
 
 	public Block() {
@@ -26,9 +28,18 @@ public class Block {
 		shapeDef = new PolygonDef();
 		// Some default values.
 		shapeDef.setAsBox(1, 1);
-		shapeDef.density = 1f;
+		shapeDef.density = 4f;
 		shapeDef.restitution = 0.0f;
-		shapeDef.friction = 0.5f;
+		shapeDef.friction = 0.7f;
+	}
+
+	private void addDragJoint(Point2D point, double forceScale) {
+		MouseJointDef jointDef = new MouseJointDef();
+		jointDef.body1 = body.getWorld().getGroundBody();
+		jointDef.body2 = body;
+		jointDef.target.set((float)point.getX(), (float)point.getY());
+		jointDef.maxForce = (float)(forceScale);
+		body.getWorld().createJoint(jointDef);
 	}
 
 	public void addTo(World world) {
@@ -40,6 +51,18 @@ public class Block {
 	public boolean contains(Point2D point) {
 		Shape shape = transformedShape();
 		return shape.contains(point);
+	}
+
+	private Rectangle2D getBounds() {
+		XForm xForm = new XForm();
+		xForm.setIdentity();
+		AABB aabb = new AABB();
+		body.getShapeList().computeAABB(aabb, xForm);
+		double width = aabb.upperBound.x - aabb.lowerBound.x;
+		double height = aabb.upperBound.y - aabb.lowerBound.y;
+		Rectangle2D rectangle = new Rectangle2D.Double();
+		rectangle.setRect(-width / 2, -height / 2, width, height);
+		return rectangle;
 	}
 
 	public Color getColor() {
@@ -61,17 +84,22 @@ public class Block {
 	}
 
 	public void grasp(Point2D point) {
-		try {
-			MouseJointDef jointDef = new MouseJointDef();
-			jointDef.body1 = body.getWorld().getGroundBody();
-			jointDef.body2 = body;
-			jointDef.target.set((float)point.getX(), (float)point.getY());
-			jointDef.maxForce = 1000 * body.getMass();
-			body.getWorld().createJoint(jointDef);
-			body.wakeUp();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+		//		try {
+		//			AffineTransform transform = getTransform();
+		//			Point2D blockPoint = transform.inverseTransform(point, null);
+		//			// TODO First figure out whether X or Y relates to X in the global frame.
+		//			blockPoint.setLocation(-blockPoint.getX(), blockPoint.getY());
+		//			Point2D otherPoint = transform.transform(blockPoint, null);
+		//			return otherPoint;
+		//		} catch (Exception e) {
+		//			throw new RuntimeException(e);
+		//		}
+		// TODO Put a center point with high force and side points with lower.
+		addDragJoint(point, 500);
+		Point2D otherPoint = otherGraspPoint(point);
+		addDragJoint(otherPoint, 400);
+		otherGraspPointOffset = new Point2D.Double(-otherPoint.getX() + point.getX(), -otherPoint.getY() + point.getY());
+		body.wakeUp();
 	}
 
 	private double inverseTransformedWidth(AffineTransform transform, double width) {
@@ -91,8 +119,26 @@ public class Block {
 	 * Only meaningful if previously grasped?
 	 */
 	public void moveTo(Point2D point) {
+		// Point 1.
 		MouseJoint joint = (MouseJoint)body.getJointList().joint;
 		joint.setTarget(new Vec2((float)point.getX(), (float)point.getY()));
+		// Point 2.
+		Point2D otherPoint = new Point2D.Double(point.getX() + otherGraspPointOffset.getX(), point.getY() + otherGraspPointOffset.getY());
+		joint = (MouseJoint)body.getJointList().next.joint;
+		joint.setTarget(new Vec2((float)otherPoint.getX(), (float)otherPoint.getY()));
+	}
+
+	private Point2D otherGraspPoint(Point2D point) {
+		try {
+			AffineTransform transform = getTransform();
+			Point2D blockPoint = transform.inverseTransform(point, null);
+			// TODO First figure out whether X or Y relates to X in the global frame.
+			blockPoint.setLocation(-blockPoint.getX(), blockPoint.getY());
+			Point2D otherPoint = transform.transform(blockPoint, null);
+			return otherPoint;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public void paint(Graphics2D graphics, AffineTransform transform) {
@@ -154,16 +200,15 @@ public class Block {
 	 */
 	private Shape transformedShape(AffineTransform transform, double inset) {
 		worldToBlockTransform(transform);
-		// Size, including stroke size.
-		XForm xForm = new XForm();
-		xForm.setIdentity();
-		AABB bounds = new AABB();
-		body.getShapeList().computeAABB(bounds, xForm);
+		// Size, including inset amount.
 		inset = inverseTransformedWidth(transform, inset);
-		double width = bounds.upperBound.x - bounds.lowerBound.x - inset;
-		double height = bounds.upperBound.y - bounds.lowerBound.y - inset;
+		Rectangle2D rectangle = getBounds();
+		rectangle.setRect(
+			rectangle.getX() + inset/2, rectangle.getY() + inset/2,
+			rectangle.getWidth() - inset, rectangle.getHeight() - inset
+		);
 		// Transformed rectangle.
-		GeneralPath path = new GeneralPath(new Rectangle2D.Double(-width / 2, -height / 2, width, height));
+		GeneralPath path = new GeneralPath(rectangle);
 		Shape shape = path.createTransformedShape(transform);
 		return shape;
 	}
