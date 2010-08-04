@@ -31,23 +31,6 @@ public class Block {
 		shapeDef.friction = 0.5f;
 	}
 
-	public void addJoint(Block other, Point2D point) {
-		try {
-			Point2D point1 = getTransform().inverseTransform(point, null);
-			Point2D point2 = other.getTransform().inverseTransform(point, null);
-			RevoluteJointDef jointDef = new RevoluteJointDef();
-			jointDef.body1 = body;
-			jointDef.body2 = other.body;
-			jointDef.localAnchor1.x = (float)point1.getX();
-			jointDef.localAnchor1.y = (float)point1.getY();
-			jointDef.localAnchor2.x = (float)point2.getX();
-			jointDef.localAnchor2.y = (float)point2.getY();
-			body.getWorld().createJoint(jointDef);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	public void addTo(World world) {
 		body = world.createBody(bodyDef);
 		body.createShape(shapeDef);
@@ -77,6 +60,20 @@ public class Block {
 		return transform;
 	}
 
+	public void grasp(Point2D point) {
+		try {
+			MouseJointDef jointDef = new MouseJointDef();
+			jointDef.body1 = body.getWorld().getGroundBody();
+			jointDef.body2 = body;
+			jointDef.target.set((float)point.getX(), (float)point.getY());
+			jointDef.maxForce = 1000 * body.getMass();
+			body.getWorld().createJoint(jointDef);
+			body.wakeUp();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	private double inverseTransformedWidth(AffineTransform transform, double width) {
 		try {
 			// TODO Look for an easier way.
@@ -88,6 +85,14 @@ public class Block {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * Only meaningful if previously grasped?
+	 */
+	public void moveTo(Point2D point) {
+		MouseJoint joint = (MouseJoint)body.getJointList().joint;
+		joint.setTarget(new Vec2((float)point.getX(), (float)point.getY()));
 	}
 
 	public void paint(Graphics2D graphics, AffineTransform transform) {
@@ -113,7 +118,7 @@ public class Block {
 		}
 	}
 
-	public void removeJoints() {
+	public void release() {
 		while (body.getJointList() != null) {
 			body.getWorld().destroyJoint(body.getJointList().joint);
 		}

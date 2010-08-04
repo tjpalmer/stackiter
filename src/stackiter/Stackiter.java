@@ -47,8 +47,8 @@ public class Stackiter extends JComponent implements ActionListener {
 		viewRect = new Rectangle2D.Double(-20, -5, 40, 25);
 		MouseAdapter mouseAdapter = new MouseAdapter() {
 			@Override
-			public void mouseMoved(MouseEvent event) {
-				Stackiter.this.mouseMoved(event);
+			public void mouseDragged(MouseEvent event) {
+				Stackiter.this.mouseDragged(event);
 			}
 			@Override
 			public void mousePressed(MouseEvent event) {
@@ -92,16 +92,23 @@ public class Stackiter extends JComponent implements ActionListener {
 		ground.addTo(world);
 	}
 
-	protected void mouseMoved(MouseEvent event) {
-		if (heldBlock != null) {
-			// TODO How's the right way to do this? Constraints?
+	protected void mouseDragged(MouseEvent event) {
+		try {
+			if (heldBlock != null) {
+				Point2D point = new Point2D.Double();
+				AffineTransform transform = worldToDisplayTransform();
+				transform.inverseTransform(new Point2D.Double(event.getX(), event.getY()), point);
+				heldBlock.moveTo(point);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 	}
 
 	protected void mousePressed(MouseEvent event) {
 		try {
 			if (heldBlock != null) {
-				heldBlock.removeJoints();
+				heldBlock.release();
 				heldBlock = null;
 			}
 			Point2D point = new Point2D.Double();
@@ -116,9 +123,7 @@ public class Stackiter extends JComponent implements ActionListener {
 				}
 			}
 			if (heldBlock != null) {
-				// TODO Build constraint.
-				//Weld
-				heldBlock.addJoint(ground, point);
+				heldBlock.grasp(point);
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
