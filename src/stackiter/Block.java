@@ -18,7 +18,9 @@ public class Block {
 
 	private Color color;
 
-	private Point2D otherGraspPointOffset;
+	private Point2D.Double graspOffsetMin;
+
+	private Point2D.Double graspOffsetMax;
 
 	private PolygonDef shapeDef;
 
@@ -33,13 +35,14 @@ public class Block {
 		shapeDef.friction = 0.7f;
 	}
 
-	private void addDragJoint(Point2D point, double forceScale) {
+	private Point2D.Double addDragJoint(Point2D point, Point2D base, double forceScale) {
 		MouseJointDef jointDef = new MouseJointDef();
 		jointDef.body1 = body.getWorld().getGroundBody();
 		jointDef.body2 = body;
 		jointDef.target.set((float)point.getX(), (float)point.getY());
 		jointDef.maxForce = (float)(forceScale);
 		body.getWorld().createJoint(jointDef);
+		return new Point2D.Double(point.getX() - base.getX(), point.getY() - base.getY());
 	}
 
 	public void addTo(World world) {
@@ -84,22 +87,37 @@ public class Block {
 	}
 
 	public void grasp(Point2D point) {
-		//		try {
-		//			AffineTransform transform = getTransform();
-		//			Point2D blockPoint = transform.inverseTransform(point, null);
-		//			// TODO First figure out whether X or Y relates to X in the global frame.
-		//			blockPoint.setLocation(-blockPoint.getX(), blockPoint.getY());
-		//			Point2D otherPoint = transform.transform(blockPoint, null);
-		//			return otherPoint;
-		//		} catch (Exception e) {
-		//			throw new RuntimeException(e);
-		//		}
-		// TODO Put a center point with high force and side points with lower.
-		addDragJoint(point, 500);
-		Point2D otherPoint = otherGraspPoint(point);
-		addDragJoint(otherPoint, 400);
-		otherGraspPointOffset = new Point2D.Double(-otherPoint.getX() + point.getX(), -otherPoint.getY() + point.getY());
-		body.wakeUp();
+		try {
+			// Assume horizontal grasps, so find if X or Y local axis is horizontal.
+			// TODO Also bias for thinner sides? Best for crazy shapes would be to look nearby for closest opposing edges.
+			AffineTransform transform = getTransform();
+			Point2D xInWorld = transform.transform(new Point2D.Double(1, 0), null);
+			// Grasp points in block coordinate frame.
+			Point2D blockPoint = transform.inverseTransform(point, null);
+			Point2D blockPointMin = new Point2D.Double();
+			Point2D blockPointMax = new Point2D.Double();
+			// Find the wrapping points.
+			// TODO Consider putting the main point in the middle rather than at the mouse position.
+			Rectangle2D bounds = getBounds();
+			boolean onX = Math.abs(xInWorld.getX()) > Math.abs(xInWorld.getY());
+			if (onX) {
+				blockPointMin.setLocation(bounds.getMinX(), blockPoint.getY());
+				blockPointMax.setLocation(bounds.getMaxX(), blockPoint.getY());
+			} else {
+				blockPointMin.setLocation(blockPoint.getY(), bounds.getMinY());
+				blockPointMax.setLocation(blockPoint.getY(), bounds.getMaxY());
+			}
+			Point2D pointMin = transform.transform(blockPointMin, null);
+			Point2D pointMax = transform.transform(blockPointMax, null);
+			// Add drag joints and remember offsets.
+			addDragJoint(point, point, 500);
+			graspOffsetMin = addDragJoint(pointMin, point, 300);
+			graspOffsetMax = addDragJoint(pointMax, point, 300);
+			// Wake up the body. It's alive if grasped.
+			body.wakeUp();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private double inverseTransformedWidth(AffineTransform transform, double width) {
@@ -119,26 +137,17 @@ public class Block {
 	 * Only meaningful if previously grasped?
 	 */
 	public void moveTo(Point2D point) {
-		// Point 1.
+		// Middle point.
 		MouseJoint joint = (MouseJoint)body.getJointList().joint;
 		joint.setTarget(new Vec2((float)point.getX(), (float)point.getY()));
-		// Point 2.
-		Point2D otherPoint = new Point2D.Double(point.getX() + otherGraspPointOffset.getX(), point.getY() + otherGraspPointOffset.getY());
+		// Min point.
 		joint = (MouseJoint)body.getJointList().next.joint;
-		joint.setTarget(new Vec2((float)otherPoint.getX(), (float)otherPoint.getY()));
-	}
-
-	private Point2D otherGraspPoint(Point2D point) {
-		try {
-			AffineTransform transform = getTransform();
-			Point2D blockPoint = transform.inverseTransform(point, null);
-			// TODO First figure out whether X or Y relates to X in the global frame.
-			blockPoint.setLocation(-blockPoint.getX(), blockPoint.getY());
-			Point2D otherPoint = transform.transform(blockPoint, null);
-			return otherPoint;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+		point = new Point2D.Double(point.getX() + graspOffsetMin.getX(), point.getY() + graspOffsetMin.getY());
+		joint.setTarget(new Vec2((float)point.getX(), (float)point.getY()));
+		// Max point.
+		joint = (MouseJoint)body.getJointList().next.next.joint;
+		point = new Point2D.Double(point.getX() + graspOffsetMax.getX(), point.getY() + graspOffsetMax.getY());
+		joint.setTarget(new Vec2((float)point.getX(), (float)point.getY()));
 	}
 
 	public void paint(Graphics2D graphics, AffineTransform transform) {
