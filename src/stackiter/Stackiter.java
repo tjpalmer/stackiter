@@ -1,5 +1,7 @@
 package stackiter;
 
+import static stackiter.Util.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
@@ -37,6 +39,8 @@ public class Stackiter extends JComponent implements ActionListener {
 
 	private Timer timer;
 
+	private Tray tray;
+
 	private Rectangle2D viewRect;
 
 	private World world;
@@ -44,6 +48,7 @@ public class Stackiter extends JComponent implements ActionListener {
 	public Stackiter() {
 		setPreferredSize(new Dimension(600, 400));
 		timer = new Timer(10, this);
+		tray = new Tray(10);
 		viewRect = new Rectangle2D.Double(-20, -5, 40, 25);
 		MouseAdapter mouseAdapter = new MouseAdapter() {
 			@Override
@@ -148,6 +153,9 @@ public class Stackiter extends JComponent implements ActionListener {
 			for (Block block: blocks) {
 				block.paint(g, (AffineTransform)transform.clone());
 			}
+			// TODO Update tray bounds on window resize. Not here!
+			updateTrayBounds();
+			tray.paint(g, copy(transform));
 		} finally {
 			g.dispose();
 		}
@@ -155,6 +163,13 @@ public class Stackiter extends JComponent implements ActionListener {
 
 	private void start() {
 		timer.start();
+	}
+
+	private void updateTrayBounds() {
+		AffineTransform transform = worldToDisplayTransform();
+		invert(transform);
+		Point2D anchor = apply(transform, point(0, 0));
+		tray.setAnchor(anchor);
 	}
 
 	private double worldToDisplayScale() {

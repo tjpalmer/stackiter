@@ -1,5 +1,7 @@
 package stackiter;
 
+import static stackiter.Util.*;
+
 import java.awt.*;
 import java.awt.Shape;
 import java.awt.geom.*;
@@ -57,19 +59,41 @@ public class Block {
 	}
 
 	private Rectangle2D getBounds() {
-		XForm xForm = new XForm();
-		xForm.setIdentity();
-		AABB aabb = new AABB();
-		body.getShapeList().computeAABB(aabb, xForm);
-		double width = aabb.upperBound.x - aabb.lowerBound.x;
-		double height = aabb.upperBound.y - aabb.lowerBound.y;
-		Rectangle2D rectangle = new Rectangle2D.Double();
-		rectangle.setRect(-width / 2, -height / 2, width, height);
+		Point2D extent = getExtent();
+		Rectangle2D rectangle = new Rectangle2D.Double(-extent.getX(), -extent.getY(), 2 * extent.getX(), 2 * extent.getY());
 		return rectangle;
 	}
 
 	public Color getColor() {
 		return color;
+	}
+
+	public Point2D getExtent() {
+		// TODO Just store our own shape info instead of this dual mess.
+		double width;
+		double height;
+		if (body == null) {
+			double minX = Double.POSITIVE_INFINITY;
+			double minY = Double.POSITIVE_INFINITY;
+			double maxX = Double.NEGATIVE_INFINITY;
+			double maxY = Double.NEGATIVE_INFINITY;
+			for (Vec2 point: shapeDef.getVertexArray()) {
+				minX = Math.min(point.x, minX);
+				minY = Math.min(point.y, minY);
+				maxX = Math.max(point.x, maxX);
+				maxY = Math.max(point.y, maxY);
+			}
+			width = maxX - minX;
+			height = maxY - minY;
+		} else {
+			XForm xForm = new XForm();
+			xForm.setIdentity();
+			AABB aabb = new AABB();
+			body.getShapeList().computeAABB(aabb, xForm);
+			width = aabb.upperBound.x - aabb.lowerBound.x;
+			height = aabb.upperBound.y - aabb.lowerBound.y;
+		}
+		return point(width / 2, height / 2);
 	}
 
 	private AffineTransform getTransform() {
@@ -133,6 +157,15 @@ public class Block {
 		}
 	}
 
+	private boolean isRotated() {
+		if (body == null) {
+			return bodyDef.angle != 0;
+		} else {
+			XForm xForm = body.getXForm();
+			return !(xForm.R.col1.y == 0 && xForm.R.col2.x == 0);
+		}
+	}
+
 	/**
 	 * Only meaningful if previously grasped?
 	 */
@@ -155,15 +188,13 @@ public class Block {
 		try {
 			// Shape information.
 			double strokeWidth = 2;
-			XForm xForm = body.getXForm();
-			boolean anyRotation = !(xForm.R.col1.y == 0 && xForm.R.col2.x == 0);
 			Shape shape = transformedShape(transform, strokeWidth);
 			// Draw the block.
 			g.setColor(color);
 			g.fill(shape);
 			g.setColor(color.darker());
 			g.setStroke(new BasicStroke((float)strokeWidth));
-			if (anyRotation) {
+			if (isRotated()) {
 				// Seems a bit too slow to do antialiasing. Even in this specific context.
 				// g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			}
@@ -223,11 +254,16 @@ public class Block {
 	}
 
 	private void worldToBlockTransform(AffineTransform transform) {
-		// Position.
-		XForm xForm = body.getXForm();
-		transform.translate(xForm.position.x, xForm.position.y);
-		// Rotation.
-		transform.concatenate(new AffineTransform(new double[] {xForm.R.col1.x, xForm.R.col1.y, xForm.R.col2.x, xForm.R.col2.y}));
+		if (body == null) {
+			transform.translate(bodyDef.position.x, bodyDef.position.y);
+			transform.rotate(bodyDef.angle);
+		} else {
+			// Position.
+			XForm xForm = body.getXForm();
+			transform.translate(xForm.position.x, xForm.position.y);
+			// Rotation.
+			transform.concatenate(new AffineTransform(new double[] {xForm.R.col1.x, xForm.R.col1.y, xForm.R.col2.x, xForm.R.col2.y}));
+		}
 	}
 
 }
