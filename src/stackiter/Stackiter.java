@@ -48,7 +48,7 @@ public class Stackiter extends JComponent implements ActionListener {
 	public Stackiter() {
 		setPreferredSize(new Dimension(600, 400));
 		timer = new Timer(10, this);
-		tray = new Tray(10);
+		tray = new Tray(20);
 		viewRect = new Rectangle2D.Double(-20, -5, 40, 25);
 		MouseAdapter mouseAdapter = new MouseAdapter() {
 			@Override
@@ -78,16 +78,6 @@ public class Stackiter extends JComponent implements ActionListener {
 		// TODO Alternatively, change the delay based on how much time is left.
 		world.step(0.02f, 10);
 		repaint();
-	}
-
-	private void addBlock(double y) {
-		Block block = new Block();
-		block.setColor(Color.getHSBColor(2/3f, 0.7f, 1f));
-		block.setExtent(1, 1);
-		block.setPosition(0, y);
-		block.setRotation(2 * Math.random() - 1);
-		block.addTo(world);
-		blocks.add(block);
 	}
 
 	private void addGround() {
