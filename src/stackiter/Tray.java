@@ -21,22 +21,36 @@ public class Tray {
 	public Tray(int total) {
 		blocks = new ArrayList<Block>();
 		random = new Random();
+		fill(total);
+	}
+
+	private void fill(int total) {
 		while (blocks.size() < total) {
 			blocks.add(randomBlock());
 		}
 	}
 
+	public Block graspedBlock(Point2D point) {
+		for (Block block: blocks) {
+			if (block.contains(point)) {
+				blocks.remove(block);
+				fill(blocks.size() + 1);
+				return block;
+			}
+		}
+		return null;
+	}
+
 	public void paint(Graphics2D graphics, AffineTransform transform) {
+		double pad = 0.2;
 		Point2D position = copy(anchor);
 		for (Block block: blocks) {
+			// Position and paint the block.
 			Point2D extent = block.getExtent();
-			// Pad the block.
-			extent.setLocation(extent.getX() + 0.2, extent.getY() + 0.1);
-			// Position and paint it.
-			block.setPosition(position.getX() + extent.getX(), position.getY() - extent.getY());
+			block.setPosition(position.getX() + extent.getX() + pad, position.getY() + extent.getY() + pad);
 			block.paint(graphics, copy(transform));
 			// Move down the line.
-			position.setLocation(position.getX(), position.getY() - 2 * extent.getY());
+			position.setLocation(position.getX(), position.getY() + 2 * extent.getY() + pad);
 		}
 	}
 

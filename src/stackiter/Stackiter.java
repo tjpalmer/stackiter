@@ -70,8 +70,6 @@ public class Stackiter extends JComponent implements ActionListener {
 		blocks = new ArrayList<Block>();
 		world = new World(new AABB(new Vec2(-100,-100), new Vec2(100,100)), new Vec2(0, -10), true);
 		addGround();
-		addBlock(10);
-		addBlock(14);
 	}
 
 	@Override
@@ -127,6 +125,14 @@ public class Stackiter extends JComponent implements ActionListener {
 					// But how often will that be when physics tries to avoid it?
 				}
 			}
+			if (heldBlock == null) {
+				// No live blocks. Try reserve blocks.
+				heldBlock = tray.graspedBlock(point);
+				if (heldBlock != null) {
+					blocks.add(heldBlock);
+					heldBlock.addTo(world);
+				}
+			}
 			if (heldBlock != null) {
 				heldBlock.grasp(point);
 			}
@@ -146,16 +152,20 @@ public class Stackiter extends JComponent implements ActionListener {
 	protected void paintComponent(Graphics graphics) {
 		Graphics2D g = (Graphics2D)graphics.create();
 		try {
+			// Background.
 			g.setColor(Color.WHITE);
 			g.fill(getBounds());
 			AffineTransform transform = worldToDisplayTransform();
-			ground.paint(g, (AffineTransform)transform.clone());
-			for (Block block: blocks) {
-				block.paint(g, (AffineTransform)transform.clone());
-			}
+			// Tray.
 			// TODO Update tray bounds on window resize. Not here!
 			updateTrayBounds();
 			tray.paint(g, copy(transform));
+			// Ground.
+			ground.paint(g, copy(transform));
+			// Live blocks.
+			for (Block block: blocks) {
+				block.paint(g, copy(transform));
+			}
 		} finally {
 			g.dispose();
 		}
@@ -169,6 +179,7 @@ public class Stackiter extends JComponent implements ActionListener {
 		AffineTransform transform = worldToDisplayTransform();
 		invert(transform);
 		Point2D anchor = apply(transform, point(0, 0));
+		anchor.setLocation(anchor.getX(), 0);
 		tray.setAnchor(anchor);
 	}
 

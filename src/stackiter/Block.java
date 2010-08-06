@@ -32,9 +32,9 @@ public class Block {
 		shapeDef = new PolygonDef();
 		// Some default values.
 		shapeDef.setAsBox(1, 1);
-		shapeDef.density = 4f;
+		shapeDef.density = 1;
 		shapeDef.restitution = 0.0f;
-		shapeDef.friction = 0.7f;
+		shapeDef.friction = 0.5f;
 	}
 
 	private Point2D.Double addDragJoint(Point2D point, Point2D base, double forceScale) {
@@ -42,7 +42,7 @@ public class Block {
 		jointDef.body1 = body.getWorld().getGroundBody();
 		jointDef.body2 = body;
 		jointDef.target.set((float)point.getX(), (float)point.getY());
-		jointDef.maxForce = (float)(forceScale);
+		jointDef.maxForce = (float)(forceScale * body.getMass());
 		body.getWorld().createJoint(jointDef);
 		return new Point2D.Double(point.getX() - base.getX(), point.getY() - base.getY());
 	}
@@ -134,9 +134,9 @@ public class Block {
 			Point2D pointMin = transform.transform(blockPointMin, null);
 			Point2D pointMax = transform.transform(blockPointMax, null);
 			// Add drag joints and remember offsets.
-			addDragJoint(point, point, 500);
-			graspOffsetMin = addDragJoint(pointMin, point, 300);
-			graspOffsetMax = addDragJoint(pointMax, point, 300);
+			addDragJoint(point, point, 50);
+			graspOffsetMin = addDragJoint(pointMin, point, 30);
+			graspOffsetMax = addDragJoint(pointMax, point, 30);
 			// Wake up the body. It's alive if grasped.
 			body.wakeUp();
 		} catch (Exception e) {
