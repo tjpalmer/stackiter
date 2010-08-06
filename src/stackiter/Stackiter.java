@@ -76,13 +76,29 @@ public class Stackiter extends JComponent implements ActionListener {
 	public void actionPerformed(ActionEvent event) {
 		// TODO Offload this to a separate thread? If so, still lock step to one update per frame.
 		// TODO Alternatively, change the delay based on how much time is left.
+		// Step the simulation.
 		world.step(0.02f, 10);
+		// Delete lost blocks.
+		AffineTransform transform = inverted(worldToDisplayTransform());
+		Path2D displayPath = new Path2D.Double(getBounds());
+		displayPath.transform(transform);
+		Rectangle2D displayBounds = displayPath.getBounds2D();
+		for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
+			Block block = b.next();
+			Shape blockShape = block.transformedShape();
+			Rectangle2D blockBounds = blockShape.getBounds2D();
+			if (!(block == heldBlock || displayBounds.contains(blockBounds) || blockShape.intersects(displayBounds))) {
+				b.remove();
+				block.removeFromWorld();
+			}
+		}
+		// And queue the repaint.
 		repaint();
 	}
 
 	private void addGround() {
 		ground = new Block();
-		ground.setColor(Color.getHSBColor(1/12f, 0.5f, 0.5f));
+		ground.setColor(Color.getHSBColor(0, 0, 0.5f));
 		ground.setDensity(0);
 		ground.setExtent(world.getWorldAABB().upperBound.x, 5);
 		ground.setPosition(0, -5);
@@ -140,21 +156,21 @@ public class Stackiter extends JComponent implements ActionListener {
 
 	@Override
 	protected void paintComponent(Graphics graphics) {
-		Graphics2D g = (Graphics2D)graphics.create();
+		Graphics2D g = copy(graphics);
 		try {
 			// Background.
 			g.setColor(Color.WHITE);
 			g.fill(getBounds());
 			AffineTransform transform = worldToDisplayTransform();
+			// Ground.
+			ground.paint(g, transform);
 			// Tray.
 			// TODO Update tray bounds on window resize. Not here!
 			updateTrayBounds();
-			tray.paint(g, copy(transform));
-			// Ground.
-			ground.paint(g, copy(transform));
+			tray.paint(g, transform);
 			// Live blocks.
 			for (Block block: blocks) {
-				block.paint(g, copy(transform));
+				block.paint(g, transform);
 			}
 		} finally {
 			g.dispose();
@@ -167,10 +183,13 @@ public class Stackiter extends JComponent implements ActionListener {
 
 	private void updateTrayBounds() {
 		AffineTransform transform = worldToDisplayTransform();
+		// Tray.
 		invert(transform);
 		Point2D anchor = apply(transform, point(0, 0));
 		anchor.setLocation(anchor.getX(), 0);
 		tray.setAnchor(anchor);
+		Point2D bottom = apply(transform, point(0, getHeight()));
+		tray.setBottom(bottom.getY());
 	}
 
 	private double worldToDisplayScale() {

@@ -1,5 +1,6 @@
 package stackiter;
 
+import java.awt.*;
 import java.awt.geom.*;
 
 public class Util {
@@ -18,6 +19,15 @@ public class Util {
 
 	public static AffineTransform copy(AffineTransform transform) {
 		return (AffineTransform)transform.clone();
+	}
+
+	/**
+	 * Remember to dispose all graphics objects!!!
+	 * @param graphics
+	 * @return
+	 */
+	public static Graphics2D copy(Graphics graphics) {
+		return (Graphics2D)graphics.create();
 	}
 
 	public static Point2D copy(Point2D point) {

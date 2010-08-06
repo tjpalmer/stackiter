@@ -184,11 +184,11 @@ public class Block {
 	}
 
 	public void paint(Graphics2D graphics, AffineTransform transform) {
-		Graphics2D g = (Graphics2D)graphics.create();
+		Graphics2D g = copy(graphics);
 		try {
 			// Shape information.
 			double strokeWidth = 2;
-			Shape shape = transformedShape(transform, strokeWidth);
+			Shape shape = transformedShape(copy(transform), strokeWidth);
 			// Draw the block.
 			g.setColor(color);
 			g.fill(shape);
@@ -207,6 +207,15 @@ public class Block {
 	public void release() {
 		while (body.getJointList() != null) {
 			body.getWorld().destroyJoint(body.getJointList().joint);
+		}
+	}
+
+	public void removeFromWorld() {
+		if (body != null) {
+			body.getWorld().destroyBody(body);
+			// TODO Put the current transform into the bodyDef?
+			// TODO Would need to extract angle for that.
+			body = null;
 		}
 	}
 
