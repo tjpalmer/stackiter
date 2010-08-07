@@ -1,17 +1,29 @@
-<project name="stackiter" default="dist">
+<project name="stackiter" default="jar">
 
-  <target name="dist">
-  	<delete dir="build"/>
-  	<mkdir dir="build/class"/>
-  	<javac srcdir="src" destdir="build/class" classpath="lib/jbox2d.jar"/>
-  	<unzip dest="build/class" src="lib/jbox2d.jar">
-  		<patternset includes="**/*.class"/>
-  	</unzip>
-  	<jar destfile="build/stackiter.jar" basedir="build/class">
-  		<manifest>
-  			<attribute name="Main-Class" value="stackiter.Stackiter"/>
-  	  </manifest>
-  	</jar>
-	</target>
+  <target name="jar">
+    <delete dir="build"/>
+    <mkdir dir="build/class"/>
+    <javac srcdir="src" destdir="build/class" classpath="lib/jbox2d.jar"/>
+    <unzip dest="build/class" src="lib/jbox2d.jar">
+      <patternset includes="**/*.class" excludes="**/SPH*.class"/>
+    </unzip>
+    <jar destfile="build/stackiter.jar" basedir="build/class">
+      <manifest>
+        <attribute name="Main-Class" value="stackiter.Stackiter"/>
+      </manifest>
+    </jar>
+  </target>
+
+	<target name="shrink" depends="jar">
+    <taskdef resource="proguard/ant/task.properties" classpath="lib/proguard.jar" />
+    <proguard>
+      -libraryjars ${java.home}/lib/rt.jar
+      -injars build/stackiter.jar
+      -outjars build/stackiter-shrunk.jar
+      -keepclasseswithmembers public class * {
+          public static void main(java.lang.String[]);
+      }
+    </proguard>
+  </target>
 
 </project>
