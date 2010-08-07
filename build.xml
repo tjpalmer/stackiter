@@ -1,0 +1,17 @@
+<project name="stackiter" default="dist">
+
+  <target name="dist">
+  	<delete dir="build"/>
+  	<mkdir dir="build/class"/>
+  	<javac srcdir="src" destdir="build/class" classpath="lib/jbox2d.jar"/>
+  	<unzip dest="build/class" src="lib/jbox2d.jar">
+  		<patternset includes="**/*.class"/>
+  	</unzip>
+  	<jar destfile="build/stackiter.jar" basedir="build/class">
+  		<manifest>
+  			<attribute name="Main-Class" value="stackiter.Stackiter"/>
+  	  </manifest>
+  	</jar>
+	</target>
+
+</project>
