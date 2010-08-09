@@ -1,6 +1,7 @@
-<project name="stackiter" default="jar">
+<project name="stackiter" default="shrink">
 
   <target name="jar">
+    <delete file="stackiter.jar"/>
     <delete dir="build"/>
     <mkdir dir="build/class"/>
     <javac srcdir="src" destdir="build/class" classpath="lib/jbox2d.jar"/>
@@ -14,12 +15,12 @@
     </jar>
   </target>
 
-	<target name="shrink" depends="jar">
+  <target name="shrink" depends="jar">
     <taskdef resource="proguard/ant/task.properties" classpath="lib/proguard.jar" />
     <proguard>
       -libraryjars ${java.home}/lib/rt.jar
       -injars build/stackiter.jar
-      -outjars build/stackiter-shrunk.jar
+      -outjars stackiter.jar
       -keepclasseswithmembers public class * {
           public static void main(java.lang.String[]);
       }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jnlp spec="1.0+" codebase=".">
+  <information>
+    <title>Stackiter</title>
+  </information>
+  <resources>
+    <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
+    <jar href="stackiter.jar"/>
+  </resources>
+  <application-desc main-class="stackiter.Stackiter"/>
+</jnlp>
