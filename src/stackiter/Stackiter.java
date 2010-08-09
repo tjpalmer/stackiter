@@ -5,6 +5,7 @@ import static stackiter.Util.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
+import java.io.*;
 import java.util.*;
 import java.util.List;
 
@@ -16,14 +17,20 @@ import org.jbox2d.common.*;
 import org.jbox2d.dynamics.*;
 
 @SuppressWarnings("serial")
-public class Stackiter extends JComponent implements ActionListener {
+public class Stackiter extends JComponent implements ActionListener, Closeable {
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Stackiter");
 		frame.setLayout(new BorderLayout());
-		Stackiter stackiter = new Stackiter();
+		final Stackiter stackiter = new Stackiter();
 		frame.add(stackiter, BorderLayout.CENTER);
 		frame.pack();
+		frame.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				stackiter.close();
+			}
+		});
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		frame.addNotify();
 		frame.setExtendedState(Frame.MAXIMIZED_BOTH);
@@ -37,6 +44,8 @@ public class Stackiter extends JComponent implements ActionListener {
 
 	private Block heldBlock;
 
+	private Logger logger;
+
 	private Timer timer;
 
 	private Tray tray;
@@ -47,6 +56,7 @@ public class Stackiter extends JComponent implements ActionListener {
 
 	public Stackiter() {
 		setPreferredSize(new Dimension(600, 400));
+		logger = new Logger();
 		timer = new Timer(10, this);
 		tray = new Tray(20);
 		viewRect = new Rectangle2D.Double(-20, -5, 40, 25);
@@ -92,6 +102,10 @@ public class Stackiter extends JComponent implements ActionListener {
 				block.removeFromWorld();
 			}
 		}
+		// Record the new state.
+		for (Block block: blocks) {
+			logger.logItem(block);
+		}
 		// And queue the repaint.
 		repaint();
 	}
@@ -105,7 +119,11 @@ public class Stackiter extends JComponent implements ActionListener {
 		ground.addTo(world);
 	}
 
-	protected void mouseDragged(MouseEvent event) {
+	public void close() {
+		logger.close();
+	}
+
+	private void mouseDragged(MouseEvent event) {
 		try {
 			if (heldBlock != null) {
 				Point2D point = new Point2D.Double();
@@ -118,7 +136,7 @@ public class Stackiter extends JComponent implements ActionListener {
 		}
 	}
 
-	protected void mousePressed(MouseEvent event) {
+	private void mousePressed(MouseEvent event) {
 		try {
 			Point2D point = new Point2D.Double();
 			AffineTransform transform = worldToDisplayTransform();
@@ -147,7 +165,7 @@ public class Stackiter extends JComponent implements ActionListener {
 		}
 	}
 
-	protected void mouseReleased(MouseEvent event) {
+	private void mouseReleased(MouseEvent event) {
 		if (heldBlock != null) {
 			heldBlock.release();
 			heldBlock = null;

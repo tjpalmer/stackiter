@@ -96,6 +96,16 @@ public class Block {
 		return point(width / 2, height / 2);
 	}
 
+	public Point2D getPosition() {
+		Vec2 position;
+		if (body == null) {
+			position = bodyDef.position;
+		} else {
+			position = body.getXForm().position;
+		}
+		return point(position.x, position.y);
+	}
+
 	private AffineTransform getTransform() {
 		return getTransform(null);
 	}
