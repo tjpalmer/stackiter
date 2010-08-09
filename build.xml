@@ -1,26 +1,26 @@
 <project name="stackiter" default="shrink">
 
-  <target name="clean">
-    <delete file="stackiter.jar"/>
-    <delete dir="build"/>
-  </target>
+	<target name="clean">
+		<delete file="stackiter.jar"/>
+		<delete dir="build"/>
+	</target>
 
-  <target name="jar" depends="clean">
-    <mkdir dir="build/class"/>
-    <javac srcdir="src" destdir="build/class" classpath="lib/jbox2d.jar"/>
-    <unzip dest="build/class" src="lib/jbox2d.jar">
-      <patternset includes="**/*.class" excludes="**/SPH*.class"/>
-    </unzip>
-    <jar destfile="build/stackiter.jar" basedir="build/class">
-      <manifest>
-        <attribute name="Main-Class" value="stackiter.Stackiter"/>
-      </manifest>
-    </jar>
-  </target>
+	<target name="jar" depends="clean">
+		<mkdir dir="build/class"/>
+		<javac srcdir="src" destdir="build/class" classpath="lib/jbox2d.jar"/>
+		<unzip dest="build/class" src="lib/jbox2d.jar">
+			<patternset includes="**/*.class" excludes="**/SPH*.class"/>
+		</unzip>
+		<jar destfile="build/stackiter.jar" basedir="build/class">
+			<manifest>
+				<attribute name="Main-Class" value="stackiter.Stackiter"/>
+			</manifest>
+		</jar>
+	</target>
 
-  <target name="shrink" depends="jar">
-    <taskdef resource="proguard/ant/task.properties" classpath="lib/proguard.jar" />
-    <proguard>
+	<target name="shrink" depends="jar">
+		<taskdef resource="proguard/ant/task.properties" classpath="lib/proguard.jar" />
+		<proguard>
       -libraryjars ${java.home}/lib/rt.jar
       -injars build/stackiter.jar
       -outjars stackiter.jar
@@ -28,6 +28,6 @@
           public static void main(java.lang.String[]);
       }
     </proguard>
-  </target>
+	</target>
 
 </project>
