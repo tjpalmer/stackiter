@@ -1,8 +1,11 @@
 <project name="stackiter" default="shrink">
 
-  <target name="jar">
+  <target name="clean">
     <delete file="stackiter.jar"/>
     <delete dir="build"/>
+  </target>
+
+  <target name="jar" depends="clean">
     <mkdir dir="build/class"/>
     <javac srcdir="src" destdir="build/class" classpath="lib/jbox2d.jar"/>
     <unzip dest="build/class" src="lib/jbox2d.jar">
