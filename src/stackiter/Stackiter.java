@@ -17,7 +17,7 @@ import org.jbox2d.common.*;
 import org.jbox2d.dynamics.*;
 
 @SuppressWarnings("serial")
-public class Stackiter extends JComponent implements ActionListener, Closeable {
+public class Stackiter extends JComponent implements ActionListener, Closeable, MouseListener, MouseMotionListener {
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Stackiter");
@@ -60,22 +60,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable {
 		timer = new Timer(10, this);
 		tray = new Tray(20);
 		viewRect = new Rectangle2D.Double(-20, -5, 40, 25);
-		MouseAdapter mouseAdapter = new MouseAdapter() {
-			@Override
-			public void mouseDragged(MouseEvent event) {
-				Stackiter.this.mouseDragged(event);
-			}
-			@Override
-			public void mousePressed(MouseEvent event) {
-				Stackiter.this.mousePressed(event);
-			}
-			@Override
-			public void mouseReleased(MouseEvent event) {
-				Stackiter.this.mouseReleased(event);
-			}
-		};
-		addMouseListener(mouseAdapter);
-		addMouseMotionListener(mouseAdapter);
+		addMouseListener(this);
+		addMouseMotionListener(this);
 		// TODO Move out domain from display.
 		blocks = new ArrayList<Block>();
 		world = new World(new AABB(new Vec2(-100,-100), new Vec2(100,100)), new Vec2(0, -10), true);
@@ -126,50 +112,74 @@ public class Stackiter extends JComponent implements ActionListener, Closeable {
 		logger.close();
 	}
 
-	private void mouseDragged(MouseEvent event) {
+	@Override
+	public void mouseClicked(MouseEvent event) {
+		// Nothing to do here.
+	}
+
+	@Override
+	public void mouseDragged(MouseEvent event) {
 		try {
+			Point2D point = eventPointToWorld(event);
 			if (heldBlock != null) {
-				Point2D point = new Point2D.Double();
-				AffineTransform transform = worldToDisplayTransform();
-				transform.inverseTransform(new Point2D.Double(event.getX(), event.getY()), point);
 				heldBlock.moveTo(point);
 			}
+			logger.logMove(point);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	private void mousePressed(MouseEvent event) {
-		try {
-			Point2D point = new Point2D.Double();
-			AffineTransform transform = worldToDisplayTransform();
-			transform.inverseTransform(new Point2D.Double(event.getX(), event.getY()), point);
-			for (Block block: blocks) {
-				if (block.contains(point)) {
-					heldBlock = block;
-					// Don't break from loop. Make the last drawn have priority for clicking.
-					// That's more intuitive when blocks overlap.
-					// But how often will that be when physics tries to avoid it?
-				}
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Log this for mouse tracking purposes?
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Log this for mouse tracking purposes?
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent event) {
+		logger.logMove(eventPointToWorld(event));
+	}
+
+	private Point2D eventPointToWorld(MouseEvent event) {
+		Point2D point = applyInv(worldToDisplayTransform(), point(event.getX(), event.getY()));
+		return point;
+	}
+
+	@Override
+	public void mousePressed(final MouseEvent event) {
+		Point2D point = eventPointToWorld(event);
+		for (Block block: blocks) {
+			if (block.contains(point)) {
+				heldBlock = block;
+				// Don't break from loop. Make the last drawn have priority for clicking.
+				// That's more intuitive when blocks overlap.
+				// But how often will that be when physics tries to avoid it?
 			}
-			if (heldBlock == null) {
-				// No live blocks. Try reserve blocks.
-				heldBlock = tray.graspedBlock(point);
-				if (heldBlock != null) {
-					blocks.add(heldBlock);
-					heldBlock.addTo(world);
-				}
-			}
+		}
+		if (heldBlock == null) {
+			// No live blocks. Try reserve blocks.
+			heldBlock = tray.graspedBlock(point);
 			if (heldBlock != null) {
-				heldBlock.grasp(point);
+				blocks.add(heldBlock);
+				heldBlock.addTo(world);
 			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		}
+		if (heldBlock != null) {
+			heldBlock.grasp(point);
+			Point2D pointRelBlock = applyInv(heldBlock.getTransform(), point);
+			logger.logGrasp(heldBlock, pointRelBlock);
 		}
 	}
 
-	private void mouseReleased(MouseEvent event) {
+	@Override
+	public void mouseReleased(MouseEvent event) {
 		if (heldBlock != null) {
+			logger.logRelease(heldBlock);
 			heldBlock.release();
 			heldBlock = null;
 		}

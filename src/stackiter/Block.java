@@ -106,7 +106,7 @@ public class Block {
 		return point(position.x, position.y);
 	}
 
-	private AffineTransform getTransform() {
+	public AffineTransform getTransform() {
 		return getTransform(null);
 	}
 

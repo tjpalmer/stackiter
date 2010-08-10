@@ -67,6 +67,7 @@ public class Logger implements Closeable {
 	@Override
 	public void close() {
 		try {
+			log("quit");
 			writer.close();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -77,28 +78,40 @@ public class Logger implements Closeable {
 		txDepth--;
 	}
 
+	private ItemInfo getInfo(Block item) {
+		ItemInfo info = items.get(item);
+		if (info == null) {
+			// New item. Log its static information.
+			info = new ItemInfo();
+			info.id = nextId++;
+			info.item = new Block();
+			items.put(item, info);
+			Point2D extent = item.getExtent();
+			log("item %d", info.id);
+			if (item.isAlive()) {
+				log("alive %d", info.id);
+			}
+			log("shape %d box %f %f", info.id, extent.getX(), extent.getY());
+			log("color %d %x", info.id, item.getColor().getRGB());
+		}
+		return info;
+	}
+
 	private void log(String message, Object... args) {
 		logTimeIfNeeded();
 		writer.format(message + "\n", args);
 	}
 
+	public void logGrasp(final Block item, final Point2D pointRelItem) {
+		atomic(new Runnable() { @Override public void run() {
+			ItemInfo info = getInfo(item);
+			log("grasp %d %f %f", info.id, pointRelItem.getX(), pointRelItem.getY());
+		}});
+	}
+
 	public void logItem(final Block item) {
 		atomic(new Runnable() { @Override public void run() {
-			ItemInfo info = items.get(item);
-			if (info == null) {
-				// New item. Log its static information.
-				info = new ItemInfo();
-				info.id = nextId++;
-				info.item = new Block();
-				items.put(item, info);
-				Point2D extent = item.getExtent();
-				log("item %d", info.id);
-				if (item.isAlive()) {
-					log("alive %d", info.id);
-				}
-				log("shape %d box %f %f", info.id, extent.getX(), extent.getY());
-				log("color %d %x", info.id, item.getColor().getRGB());
-			}
+			ItemInfo info = getInfo(item);
 			// TODO Could check for changes in alive (if datafied), color, or shape here, too.
 			Point2D position = item.getPosition();
 			if (!position.equals(info.item.getPosition())) {
@@ -108,9 +121,22 @@ public class Logger implements Closeable {
 		}});
 	}
 
-	public void logRemoval(Block item) {
-		ItemInfo info = items.get(item);
-		log("destroy %d", info.id);
+	public void logMove(Point2D point) {
+		log("move %f %f", point.getX(), point.getY());
+	}
+
+	public void logRelease(final Block item) {
+		atomic(new Runnable() { @Override public void run() {
+			ItemInfo info = getInfo(item);
+			log("release %d", info.id);
+		}});
+	}
+
+	public void logRemoval(final Block item) {
+		atomic(new Runnable() { @Override public void run() {
+			ItemInfo info = getInfo(item);
+			log("destroy %d", info.id);
+		}});
 	}
 
 	private void logTimeIfNeeded() {
