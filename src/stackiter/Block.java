@@ -167,6 +167,10 @@ public class Block {
 		}
 	}
 
+	public boolean isAlive() {
+		return body != null;
+	}
+
 	private boolean isRotated() {
 		if (body == null) {
 			return bodyDef.angle != 0;
