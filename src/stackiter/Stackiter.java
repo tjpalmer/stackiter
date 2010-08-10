@@ -88,25 +88,27 @@ public class Stackiter extends JComponent implements ActionListener, Closeable {
 		// TODO Alternatively, change the delay based on how much time is left.
 		// Step the simulation.
 		world.step(0.02f, 10);
-		// Delete lost blocks.
-		AffineTransform transform = inverted(worldToDisplayTransform());
-		Path2D displayPath = new Path2D.Double(getBounds());
-		displayPath.transform(transform);
-		Rectangle2D displayBounds = displayPath.getBounds2D();
-		for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
-			Block block = b.next();
-			Shape blockShape = block.transformedShape();
-			Rectangle2D blockBounds = blockShape.getBounds2D();
-			if (!(block == heldBlock || displayBounds.contains(blockBounds) || blockShape.intersects(displayBounds))) {
-				b.remove();
-				block.removeFromWorld();
-				logger.logRemoval(block);
+		logger.atomic(new Runnable() { @Override public void run() {
+			// Delete lost blocks.
+			AffineTransform transform = inverted(worldToDisplayTransform());
+			Path2D displayPath = new Path2D.Double(getBounds());
+			displayPath.transform(transform);
+			Rectangle2D displayBounds = displayPath.getBounds2D();
+			for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
+				Block block = b.next();
+				Shape blockShape = block.transformedShape();
+				Rectangle2D blockBounds = blockShape.getBounds2D();
+				if (!(block == heldBlock || displayBounds.contains(blockBounds) || blockShape.intersects(displayBounds))) {
+					b.remove();
+					block.removeFromWorld();
+					logger.logRemoval(block);
+				}
 			}
-		}
-		// Record the new state.
-		for (Block block: blocks) {
-			logger.logItem(block);
-		}
+			// Record the new state.
+			for (Block block: blocks) {
+				logger.logItem(block);
+			}
+		}});
 		// And queue the repaint.
 		repaint();
 	}

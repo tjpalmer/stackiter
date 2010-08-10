@@ -17,6 +17,8 @@ public class Logger implements Closeable {
 		public Block item;
 	}
 
+	boolean firstPerTx;
+
 	private Map<Block, ItemInfo> items = new HashMap<Block, ItemInfo>();
 
 	private int nextId = 1;
@@ -24,6 +26,8 @@ public class Logger implements Closeable {
 	private long startTime;
 
 	private long time;
+
+	private int txDepth;
 
 	private Formatter writer;
 
@@ -44,6 +48,22 @@ public class Logger implements Closeable {
 		}
 	}
 
+	public void atomic(Runnable runnable) {
+		beginStep();
+		try {
+			runnable.run();
+		} finally {
+			endStep();
+		}
+	}
+
+	private void beginStep() {
+		if (txDepth == 0) {
+			firstPerTx = true;
+		}
+		txDepth++;
+	}
+
 	@Override
 	public void close() {
 		try {
@@ -53,33 +73,39 @@ public class Logger implements Closeable {
 		}
 	}
 
+	private void endStep() {
+		txDepth--;
+	}
+
 	private void log(String message, Object... args) {
 		logTimeIfNeeded();
 		writer.format(message + "\n", args);
 	}
 
-	public void logItem(Block item) {
-		ItemInfo info = items.get(item);
-		if (info == null) {
-			// New item. Log its static information.
-			info = new ItemInfo();
-			info.id = nextId++;
-			info.item = new Block();
-			items.put(item, info);
-			Point2D extent = item.getExtent();
-			log("item %d", info.id);
-			if (item.isAlive()) {
-				log("alive %d", info.id);
+	public void logItem(final Block item) {
+		atomic(new Runnable() { @Override public void run() {
+			ItemInfo info = items.get(item);
+			if (info == null) {
+				// New item. Log its static information.
+				info = new ItemInfo();
+				info.id = nextId++;
+				info.item = new Block();
+				items.put(item, info);
+				Point2D extent = item.getExtent();
+				log("item %d", info.id);
+				if (item.isAlive()) {
+					log("alive %d", info.id);
+				}
+				log("shape %d box %f %f", info.id, extent.getX(), extent.getY());
+				log("color %d %x", info.id, item.getColor().getRGB());
 			}
-			log("shape %d box %f %f", info.id, extent.getX(), extent.getY());
-			log("color %d %x", info.id, item.getColor().getRGB());
-		}
-		// TODO Could check for changes in alive (if datafied), color, or shape here, too.
-		Point2D position = item.getPosition();
-		if (!position.equals(info.item.getPosition())) {
-			info.item.setPosition(position.getX(), position.getY());
-			log("pos %d %f %f", info.id, position.getX(), position.getY());
-		}
+			// TODO Could check for changes in alive (if datafied), color, or shape here, too.
+			Point2D position = item.getPosition();
+			if (!position.equals(info.item.getPosition())) {
+				info.item.setPosition(position.getX(), position.getY());
+				log("pos %d %f %f", info.id, position.getX(), position.getY());
+			}
+		}});
 	}
 
 	public void logRemoval(Block item) {
@@ -88,10 +114,13 @@ public class Logger implements Closeable {
 	}
 
 	private void logTimeIfNeeded() {
-		long currentTime = System.currentTimeMillis();
-		if (currentTime != time) {
-			time = currentTime;
-			writer.format("time %d\n", currentTime - startTime);
+		if (txDepth == 0 || firstPerTx) {
+			firstPerTx = false;
+			long currentTime = System.currentTimeMillis();
+			if (currentTime != time) {
+				time = currentTime;
+				writer.format("time %d\n", currentTime - startTime);
+			}
 		}
 	}
 
