@@ -100,6 +100,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable {
 			if (!(block == heldBlock || displayBounds.contains(blockBounds) || blockShape.intersects(displayBounds))) {
 				b.remove();
 				block.removeFromWorld();
+				logger.logRemoval(block);
 			}
 		}
 		// Record the new state.
