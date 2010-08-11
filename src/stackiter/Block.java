@@ -20,9 +20,9 @@ public class Block {
 
 	private Color color;
 
-	private Point2D.Double graspOffsetMin;
+	private boolean debugPaint;
 
-	private Point2D.Double graspOffsetMax;
+	private MouseJoint mainJoint;
 
 	private PolygonDef shapeDef;
 
@@ -37,14 +37,13 @@ public class Block {
 		shapeDef.friction = 0.5f;
 	}
 
-	private Point2D.Double addDragJoint(Point2D point, Point2D base, double forceScale) {
+	private MouseJoint addDragJoint(Point2D point, double forceScale) {
 		MouseJointDef jointDef = new MouseJointDef();
 		jointDef.body1 = body.getWorld().getGroundBody();
 		jointDef.body2 = body;
 		jointDef.target.set((float)point.getX(), (float)point.getY());
 		jointDef.maxForce = (float)(forceScale * body.getMass());
-		body.getWorld().createJoint(jointDef);
-		return new Point2D.Double(point.getX() - base.getX(), point.getY() - base.getY());
+		return (MouseJoint)body.getWorld().createJoint(jointDef);
 	}
 
 	public void addTo(World world) {
@@ -144,9 +143,9 @@ public class Block {
 			Point2D pointMin = transform.transform(blockPointMin, null);
 			Point2D pointMax = transform.transform(blockPointMax, null);
 			// Add drag joints and remember offsets.
-			addDragJoint(point, point, 50);
-			graspOffsetMin = addDragJoint(pointMin, point, 30);
-			graspOffsetMax = addDragJoint(pointMax, point, 30);
+			mainJoint = addDragJoint(point, 50);
+			addDragJoint(pointMin, 30);
+			addDragJoint(pointMax, 30);
 			// Wake up the body. It's alive if grasped.
 			body.wakeUp();
 		} catch (Exception e) {
@@ -184,17 +183,13 @@ public class Block {
 	 * Only meaningful if previously grasped?
 	 */
 	public void moveTo(Point2D point) {
-		// Middle point.
-		MouseJoint joint = (MouseJoint)body.getJointList().joint;
-		joint.setTarget(new Vec2((float)point.getX(), (float)point.getY()));
-		// Min point.
-		joint = (MouseJoint)body.getJointList().next.joint;
-		point = new Point2D.Double(point.getX() + graspOffsetMin.getX(), point.getY() + graspOffsetMin.getY());
-		joint.setTarget(new Vec2((float)point.getX(), (float)point.getY()));
-		// Max point.
-		joint = (MouseJoint)body.getJointList().next.next.joint;
-		point = new Point2D.Double(point.getX() + graspOffsetMax.getX(), point.getY() + graspOffsetMax.getY());
-		joint.setTarget(new Vec2((float)point.getX(), (float)point.getY()));
+		Vec2 mainTargetNew = new Vec2((float)point.getX(), (float)point.getY());
+		Vec2 mainTargetOld = mainJoint.getAnchor1().clone();
+		for (JointEdge j = body.getJointList(); j != null; j = j.next) {
+			MouseJoint joint = (MouseJoint)j.joint;
+			joint.getAnchor1().addLocal(mainTargetNew.sub(mainTargetOld));
+		}
+		body.wakeUp();
 	}
 
 	public void paint(Graphics2D graphics, AffineTransform transform) {
@@ -213,8 +208,28 @@ public class Block {
 				// g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			}
 			g.draw(shape);
+			if (debugPaint) {
+				paintJoints(g, transform);
+			}
 		} finally {
 			g.dispose();
+		}
+	}
+
+	private void paintJoints(Graphics2D graphics, AffineTransform transform) {
+		if (isAlive()) {
+			graphics.setColor(Color.BLACK);
+			int j = 0;
+			JointEdge edge = body.getJointList();
+			while (edge != null) {
+				MouseJoint joint = (MouseJoint)edge.joint;
+				Vec2 target = joint.getAnchor1();
+				Point2D point = point(target.x, target.y);
+				point = apply(transform, point);
+				graphics.drawString(String.valueOf(j), (float)point.getX(), (float)point.getY());
+				edge = edge.next;
+				j++;
+			}
 		}
 	}
 
