@@ -131,13 +131,13 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	}
 
 	@Override
-	public void mouseEntered(MouseEvent e) {
-		// TODO Log this for mouse tracking purposes?
+	public void mouseEntered(MouseEvent event) {
+		logger.logEnter();
 	}
 
 	@Override
-	public void mouseExited(MouseEvent e) {
-		// TODO Log this for mouse tracking purposes?
+	public void mouseExited(MouseEvent event) {
+		logger.logLeave();
 	}
 
 	@Override

@@ -102,6 +102,10 @@ public class Logger implements Closeable {
 		writer.format(message + "\n", args);
 	}
 
+	public void logEnter() {
+		log("enter");
+	}
+
 	public void logGrasp(final Block item, final Point2D pointRelItem) {
 		atomic(new Runnable() { @Override public void run() {
 			ItemInfo info = getInfo(item);
@@ -121,7 +125,12 @@ public class Logger implements Closeable {
 		}});
 	}
 
+	public void logLeave() {
+		log("leave");
+	}
+
 	public void logMove(Point2D point) {
+		// TODO Consider checking for changes even though that's mostly handled outside.
 		log("move %f %f", point.getX(), point.getY());
 	}
 
