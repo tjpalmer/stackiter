@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<jnlp spec="1.0+" codebase=".">
+<jnlp spec="1.0+" codebase="build">
   <information>
     <title>Stackiter</title>
+    <vendor>Tom Palmer</vendor>
   </information>
+  <security>
+    <all-permissions/>
+  </security>
   <resources>
     <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
     <jar href="stackiter.jar"/>

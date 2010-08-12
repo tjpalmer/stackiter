@@ -1,14 +1,34 @@
-<project name="stackiter" default="shrink">
+<project name="stackiter" default="dist-shrunk">
 
 	<target name="clean">
-		<delete file="stackiter.jar"/>
 		<delete dir="build"/>
+	</target>
+
+	<target name="dist-shrunk" depends="shrink, finish">
+		<description>
+			Shrink (and obfuscate most of) the jar before signing it.
+			Resulting jnlp and jar are left directly under build.
+		</description>
+	</target>
+
+	<target name="dist-orig" depends="jar, finish">
+		<description>
+			Resulting jnlp and jar are left directly under build.
+			No shrinking or obfuscation is performed.
+		</description>
+	</target>
+
+	<target name="finish">
+		<copy file="stackiter.jnlp" todir="build"/>
+		<replaceregexp file="build/stackiter.jnlp" match="codebase=&quot;.*?&quot;" replace="codebase=&quot;${codebase}&quot;"/>
+		<signjar jar="build/stackiter.jar" alias="${alias}" storepass="${storepass}"/>
 	</target>
 
 	<target name="jar" depends="clean">
 		<mkdir dir="build/class"/>
 		<javac srcdir="src" destdir="build/class" classpath="lib/jbox2d.jar"/>
 		<unzip dest="build/class" src="lib/jbox2d.jar">
+			<!-- Explicitly leave out files referencing Processing since I don't want to worry about them for ProGuard or otherwise. -->
 			<patternset includes="**/*.class" excludes="**/SPH*.class"/>
 		</unzip>
 		<jar destfile="build/stackiter.jar" basedir="build/class">
@@ -19,15 +39,16 @@
 	</target>
 
 	<target name="shrink" depends="jar">
-		<taskdef resource="proguard/ant/task.properties" classpath="lib/proguard.jar" />
+		<move file="build/stackiter.jar" tofile="build/stackiter-orig.jar"/>
+		<taskdef resource="proguard/ant/task.properties" classpath="lib/proguard.jar"/>
 		<proguard>
-      -libraryjars ${java.home}/lib/rt.jar
-      -injars build/stackiter.jar
-      -outjars stackiter.jar
-      -keepclasseswithmembers public class * {
-          public static void main(java.lang.String[]);
-      }
-    </proguard>
+			-libraryjars ${java.home}/lib/rt.jar
+			-injars build/stackiter-orig.jar
+			-outjars build/stackiter.jar
+			-keepclasseswithmembers public class * {
+					public static void main(java.lang.String[]);
+			}
+		</proguard>
 	</target>
 
 </project>
