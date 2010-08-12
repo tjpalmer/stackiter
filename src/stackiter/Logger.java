@@ -43,6 +43,8 @@ public class Logger implements Closeable {
 			String logName = String.format("stackiter-%s.log", format.format(new Date(startTime)));
 			FileOutputStream out = new FileOutputStream(new File(dir, logName));
 			writer = new Formatter(new BufferedWriter(new OutputStreamWriter(out, "UTF-8"), 1<<16));
+			// Initial info.
+			logStart();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -91,7 +93,7 @@ public class Logger implements Closeable {
 			if (item.isAlive()) {
 				log("alive %d", info.id);
 			}
-			log("shape %d box %f %f", info.id, extent.getX(), extent.getY());
+			log("shape %d box %.3f %.3f", info.id, extent.getX(), extent.getY());
 			log("color %d %x", info.id, item.getColor().getRGB());
 		}
 		return info;
@@ -109,7 +111,7 @@ public class Logger implements Closeable {
 	public void logGrasp(final Block item, final Point2D pointRelItem) {
 		atomic(new Runnable() { @Override public void run() {
 			ItemInfo info = getInfo(item);
-			log("grasp %d %f %f", info.id, pointRelItem.getX(), pointRelItem.getY());
+			log("grasp %d %.3f %.3f", info.id, pointRelItem.getX(), pointRelItem.getY());
 		}});
 	}
 
@@ -117,10 +119,17 @@ public class Logger implements Closeable {
 		atomic(new Runnable() { @Override public void run() {
 			ItemInfo info = getInfo(item);
 			// TODO Could check for changes in alive (if datafied), color, or shape here, too.
+			// Position: pos.
 			Point2D position = item.getPosition();
 			if (!position.equals(info.item.getPosition())) {
 				info.item.setPosition(position.getX(), position.getY());
-				log("pos %d %f %f", info.id, position.getX(), position.getY());
+				log("pos %d %.3f %.3f", info.id, position.getX(), position.getY());
+			}
+			// Angle: rot.
+			double angle = item.getAngle();
+			if (Math.abs(angle - info.item.getAngle()) > 0.001) {
+				info.item.setAngle(angle);
+				log("rot %d %.3f", info.id, angle);
 			}
 		}});
 	}
@@ -131,7 +140,7 @@ public class Logger implements Closeable {
 
 	public void logMove(Point2D point) {
 		// TODO Consider checking for changes even though that's mostly handled outside.
-		log("move %f %f", point.getX(), point.getY());
+		log("pos 0 %.3f %.3f", point.getX(), point.getY());
 	}
 
 	public void logRelease(final Block item) {
@@ -145,6 +154,14 @@ public class Logger implements Closeable {
 		atomic(new Runnable() { @Override public void run() {
 			ItemInfo info = getInfo(item);
 			log("destroy %d", info.id);
+		}});
+	}
+
+	private void logStart() {
+		atomic(new Runnable() { @Override public void run() {
+			// Hardcoded info about the mouse pointer.
+			log("item 0");
+			log("tool 0");
 		}});
 	}
 

@@ -57,6 +57,19 @@ public class Block {
 		return shape.contains(point);
 	}
 
+	/**
+	 * @return angle in rats (radians / pi).
+	 */
+	public double getAngle() {
+		if (body == null) {
+			return bodyDef.angle / Math.PI;
+		} else {
+			XForm xForm = body.getXForm();
+			double angle = -Math.signum(xForm.R.col2.x) * Math.acos(xForm.R.col1.x);
+			return angle / Math.PI;
+		}
+	}
+
 	private Rectangle2D getBounds() {
 		Point2D extent = getExtent();
 		Rectangle2D rectangle = new Rectangle2D.Double(-extent.getX(), -extent.getY(), 2 * extent.getX(), 2 * extent.getY());
@@ -246,6 +259,13 @@ public class Block {
 			// TODO Would need to extract angle for that.
 			body = null;
 		}
+	}
+
+	/**
+	 * @param angle in rats (radians / pi).
+	 */
+	public void setAngle(double angle) {
+		bodyDef.angle = (float)(angle * Math.PI);
 	}
 
 	public void setColor(Color color) {
