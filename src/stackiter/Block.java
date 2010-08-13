@@ -157,17 +157,20 @@ public class Block {
 		Point2D pointMax = apply(transform, blockPointMax);
 		// Calculate forces. Less stable the further from the center.
 		double force = 50;
-		double dist = blockPoint.distance(0, 0);
-		double radius = getExtent().distance(0, 0);
-		double supportForce = 0.6 * force * (1 - dist/radius);
+		double distX = Math.abs(blockPoint.getX() / bounds.getWidth());
+		double distY = Math.abs(blockPoint.getY() / bounds.getHeight());
+		double dist = 2 * Math.max(distX, distY); // 2x because earlier div by diameter, not radius.
+		double supportForce = 0.6 * force * Math.pow((1 - dist), 5);
 		// Normalize total max force for gain control.
 		double ratio = 100 / (force + 2 * supportForce);
 		force *= ratio;
 		supportForce *= ratio;
 		// Add drag joints.
 		mainJoint = addDragJoint(point, force);
-		addDragJoint(pointMin, supportForce);
-		addDragJoint(pointMax, supportForce);
+		if (supportForce > 0.01) {
+			addDragJoint(pointMin, supportForce);
+			addDragJoint(pointMax, supportForce);
+		}
 		// Wake up the body. It's alive if grasped.
 		body.wakeUp();
 	}
