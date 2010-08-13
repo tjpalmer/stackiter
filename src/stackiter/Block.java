@@ -41,8 +41,11 @@ public class Block {
 		MouseJointDef jointDef = new MouseJointDef();
 		jointDef.body1 = body.getWorld().getGroundBody();
 		jointDef.body2 = body;
+		jointDef.dampingRatio = 1;
+		jointDef.frequencyHz = 2;
 		jointDef.target.set((float)point.getX(), (float)point.getY());
-		jointDef.maxForce = (float)(forceScale * body.getMass());
+		// Constant force, but 5 is _near_ the top range of our masses.
+		jointDef.maxForce = (float)(forceScale * 5); // * body.getMass());
 		return (MouseJoint)body.getWorld().createJoint(jointDef);
 	}
 
@@ -133,37 +136,31 @@ public class Block {
 	}
 
 	public void grasp(Point2D point) {
-		try {
-			// Assume horizontal grasps, so find if X or Y local axis is horizontal.
-			// TODO Also bias for thinner sides? Best for crazy shapes would be to look nearby for closest opposing edges.
-			AffineTransform transform = getTransform();
-			Point2D xInWorld = transform.transform(new Point2D.Double(1, 0), null);
-			// Grasp points in block coordinate frame.
-			Point2D blockPoint = transform.inverseTransform(point, null);
-			Point2D blockPointMin = new Point2D.Double();
-			Point2D blockPointMax = new Point2D.Double();
-			// Find the wrapping points.
-			// TODO Consider putting the main point in the middle rather than at the mouse position.
-			Rectangle2D bounds = getBounds();
-			boolean onX = Math.abs(xInWorld.getX()) > Math.abs(xInWorld.getY());
-			if (onX) {
-				blockPointMin.setLocation(bounds.getMinX(), blockPoint.getY());
-				blockPointMax.setLocation(bounds.getMaxX(), blockPoint.getY());
-			} else {
-				blockPointMin.setLocation(blockPoint.getY(), bounds.getMinY());
-				blockPointMax.setLocation(blockPoint.getY(), bounds.getMaxY());
-			}
-			Point2D pointMin = transform.transform(blockPointMin, null);
-			Point2D pointMax = transform.transform(blockPointMax, null);
-			// Add drag joints and remember offsets.
-			mainJoint = addDragJoint(point, 50);
-			addDragJoint(pointMin, 30);
-			addDragJoint(pointMax, 30);
-			// Wake up the body. It's alive if grasped.
-			body.wakeUp();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		// Assume horizontal grasps, so find if X or Y local axis is horizontal.
+		// TODO Also bias for thinner sides? Best for crazy shapes would be to look nearby for closest opposing edges.
+		AffineTransform transform = getTransform();
+		// Grasp points in block coordinate frame.
+		Point2D blockPoint = applyInv(transform, point);
+		Point2D blockPointMin = new Point2D.Double();
+		Point2D blockPointMax = new Point2D.Double();
+		// Find the wrapping points.
+		// TODO Consider putting the main point in the middle rather than at the mouse position.
+		Rectangle2D bounds = getBounds();
+		if (bounds.getWidth() < bounds.getHeight()) {
+			blockPointMin.setLocation(bounds.getMinX(), blockPoint.getY());
+			blockPointMax.setLocation(bounds.getMaxX(), blockPoint.getY());
+		} else {
+			blockPointMin.setLocation(blockPoint.getX(), bounds.getMinY());
+			blockPointMax.setLocation(blockPoint.getX(), bounds.getMaxY());
 		}
+		Point2D pointMin = apply(transform, blockPointMin);
+		Point2D pointMax = apply(transform, blockPointMax);
+		// Add drag joints and remember offsets.
+		mainJoint = addDragJoint(point, 50);
+		addDragJoint(pointMin, 30);
+		addDragJoint(pointMax, 30);
+		// Wake up the body. It's alive if grasped.
+		body.wakeUp();
 	}
 
 	private double inverseTransformedWidth(AffineTransform transform, double width) {
