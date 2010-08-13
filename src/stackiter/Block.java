@@ -41,7 +41,7 @@ public class Block {
 		MouseJointDef jointDef = new MouseJointDef();
 		jointDef.body1 = body.getWorld().getGroundBody();
 		jointDef.body2 = body;
-		jointDef.dampingRatio = 1;
+		jointDef.dampingRatio = (float)(Math.pow(body.getMass(), 0.5) / 2);
 		jointDef.frequencyHz = 2;
 		jointDef.target.set((float)point.getX(), (float)point.getY());
 		// Constant force, but 5 is _near_ the top range of our masses.
@@ -155,10 +155,19 @@ public class Block {
 		}
 		Point2D pointMin = apply(transform, blockPointMin);
 		Point2D pointMax = apply(transform, blockPointMax);
-		// Add drag joints and remember offsets.
-		mainJoint = addDragJoint(point, 50);
-		addDragJoint(pointMin, 30);
-		addDragJoint(pointMax, 30);
+		// Calculate forces. Less stable the further from the center.
+		double force = 50;
+		double dist = blockPoint.distance(0, 0);
+		double radius = getExtent().distance(0, 0);
+		double supportForce = 0.6 * force * (1 - dist/radius);
+		// Normalize total max force for gain control.
+		double ratio = 100 / (force + 2 * supportForce);
+		force *= ratio;
+		supportForce *= ratio;
+		// Add drag joints.
+		mainJoint = addDragJoint(point, force);
+		addDragJoint(pointMin, supportForce);
+		addDragJoint(pointMax, supportForce);
 		// Wake up the body. It's alive if grasped.
 		body.wakeUp();
 	}
