@@ -33,7 +33,7 @@ public class Block {
 		// Some default values.
 		shapeDef.setAsBox(1, 1);
 		shapeDef.density = 1;
-		shapeDef.restitution = 0.0f;
+		shapeDef.restitution = 0.25f;
 		shapeDef.friction = 0.5f;
 	}
 

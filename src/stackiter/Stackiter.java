@@ -59,7 +59,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		logger = new Logger();
 		timer = new Timer(10, this);
 		tray = new Tray(20);
-		viewRect = new Rectangle2D.Double(-20, -5, 40, 25);
+		viewRect = new Rectangle2D.Double(-20, -1, 40, 30);
 		addMouseListener(this);
 		addMouseMotionListener(this);
 		// TODO Move out domain from display.
@@ -153,20 +153,20 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	@Override
 	public void mousePressed(final MouseEvent event) {
 		Point2D point = eventPointToWorld(event);
-		for (Block block: blocks) {
-			if (block.contains(point)) {
-				heldBlock = block;
-				// Don't break from loop. Make the last drawn have priority for clicking.
-				// That's more intuitive when blocks overlap.
-				// But how often will that be when physics tries to avoid it?
-			}
+		// No live blocks. Try reserve blocks.
+		heldBlock = tray.graspedBlock(point);
+		if (heldBlock != null) {
+			blocks.add(heldBlock);
+			heldBlock.addTo(world);
 		}
-		if (heldBlock == null) {
-			// No live blocks. Try reserve blocks.
-			heldBlock = tray.graspedBlock(point);
-			if (heldBlock != null) {
-				blocks.add(heldBlock);
-				heldBlock.addTo(world);
+		if (!tray.isActionConsumed()) {
+			for (Block block: blocks) {
+				if (block.contains(point)) {
+					heldBlock = block;
+					// Don't break from loop. Make the last drawn have priority for clicking.
+					// That's more intuitive when blocks overlap.
+					// But how often will that be when physics tries to avoid it?
+				}
 			}
 		}
 		if (heldBlock != null) {
@@ -195,14 +195,14 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			AffineTransform transform = worldToDisplayTransform();
 			// Ground.
 			ground.paint(g, transform);
-			// Tray.
-			// TODO Update tray bounds on window resize. Not here!
-			updateTrayBounds();
-			tray.paint(g, transform);
 			// Live blocks.
 			for (Block block: blocks) {
 				block.paint(g, transform);
 			}
+			// Tray.
+			// TODO Update tray bounds on window resize. Not here!
+			updateTrayBounds();
+			tray.paint(g, transform);
 		} finally {
 			g.dispose();
 		}
@@ -219,8 +219,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		Point2D anchor = apply(transform, point(0, 0));
 		anchor.setLocation(anchor.getX(), 0);
 		tray.setAnchor(anchor);
-		Point2D bottom = apply(transform, point(0, getHeight()));
-		tray.setBottom(bottom.getY());
 	}
 
 	private double worldToDisplayScale() {
@@ -233,10 +231,10 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	private AffineTransform worldToDisplayTransform() {
 		AffineTransform transform = new AffineTransform();
-		transform.translate(0.5 * getWidth(), 0.5 * getHeight());
+		transform.translate(0.5 * getWidth(), getHeight());
 		double scale = worldToDisplayScale();
 		transform.scale(scale, -scale);
-		transform.translate(-viewRect.getCenterX(), -viewRect.getCenterY());
+		transform.translate(-viewRect.getCenterX(), -viewRect.getMinY());
 		return transform;
 	}
 

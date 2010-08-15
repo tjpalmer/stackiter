@@ -16,9 +16,13 @@ public class Tray {
 
 	private List<Block> blocks;
 
+	private double flusherHeight = 2;
+
+	private double pad = 0.2;
+
 	private Random random;
 
-	private double bottom;
+	private boolean actionConsumed;
 
 	public Tray(int count) {
 		blocks = new ArrayList<Block>();
@@ -38,18 +42,25 @@ public class Tray {
 		fill(count);
 	}
 
+	public boolean isActionConsumed() {
+		return actionConsumed;
+	}
+
 	public Block graspedBlock(Point2D point) {
 		// First check to make sure we're in the range of the tray.
-		// TODO The width and pad constants again!
-		if (point.getX() < anchor.getX() + 5 + 0.4) {
+		actionConsumed = false;
+		// TODO The width constant again!
+		if (point.getX() < anchor.getX() + 5 + 2*pad) {
 			// Check flusher first, actually.
 			// TODO Consider making the flusher a first class object.
-			if (point.getY() < 0) {
+			if (0 < point.getY()  && point.getY() < flusherHeight + pad) {
+				actionConsumed = true;
 				flush();
 			} else {
 				// Now check the blocks if we didn't click the flusher.
 				for (Block block: blocks) {
 					if (block.contains(point)) {
+						actionConsumed = true;
 						blocks.remove(block);
 						fill(blocks.size() + 1);
 						return block;
@@ -61,41 +72,30 @@ public class Tray {
 	}
 
 	public void paint(Graphics2D graphics, AffineTransform transform) {
-		double pad = 0.2;
-		Point2D position = copy(anchor);
+		Point2D position = point(anchor.getX(), anchor.getY() + flusherHeight + pad);
 		for (Block block: blocks) {
 			// Position and paint the block.
 			Point2D extent = block.getExtent();
 			block.setPosition(position.getX() + extent.getX() + pad, position.getY() + extent.getY() + pad);
 			block.paint(graphics, transform);
-			// Move down the line.
+			// Move up the line.
 			position.setLocation(position.getX(), position.getY() + 2*extent.getY() + pad);
 		}
-		paintFlusher(graphics, transform, pad);
+		paintFlusher(graphics, transform);
 	}
 
-	private void paintFlusher(Graphics2D graphics, AffineTransform transform, double pad) {
+	private void paintFlusher(Graphics2D graphics, AffineTransform transform) {
 		// TODO Base width on max block size, once we have that constant.
-		double maxWidth = 5 + 2*pad;
-		double size = Math.min(maxWidth, -bottom);
-		pad = 0.1 * size;
-		size = size - 2*pad;
-		// Build path.
-		Path2D path = new Path2D.Double();
-		path.moveTo(anchor.getX() + pad, -pad);
-		path.lineTo(anchor.getX() + pad + size, -pad);
-		path.lineTo(anchor.getX() + pad + size/2, -(size + pad));
-		path.closePath();
-		// Transform it to display coords.
-		path.transform(transform);
-		// Fill.
-		Color color = Color.getHSBColor(0, 0, 0.2f);
-		graphics.setColor(color);
-		graphics.fill(path);
-		// Draw border.
-		graphics.setColor(color.darker());
-		graphics.setStroke(new BasicStroke(2));
-		graphics.draw(path);
+		// TODO Improve centering also with font metrics.
+		// TODO Standardize buttons and so on.
+		transform = copy(transform);
+		transform.translate(anchor.getX() + pad, pad);
+		transform.scale(1, -1);
+		graphics.setFont(new Font(Font.SANS_SERIF, 0, (int)flusherHeight));
+		graphics.transform(transform);
+		graphics.setColor(Color.BLACK);
+		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		graphics.drawString("Flush", 0, 0);
 	}
 
 	private Block randomBlock() {
@@ -114,10 +114,6 @@ public class Tray {
 
 	public void setAnchor(Point2D anchor) {
 		this.anchor = anchor;
-	}
-
-	public void setBottom(double bottom) {
-		this.bottom = bottom;
 	}
 
 }
