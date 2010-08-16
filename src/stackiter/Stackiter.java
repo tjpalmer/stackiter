@@ -79,12 +79,12 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			AffineTransform transform = inverted(worldToDisplayTransform());
 			Path2D displayPath = new Path2D.Double(getBounds());
 			displayPath.transform(transform);
-			Rectangle2D displayBounds = displayPath.getBounds2D();
 			for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
 				Block block = b.next();
 				Shape blockShape = block.transformedShape();
 				Rectangle2D blockBounds = blockShape.getBounds2D();
-				if (!(block == heldBlock || displayBounds.contains(blockBounds) || blockShape.intersects(displayBounds))) {
+				if (blockBounds.getMaxY() < -5) {
+					// It fell off the table. Out of sight, out of mind.
 					b.remove();
 					block.removeFromWorld();
 					logger.logRemoval(block);
@@ -103,7 +103,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		ground = new Block();
 		ground.setColor(Color.getHSBColor(0, 0, 0.5f));
 		ground.setDensity(0);
-		ground.setExtent(world.getWorldAABB().upperBound.x, 5);
+		ground.setExtent(viewRect.getWidth()/2 - 1, 5);
 		ground.setPosition(0, -5);
 		ground.addTo(world);
 	}
@@ -225,7 +225,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		Dimension size = getSize();
 		double xScale = size.getWidth() / viewRect.getWidth();
 		double yScale = size.getHeight() / viewRect.getHeight();
-		double scale = xScale * viewRect.getHeight() > size.getHeight() ? yScale : xScale;
+		// Go with the smaller of the two. Cut off rather than show extra.
+		double scale = xScale * viewRect.getHeight() < size.getHeight() ? yScale : xScale;
 		return scale;
 	}
 
