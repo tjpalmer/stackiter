@@ -42,6 +42,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	private List<Block> blocks;
 
+	private double edgeThickness = 1;
+
 	private Block ground;
 
 	private Block graspedBlock;
@@ -165,7 +167,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		double rateX = 0;
 		double rateY = 0;
 		Rectangle2D viewRelWorld = viewRelWorld();
-		double edgeThickness = 0.1 * Math.min(viewRelWorld.getWidth(), viewRelWorld.getHeight());
 
 		// See how close we are to the edge.
 		if (toolPoint.getX() < viewRelWorld.getMinX() + edgeThickness) {
@@ -187,13 +188,13 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		// TODO Nonlinear?
 		rateX = rateX / edgeThickness;
 		rateY = rateY / edgeThickness;
-		rateX = 0.5 * Math.pow(Math.abs(rateX), 2) * Math.signum(rateX);
-		rateY = 0.5 * Math.pow(Math.abs(rateY), 2) * Math.signum(rateY);
+		rateX = 0.5 * Math.pow(1 - Math.abs(rateX), 2) * Math.signum(rateX);
+		rateY = 0.5 * Math.pow(1 - Math.abs(rateY), 2) * Math.signum(rateY);
 
 		// Impose view bounds.
 		// TODO Do narrow bounds drive this crazy?
 		// TODO Vectorized math would sure be nice here. This repetition is silly.
-		System.out.println(viewBounds);
+		//System.out.println(viewBounds);
 		if (viewRect.getMaxX() + rateX > viewBounds.getMaxX()) {
 			rateX = viewBounds.getMaxX() - viewRect.getMaxX();
 		}
@@ -302,7 +303,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		// Tray.
 		invert(transform);
 		Point2D anchor = apply(transform, point(0, 0));
-		anchor.setLocation(anchor.getX(), 0);
+		anchor.setLocation(anchor.getX() + edgeThickness, 0);
 		tray.setAnchor(anchor);
 	}
 
