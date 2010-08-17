@@ -23,6 +23,8 @@ public class Logger implements Closeable {
 
 	private int nextId = 1;
 
+	Point2D toolPoint = new Point2D.Double();
+
 	private long startTime;
 
 	private long time;
@@ -139,8 +141,10 @@ public class Logger implements Closeable {
 	}
 
 	public void logMove(Point2D point) {
-		// TODO Consider checking for changes even though that's mostly handled outside.
-		log("pos 0 %.3f %.3f", point.getX(), point.getY());
+		if (!point.equals(toolPoint)) {
+			log("pos 0 %.3f %.3f", point.getX(), point.getY());
+			toolPoint.setLocation(point);
+		}
 	}
 
 	public void logRelease(final Block item) {

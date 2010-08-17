@@ -38,47 +38,79 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		stackiter.start();
 	}
 
+	Rectangle2D blockBoundsAllButGrasped = new Rectangle2D.Double();
+
 	private List<Block> blocks;
 
 	private Block ground;
 
-	private Block heldBlock;
+	private Block graspedBlock;
 
 	private Logger logger;
+
+	private Point2D mousePoint;
 
 	private Timer timer;
 
 	private Tray tray;
 
+	/**
+	 * The outer bounds of what we are allowed to see.
+	 */
+	private Rectangle2D viewBounds;
+
+	/**
+	 * The current view we'd like to see, if we had the right aspect ratio. The
+	 * size of this rectangle shouldn't ever change.
+	 */
 	private Rectangle2D viewRect;
 
 	private World world;
 
 	public Stackiter() {
-		setPreferredSize(new Dimension(600, 400));
+		setPreferredSize(new Dimension(640, 480));
 		logger = new Logger();
+		mousePoint = new Point2D.Double();
 		timer = new Timer(10, this);
 		tray = new Tray(20);
+		viewBounds = new Rectangle2D.Double(-25, -1, 50, 30);
 		viewRect = new Rectangle2D.Double(-20, -1, 40, 30);
+		addComponentListener(new ComponentAdapter() {
+			@Override
+			public void componentResized(ComponentEvent event) {
+				Stackiter.this.componentResized(event);
+			}
+		});
 		addMouseListener(this);
 		addMouseMotionListener(this);
 		// TODO Move out domain from display.
 		blocks = new ArrayList<Block>();
 		world = new World(new AABB(new Vec2(-100,-100), new Vec2(100,100)), new Vec2(0, -10), true);
 		addGround();
+		setSize(getPreferredSize());
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent event) {
+
+		// Move the grasped block then scroll if needed.
+		// TODO This is a chicken and egg problem here.
+		final Point2D point = applyInv(worldToDisplayTransform(), mousePoint);
+		if (graspedBlock != null) {
+			graspedBlock.moveTo(point);
+		}
+		handleScroll(point);
+		updateView();
+
 		// TODO Offload this to a separate thread? If so, still lock step to one update per frame.
 		// TODO Alternatively, change the delay based on how much time is left.
 		// Step the simulation.
 		world.step(0.02f, 10);
+
 		logger.atomic(new Runnable() { @Override public void run() {
+			logger.logMove(point);
 			// Delete lost blocks.
-			AffineTransform transform = inverted(worldToDisplayTransform());
-			Path2D displayPath = new Path2D.Double(getBounds());
-			displayPath.transform(transform);
+			blockBoundsAllButGrasped.setRect(0, 0, 0, 0);
 			for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
 				Block block = b.next();
 				Shape blockShape = block.transformedShape();
@@ -88,6 +120,11 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 					b.remove();
 					block.removeFromWorld();
 					logger.logRemoval(block);
+				} else {
+					// Keep track of where the blocks reach.
+					if (block != graspedBlock) {
+						Rectangle2D.union(blockBoundsAllButGrasped, blockBounds, blockBoundsAllButGrasped);
+					}
 				}
 			}
 			// Record the new state.
@@ -95,8 +132,10 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 				logger.logItem(block);
 			}
 		}});
+
 		// And queue the repaint.
 		repaint();
+
 	}
 
 	private void addGround() {
@@ -112,6 +151,67 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		logger.close();
 	}
 
+	public void componentResized(ComponentEvent event) {
+		updateView();
+	}
+
+	private Point2D eventPointToWorld(MouseEvent event) {
+		Point2D point = applyInv(worldToDisplayTransform(), point(event.getX(), event.getY()));
+		return point;
+	}
+
+	private void handleScroll(Point2D toolPoint) {
+
+		double rateX = 0;
+		double rateY = 0;
+		Rectangle2D viewRelWorld = viewRelWorld();
+		double edgeThickness = 0.1 * Math.min(viewRelWorld.getWidth(), viewRelWorld.getHeight());
+
+		// See how close we are to the edge.
+		if (toolPoint.getX() < viewRelWorld.getMinX() + edgeThickness) {
+			// Scroll left if space available.
+			rateX = viewRelWorld.getMinX() - toolPoint.getX();
+		} else if (toolPoint.getX() > viewRelWorld.getMaxX() - edgeThickness) {
+			// Scroll right if space available.
+			rateX = viewRelWorld.getMaxX() - toolPoint.getX();
+		}
+		if (toolPoint.getY() < viewRelWorld.getMinY() + edgeThickness) {
+			// Scroll down if space available.
+			rateY = viewRelWorld.getMinY() - toolPoint.getY();
+		} else if (toolPoint.getY() > viewRelWorld.getMaxY() - edgeThickness) {
+			// Scroll up if space available.
+			rateY = viewRelWorld.getMaxY() - toolPoint.getY();
+		}
+
+		// Scale by edge thickness and max speed.
+		// TODO Nonlinear?
+		rateX = rateX / edgeThickness;
+		rateY = rateY / edgeThickness;
+		rateX = 0.5 * Math.pow(Math.abs(rateX), 2) * Math.signum(rateX);
+		rateY = 0.5 * Math.pow(Math.abs(rateY), 2) * Math.signum(rateY);
+
+		// Impose view bounds.
+		// TODO Do narrow bounds drive this crazy?
+		// TODO Vectorized math would sure be nice here. This repetition is silly.
+		System.out.println(viewBounds);
+		if (viewRect.getMaxX() + rateX > viewBounds.getMaxX()) {
+			rateX = viewBounds.getMaxX() - viewRect.getMaxX();
+		}
+		if (viewRect.getMinX() + rateX < viewBounds.getMinX()) {
+			rateX = viewBounds.getMinX() - viewRect.getMinX();
+		}
+		if (viewRect.getMaxY() + rateY > viewBounds.getMaxY()) {
+			rateY = viewBounds.getMaxY() - viewRect.getMaxY();
+		}
+		if (viewRect.getMinY() + rateY < viewBounds.getMinY()) {
+			rateY = viewBounds.getMinY() - viewRect.getMinY();
+		}
+
+		// Apply scroll rate, leaving the size unchanged.
+		viewRect.setRect(viewRect.getX() + rateX, viewRect.getY() + rateY, viewRect.getWidth(), viewRect.getHeight());
+
+	}
+
 	@Override
 	public void mouseClicked(MouseEvent event) {
 		// Nothing to do here.
@@ -119,15 +219,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	@Override
 	public void mouseDragged(MouseEvent event) {
-		try {
-			Point2D point = eventPointToWorld(event);
-			if (heldBlock != null) {
-				heldBlock.moveTo(point);
-			}
-			logger.logMove(point);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+		mouseMoved(event);
 	}
 
 	@Override
@@ -142,46 +234,41 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	@Override
 	public void mouseMoved(MouseEvent event) {
-		logger.logMove(eventPointToWorld(event));
-	}
-
-	private Point2D eventPointToWorld(MouseEvent event) {
-		Point2D point = applyInv(worldToDisplayTransform(), point(event.getX(), event.getY()));
-		return point;
+		mousePoint.setLocation(event.getX(), event.getY());
 	}
 
 	@Override
 	public void mousePressed(final MouseEvent event) {
 		Point2D point = eventPointToWorld(event);
 		// No live blocks. Try reserve blocks.
-		heldBlock = tray.graspedBlock(point);
-		if (heldBlock != null) {
-			blocks.add(heldBlock);
-			heldBlock.addTo(world);
+		graspedBlock = tray.graspedBlock(point);
+		if (graspedBlock != null) {
+			blocks.add(graspedBlock);
+			graspedBlock.addTo(world);
 		}
 		if (!tray.isActionConsumed()) {
 			for (Block block: blocks) {
 				if (block.contains(point)) {
-					heldBlock = block;
+					graspedBlock = block;
 					// Don't break from loop. Make the last drawn have priority for clicking.
 					// That's more intuitive when blocks overlap.
 					// But how often will that be when physics tries to avoid it?
 				}
 			}
 		}
-		if (heldBlock != null) {
-			heldBlock.grasp(point);
-			Point2D pointRelBlock = applyInv(heldBlock.getTransform(), point);
-			logger.logGrasp(heldBlock, pointRelBlock);
+		if (graspedBlock != null) {
+			graspedBlock.grasp(point);
+			Point2D pointRelBlock = applyInv(graspedBlock.getTransform(), point);
+			logger.logGrasp(graspedBlock, pointRelBlock);
 		}
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent event) {
-		if (heldBlock != null) {
-			logger.logRelease(heldBlock);
-			heldBlock.release();
-			heldBlock = null;
+		if (graspedBlock != null) {
+			logger.logRelease(graspedBlock);
+			graspedBlock.release();
+			graspedBlock = null;
 		}
 	}
 
@@ -200,8 +287,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 				block.paint(g, transform);
 			}
 			// Tray.
-			// TODO Update tray bounds on window resize. Not here!
-			updateTrayBounds();
 			tray.paint(g, transform);
 		} finally {
 			g.dispose();
@@ -219,6 +304,23 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		Point2D anchor = apply(transform, point(0, 0));
 		anchor.setLocation(anchor.getX(), 0);
 		tray.setAnchor(anchor);
+	}
+
+	private void updateView() {
+		// TODO Calculate view rect.
+		viewBounds.setFrameFromDiagonal(
+			viewBounds.getMinX(), viewBounds.getMinY(),
+			viewBounds.getMaxX(), Math.max(30, blockBoundsAllButGrasped.getMaxY() + 5)
+		);
+		// TODO Pull in the view rect?
+		updateTrayBounds();
+	}
+
+	private Rectangle2D viewRelWorld() {
+		AffineTransform transform = inverted(worldToDisplayTransform());
+		Path2D displayPath = new Path2D.Double(getBounds());
+		displayPath.transform(transform);
+		return displayPath.getBounds2D();
 	}
 
 	private double worldToDisplayScale() {
