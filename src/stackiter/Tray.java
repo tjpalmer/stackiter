@@ -89,7 +89,7 @@ public class Tray {
 		// TODO Improve centering also with font metrics.
 		// TODO Standardize buttons and so on.
 		transform = copy(transform);
-		transform.translate(anchor.getX() + pad, pad);
+		transform.translate(anchor.getX() + pad, anchor.getY() + 2*pad);
 		transform.scale(1, -1);
 		graphics.setFont(new Font(Font.SANS_SERIF, 0, (int)flusherHeight));
 		graphics.transform(transform);

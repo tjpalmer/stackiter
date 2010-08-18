@@ -42,7 +42,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	private List<Block> blocks;
 
-	private double edgeThickness = 1;
+	private double edgeThickness = 2.5;
 
 	private Block ground;
 
@@ -75,7 +75,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		mousePoint = new Point2D.Double();
 		timer = new Timer(10, this);
 		tray = new Tray(20);
-		viewBounds = new Rectangle2D.Double(-25, -1, 50, 30);
+		viewBounds = new Rectangle2D.Double(-20, -1, 40, 30);
 		viewRect = new Rectangle2D.Double(-20, -1, 40, 30);
 		addComponentListener(new ComponentAdapter() {
 			@Override
@@ -144,7 +144,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		ground = new Block();
 		ground.setColor(Color.getHSBColor(0, 0, 0.5f));
 		ground.setDensity(0);
-		ground.setExtent(viewRect.getWidth()/2 - 1, 5);
+		ground.setExtent(viewRect.getWidth()/2 - 5.5, 5);
 		ground.setPosition(0, -5);
 		ground.addTo(world);
 	}
@@ -302,8 +302,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		AffineTransform transform = worldToDisplayTransform();
 		// Tray.
 		invert(transform);
-		Point2D anchor = apply(transform, point(0, 0));
-		anchor.setLocation(anchor.getX() + edgeThickness, 0);
+		Point2D anchor = apply(transform, point(0, getHeight()));
+		//anchor.setLocation(anchor.getX(), 0);
 		tray.setAnchor(anchor);
 	}
 
