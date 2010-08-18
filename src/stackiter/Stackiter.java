@@ -168,20 +168,26 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		double rateY = 0;
 		Rectangle2D viewRelWorld = viewRelWorld();
 
+		if (graspedBlock == null && toolPoint.getX() < tray.getAnchor().getX() + tray.getWidth()) {
+			// No block and over the tray means we are probably thinking about the tray, not scrolling.
+			// TODO Generalize this notion for widgets.
+			return;
+		}
+
 		// See how close we are to the edge.
 		if (toolPoint.getX() < viewRelWorld.getMinX() + edgeThickness) {
 			// Scroll left if space available.
-			rateX = viewRelWorld.getMinX() - toolPoint.getX();
+			rateX = Math.min(viewRelWorld.getMinX() - toolPoint.getX(), 0);
 		} else if (toolPoint.getX() > viewRelWorld.getMaxX() - edgeThickness) {
 			// Scroll right if space available.
-			rateX = viewRelWorld.getMaxX() - toolPoint.getX();
+			rateX = Math.max(viewRelWorld.getMaxX() - toolPoint.getX(), 0);
 		}
 		if (toolPoint.getY() < viewRelWorld.getMinY() + edgeThickness) {
 			// Scroll down if space available.
-			rateY = viewRelWorld.getMinY() - toolPoint.getY();
+			rateY = Math.min(viewRelWorld.getMinY() - toolPoint.getY(), 0);
 		} else if (toolPoint.getY() > viewRelWorld.getMaxY() - edgeThickness) {
 			// Scroll up if space available.
-			rateY = viewRelWorld.getMaxY() - toolPoint.getY();
+			rateY = Math.max(viewRelWorld.getMaxY() - toolPoint.getY(), 0);
 		}
 
 		// Scale by edge thickness and max speed.
@@ -195,18 +201,23 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		// TODO Do narrow bounds drive this crazy?
 		// TODO Vectorized math would sure be nice here. This repetition is silly.
 		//System.out.println(viewBounds);
-		if (viewRect.getMaxX() + rateX > viewBounds.getMaxX()) {
-			rateX = viewBounds.getMaxX() - viewRect.getMaxX();
+		if (viewRelWorld.getMaxX() + rateX > viewBounds.getMaxX()) {
+			rateX = viewBounds.getMaxX() - viewRelWorld.getMaxX();
 		}
-		if (viewRect.getMinX() + rateX < viewBounds.getMinX()) {
-			rateX = viewBounds.getMinX() - viewRect.getMinX();
+		if (viewRelWorld.getMinX() + rateX < viewBounds.getMinX()) {
+			rateX = viewBounds.getMinX() - viewRelWorld.getMinX();
 		}
-		if (viewRect.getMaxY() + rateY > viewBounds.getMaxY()) {
-			rateY = viewBounds.getMaxY() - viewRect.getMaxY();
+		if (viewRelWorld.getMaxY() + rateY > viewBounds.getMaxY()) {
+			rateY = viewBounds.getMaxY() - viewRelWorld.getMaxY();
 		}
-		if (viewRect.getMinY() + rateY < viewBounds.getMinY()) {
-			rateY = viewBounds.getMinY() - viewRect.getMinY();
+		if (viewRelWorld.getMinY() + rateY < viewBounds.getMinY()) {
+			rateY = viewBounds.getMinY() - viewRelWorld.getMinY();
 		}
+
+		// Disable horizontal scrolling for now. It complicates having widgets on the sides.
+		// TODO Define the bounds apart from widgets and use that edge for scrolling? No. You don't want to scroll just to get to the widgets. And bringing in the widgets makes things congested.
+		// TODO Maybe make the widgets actually part of the world sometime instead of floating?
+		rateX = 0;
 
 		// Apply scroll rate, leaving the size unchanged.
 		viewRect.setRect(viewRect.getX() + rateX, viewRect.getY() + rateY, viewRect.getWidth(), viewRect.getHeight());

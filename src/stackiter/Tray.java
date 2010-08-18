@@ -18,6 +18,8 @@ public class Tray {
 
 	private double flusherHeight = 2;
 
+	private double maxBlockExtent = 2.5;
+
 	private double pad = 0.2;
 
 	private Random random;
@@ -42,18 +44,22 @@ public class Tray {
 		fill(count);
 	}
 
-	public boolean isActionConsumed() {
-		return actionConsumed;
+	public Point2D getAnchor() {
+		return anchor;
+	}
+
+	public double getWidth() {
+		return 2 * (maxBlockExtent + pad);
 	}
 
 	public Block graspedBlock(Point2D point) {
 		// First check to make sure we're in the range of the tray.
 		actionConsumed = false;
 		// TODO The width constant again!
-		if (point.getX() < anchor.getX() + 5 + 2*pad) {
+		if (point.getX() < anchor.getX() + getWidth()) {
 			// Check flusher first, actually.
 			// TODO Consider making the flusher a first class object.
-			if (0 < point.getY()  && point.getY() < flusherHeight + pad) {
+			if (anchor.getY() < point.getY() && point.getY() < anchor.getY() + flusherHeight + 2*pad) {
 				actionConsumed = true;
 				flush();
 			} else {
@@ -69,6 +75,10 @@ public class Tray {
 			}
 		}
 		return null;
+	}
+
+	public boolean isActionConsumed() {
+		return actionConsumed;
 	}
 
 	public void paint(Graphics2D graphics, AffineTransform transform) {
