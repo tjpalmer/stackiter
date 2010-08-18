@@ -5,6 +5,7 @@ import static stackiter.Util.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
+import java.awt.image.*;
 import java.io.*;
 import java.util.*;
 import java.util.List;
@@ -37,6 +38,10 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		frame.setVisible(true);
 		stackiter.start();
 	}
+
+	private BufferedImage backdrop;
+
+	private double backdropScale;
 
 	Rectangle2D blockBoundsAllButGrasped = new Rectangle2D.Double();
 
@@ -288,10 +293,15 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	protected void paintComponent(Graphics graphics) {
 		Graphics2D g = copy(graphics);
 		try {
-			// Background.
-			g.setColor(Color.WHITE);
-			g.fill(getBounds());
+			// Transform.
 			AffineTransform transform = worldToDisplayTransform();
+			// Backdrop.
+			g.drawImage(
+				backdrop,
+				0,
+				(int)apply(transform, point(0, viewBounds.getMinY())).getY() - backdrop.getHeight(),
+				null
+			);
 			// Ground.
 			ground.paint(g, transform);
 			// Live blocks.
@@ -309,6 +319,28 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		timer.start();
 	}
 
+	private void updateBackdrop() {
+		double scale = worldToDisplayScale();
+		int width = getWidth();
+		int height = (int)Math.ceil(viewBounds.getHeight() * scale);
+		if (backdrop == null || backdropScale != scale || width != backdrop.getWidth() || height > backdrop.getHeight()) {
+			// Make the backdrop twice as large as we've ever seen a need. Prevents constant reallocation.
+			height = 2 * height;
+			backdrop = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			backdropScale = scale;
+			Graphics2D g = backdrop.createGraphics();
+			try {
+				g.setPaint(new GradientPaint(
+					0, backdrop.getHeight(), Color.getHSBColor(2/3f, 0.3f, 1f),
+					0, (float)(backdrop.getHeight() - 20*scale), Color.WHITE
+				));
+				g.fillRect(0, 0, backdrop.getWidth(), backdrop.getHeight());
+			} finally {
+				g.dispose();
+			}
+		}
+	}
+
 	private void updateTrayBounds() {
 		AffineTransform transform = worldToDisplayTransform();
 		// Tray.
@@ -319,12 +351,11 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	}
 
 	private void updateView() {
-		// TODO Calculate view rect.
 		viewBounds.setFrameFromDiagonal(
 			viewBounds.getMinX(), viewBounds.getMinY(),
 			viewBounds.getMaxX(), Math.max(30, blockBoundsAllButGrasped.getMaxY() + 5)
 		);
-		// TODO Pull in the view rect?
+		updateBackdrop();
 		updateTrayBounds();
 	}
 
