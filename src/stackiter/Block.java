@@ -14,6 +14,8 @@ import org.jbox2d.dynamics.joints.*;
 
 public class Block {
 
+	private boolean alive;
+
 	private Body body;
 
 	private BodyDef bodyDef;
@@ -50,6 +52,7 @@ public class Block {
 	}
 
 	public void addTo(World world) {
+		setAlive(true);
 		body = world.createBody(bodyDef);
 		body.createShape(shapeDef);
 		body.setMassFromShapes();
@@ -171,7 +174,7 @@ public class Block {
 			addDragJoint(pointMin, supportForce);
 			addDragJoint(pointMax, supportForce);
 		}
-		// Wake up the body. It's alive if grasped.
+		// Wake up the body. It's awake if grasped.
 		body.wakeUp();
 	}
 
@@ -189,7 +192,7 @@ public class Block {
 	}
 
 	public boolean isAlive() {
-		return body != null;
+		return alive;
 	}
 
 	private boolean isRotated() {
@@ -262,12 +265,21 @@ public class Block {
 	}
 
 	public void removeFromWorld() {
+		setAlive(false);
 		if (body != null) {
 			body.getWorld().destroyBody(body);
 			// TODO Put the current transform into the bodyDef?
 			// TODO Would need to extract angle for that.
 			body = null;
 		}
+	}
+
+	/**
+	 * Manually control the alive setting rather than depending on connection to
+	 * world.
+	 */
+	public void setAlive(boolean alive) {
+		this.alive = alive;
 	}
 
 	/**

@@ -18,6 +18,10 @@ public class Tray {
 
 	private double flusherHeight = 2;
 
+	private double height;
+
+	private Logger logger;
+
 	private double maxBlockExtent = 2.5;
 
 	private double pad = 0.2;
@@ -26,22 +30,41 @@ public class Tray {
 
 	private boolean actionConsumed;
 
-	public Tray(int count) {
+	public Tray() {
 		blocks = new ArrayList<Block>();
 		random = new Random();
-		fill(count);
 	}
 
-	private void fill(int count) {
-		while (blocks.size() < count) {
-			blocks.add(randomBlock());
-		}
+	private void fill() {
+		logger.atomic(new Runnable() { @Override public void run() {
+			Point2D position = point(0, flusherHeight + pad);
+			for (int b = 0; position.getY() < height || b < blocks.size(); b++) {
+				// Position and paint the block.
+				Block block;
+				if (b < blocks.size()) {
+					block = blocks.get(b);
+				} else {
+					block = randomBlock();
+					blocks.add(block);
+				}
+				Point2D extent = block.getExtent();
+				block.setPosition(position.getX() + extent.getX() + pad, position.getY() + extent.getY() + pad);
+				// Log the block.
+				logger.logItem(block);
+				// Move up the line.
+				position.setLocation(position.getX(), position.getY() + 2*extent.getY() + pad);
+			}
+		}});
 	}
 
 	private void flush() {
-		int count = blocks.size();
+		logger.atomic(new Runnable() { @Override public void run() {
+			for (Block block: blocks) {
+				logger.logRemoval(block);
+			}
+		}});
 		blocks.clear();
-		fill(count);
+		fill();
 	}
 
 	public Point2D getAnchor() {
@@ -54,12 +77,13 @@ public class Tray {
 
 	public Block graspedBlock(Point2D point) {
 		// First check to make sure we're in the range of the tray.
+		point = point(point.getX() - anchor.getX(), point.getY() - anchor.getY());
 		actionConsumed = false;
 		// TODO The width constant again!
-		if (point.getX() < anchor.getX() + getWidth()) {
+		if (point.getX() < getWidth()) {
 			// Check flusher first, actually.
 			// TODO Consider making the flusher a first class object.
-			if (anchor.getY() < point.getY() && point.getY() < anchor.getY() + flusherHeight + 2*pad) {
+			if (anchor.getY() < point.getY() && point.getY() < + flusherHeight + 2*pad) {
 				actionConsumed = true;
 				flush();
 			} else {
@@ -68,7 +92,9 @@ public class Tray {
 					if (block.contains(point)) {
 						actionConsumed = true;
 						blocks.remove(block);
-						fill(blocks.size() + 1);
+						Point2D blockPosition = block.getPosition();
+						block.setPosition(blockPosition.getX() + anchor.getX(), blockPosition.getY() + anchor.getY());
+						fill();
 						return block;
 					}
 				}
@@ -83,14 +109,10 @@ public class Tray {
 
 	public void paint(Graphics2D graphics, AffineTransform transform) {
 		// Blocks.
-		Point2D position = point(anchor.getX(), anchor.getY() + flusherHeight + pad);
+		AffineTransform blockTransform = copy(transform);
+		blockTransform.translate(anchor.getX(), anchor.getY());
 		for (Block block: blocks) {
-			// Position and paint the block.
-			Point2D extent = block.getExtent();
-			block.setPosition(position.getX() + extent.getX() + pad, position.getY() + extent.getY() + pad);
-			block.paint(graphics, transform);
-			// Move up the line.
-			position.setLocation(position.getX(), position.getY() + 2*extent.getY() + pad);
+			block.paint(graphics, blockTransform);
 		}
 		// Flusher.
 		paintFlusher(graphics, transform);
@@ -139,6 +161,18 @@ public class Tray {
 
 	public void setAnchor(Point2D anchor) {
 		this.anchor = anchor;
+	}
+
+	public void setHeight(double height) {
+		if (this.height != height) {
+			this.height = height;
+			// We might need more blocks now.
+			fill();
+		}
+	}
+
+	public void setLogger(Logger logger) {
+		this.logger = logger;
 	}
 
 }

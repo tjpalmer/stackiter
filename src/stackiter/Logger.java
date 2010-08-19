@@ -98,9 +98,6 @@ public class Logger implements Closeable {
 			items.put(item, info);
 			Point2D extent = item.getExtent();
 			log("item %d", info.id);
-			if (item.isAlive()) {
-				log("alive %d true", info.id);
-			}
 			log("type %d box", info.id, extent.getX(), extent.getY());
 			log("extent %d %.3f %.3f", info.id, extent.getX(), extent.getY());
 			float[] color = item.getColor().getRGBComponents(null);
@@ -134,6 +131,11 @@ public class Logger implements Closeable {
 		atomic(new Runnable() { @Override public void run() {
 			ItemInfo info = getInfo(item);
 			// TODO Could check for changes in alive (if datafied), color, or shape here, too.
+			// Alive: alive.
+			if (item.isAlive() != info.item.isAlive()) {
+				info.item.setAlive(true);
+				log("alive %d %s", info.id, item.isAlive());
+			}
 			// Position: pos.
 			Point2D position = item.getPosition();
 			if (!position.equals(info.item.getPosition())) {

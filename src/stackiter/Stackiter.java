@@ -81,7 +81,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		logger = new Logger();
 		mousePoint = new Point2D.Double();
 		timer = new Timer(10, this);
-		tray = new Tray(20);
+		tray = new Tray();
+		tray.setLogger(logger);
 		viewBounds = new Rectangle2D.Double(-20, -1, 40, 101);
 		viewRect = new Rectangle2D.Double(-20, -1, 40, 30);
 		addComponentListener(new ComponentAdapter() {
@@ -383,10 +384,10 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	private void updateTrayBounds() {
 		AffineTransform transform = worldToDisplayTransform();
-		// Tray.
 		invert(transform);
 		Point2D anchor = apply(transform, point(0, getHeight()));
 		tray.setAnchor(anchor);
+		tray.setHeight(viewRelWorld().getHeight());
 	}
 
 	private void updateView() {
