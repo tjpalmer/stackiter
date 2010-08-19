@@ -82,6 +82,7 @@ public class Tray {
 	}
 
 	public void paint(Graphics2D graphics, AffineTransform transform) {
+		// Blocks.
 		Point2D position = point(anchor.getX(), anchor.getY() + flusherHeight + pad);
 		for (Block block: blocks) {
 			// Position and paint the block.
@@ -91,10 +92,23 @@ public class Tray {
 			// Move up the line.
 			position.setLocation(position.getX(), position.getY() + 2*extent.getY() + pad);
 		}
+		// Flusher.
 		paintFlusher(graphics, transform);
 	}
 
 	private void paintFlusher(Graphics2D graphics, AffineTransform transform) {
+
+		// Background for readability and to clarify click priority.
+		// TODO It's a bit too slow for me when translucent. Frame period drops from about 10 to about 15 ms.
+		// TODO Consider blitting or generally reduced frame rate?
+		// TODO Or possibly make a font outline, but that doesn't clarify the click trump.
+		// TODO   Something like this? new Font(null).createGlyphVector(null, "").getGlyphOutline(0);
+		// TODO   Or create an image then dilate it by other means?
+		graphics.setPaint(Color.WHITE);
+		Rectangle2D backdrop = new Rectangle2D.Double(anchor.getX(), anchor.getY(), getWidth(), flusherHeight + pad);
+		backdrop = new Path2D.Double(backdrop, transform).getBounds();
+		graphics.fill(backdrop);
+
 		// TODO Base width on max block size, once we have that constant.
 		// TODO Improve centering also with font metrics.
 		// TODO Standardize buttons and so on.
@@ -106,6 +120,7 @@ public class Tray {
 		graphics.setColor(Color.BLACK);
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		graphics.drawString("Flush", 0, 0);
+
 	}
 
 	private Block randomBlock() {
