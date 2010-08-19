@@ -94,7 +94,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		addMouseMotionListener(this);
 		// TODO Move out domain from display.
 		blocks = new ArrayList<Block>();
-		world = new World(new AABB(new Vec2(-100,-100), new Vec2(100,100)), new Vec2(0, -10), true);
+		world = new World(new AABB(new Vec2(-100,-100), new Vec2(100,150)), new Vec2(0, -10), true);
 		addGround();
 		setSize(getPreferredSize());
 	}
@@ -120,7 +120,16 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		world.step(0.02f, 10);
 
 		logger.atomic(new Runnable() { @Override public void run() {
-			logger.logMove(point);
+			if (mouseOver) {
+				// Make sure we get the entrance before the move, if both.
+				logger.logToolPresent(mouseOver);
+				logger.logMove(point);
+			} else {
+				// Make we get the move before the departure, if both.
+				logger.logMove(point);
+				logger.logToolPresent(mouseOver);
+			}
+			logger.logView(viewRelWorld());
 			// Delete lost blocks.
 			blockBoundsAllButGrasped.setRect(0, 0, 0, 0);
 			for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
@@ -246,13 +255,11 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	@Override
 	public void mouseEntered(MouseEvent event) {
-		logger.logEnter();
 		mouseOver = true;
 	}
 
 	@Override
 	public void mouseExited(MouseEvent event) {
-		logger.logLeave();
 		mouseOver = false;
 	}
 
@@ -265,7 +272,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	@Override
 	public void mousePressed(final MouseEvent event) {
 		Point2D point = eventPointToWorld(event);
-		// No live blocks. Try reserve blocks.
+		// Try reserve blocks.
 		graspedBlock = tray.graspedBlock(point);
 		if (graspedBlock != null) {
 			blocks.add(graspedBlock);
@@ -282,6 +289,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			}
 		}
 		if (graspedBlock != null) {
+			// No blocks from tray. Try live blocks.
 			graspedBlock.grasp(point);
 			Point2D pointRelBlock = applyInv(graspedBlock.getTransform(), point);
 			logger.logGrasp(graspedBlock, pointRelBlock);
@@ -354,7 +362,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 				sectionHeight = (float)(20 * scale);
 				float sectionY = backdrop.getHeight() - sectionHeight;
 				g.setPaint(new GradientPaint(
-					0, backdrop.getHeight(), Color.getHSBColor(2/3f, 0.3f, 1f),
+					0, backdrop.getHeight(), Color.getHSBColor((float)(0.7 * 2/3f + 0.3 * 1/3f), 0.3f, 1f),
 					0, sectionY, Color.WHITE
 				));
 				sectionY -= (float)(5 * scale);

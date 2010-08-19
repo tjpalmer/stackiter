@@ -22,6 +22,14 @@ public class Util {
 	}
 
 	/**
+	 * @return the center of the bounding rectangle.
+	 */
+	public static Point2D center(Shape shape) {
+		Rectangle2D bounds = shape.getBounds2D();
+		return point(bounds.getCenterX(), bounds.getCenterY());
+	}
+
+	/**
 	 * Remember to dispose all graphics objects!!!
 	 * @param graphics
 	 * @return
@@ -32,6 +40,14 @@ public class Util {
 
 	public static Point2D copy(Point2D point) {
 		return (Point2D)point.clone();
+	}
+
+	/**
+	 * @return the extent (half width, half height) of the bounding rectangle.
+	 */
+	public static Point2D extent(Shape shape) {
+		Rectangle2D bounds = shape.getBounds2D();
+		return point(bounds.getWidth() / 2, bounds.getHeight() / 2);
 	}
 
 	public static void invert(AffineTransform transform) {

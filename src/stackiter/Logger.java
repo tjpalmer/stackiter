@@ -1,5 +1,7 @@
 package stackiter;
 
+import static stackiter.Util.*;
+
 import java.awt.geom.*;
 import java.io.*;
 import java.text.*;
@@ -29,7 +31,11 @@ public class Logger implements Closeable {
 
 	private long time;
 
+	private boolean toolPresent;
+
 	private int txDepth;
+
+	private Rectangle2D view = new Rectangle2D.Double();
 
 	private Formatter writer;
 
@@ -93,10 +99,12 @@ public class Logger implements Closeable {
 			Point2D extent = item.getExtent();
 			log("item %d", info.id);
 			if (item.isAlive()) {
-				log("alive %d", info.id);
+				log("alive %d true", info.id);
 			}
-			log("shape %d box %.3f %.3f", info.id, extent.getX(), extent.getY());
-			log("color %d %x", info.id, item.getColor().getRGB());
+			log("type %d box", info.id, extent.getX(), extent.getY());
+			log("extent %d %.3f %.3f", info.id, extent.getX(), extent.getY());
+			float[] color = item.getColor().getRGBComponents(null);
+			log("color %d %.3f %.3f %.3f %.3f", info.id, color[0], color[1], color[2], color[3]);
 		}
 		return info;
 	}
@@ -106,14 +114,19 @@ public class Logger implements Closeable {
 		writer.format(message + "\n", args);
 	}
 
-	public void logEnter() {
-		log("enter");
+	public void logToolPresent(boolean toolPresent) {
+		// TODO Develop general "state" class(es) for duplication purposes such as here in logger.
+		// TODO The current mechanism is ad hoc.
+		if (toolPresent != this.toolPresent) {
+			this.toolPresent = toolPresent;
+			log("present 0 %s", toolPresent);
+		}
 	}
 
 	public void logGrasp(final Block item, final Point2D pointRelItem) {
 		atomic(new Runnable() { @Override public void run() {
 			ItemInfo info = getInfo(item);
-			log("grasp %d %.3f %.3f", info.id, pointRelItem.getX(), pointRelItem.getY());
+			log("grasp 0 %d %.3f %.3f", info.id, pointRelItem.getX(), pointRelItem.getY());
 		}});
 	}
 
@@ -136,10 +149,6 @@ public class Logger implements Closeable {
 		}});
 	}
 
-	public void logLeave() {
-		log("leave");
-	}
-
 	public void logMove(Point2D point) {
 		if (!point.equals(toolPoint)) {
 			log("pos 0 %.3f %.3f", point.getX(), point.getY());
@@ -150,7 +159,7 @@ public class Logger implements Closeable {
 	public void logRelease(final Block item) {
 		atomic(new Runnable() { @Override public void run() {
 			ItemInfo info = getInfo(item);
-			log("release %d", info.id);
+			log("release 0 %d", info.id);
 		}});
 	}
 
@@ -163,9 +172,12 @@ public class Logger implements Closeable {
 
 	private void logStart() {
 		atomic(new Runnable() { @Override public void run() {
+			// Hardcoded info about the view.
+			log("item -1");
+			log("type -1 view");
 			// Hardcoded info about the mouse pointer.
 			log("item 0");
-			log("tool 0");
+			log("type 0 tool");
 		}});
 	}
 
@@ -177,6 +189,22 @@ public class Logger implements Closeable {
 				time = currentTime;
 				writer.format("time %d\n", currentTime - startTime);
 			}
+		}
+	}
+
+	public void logView(final Rectangle2D view) {
+		if (!view.equals(this.view)) {
+			atomic(new Runnable() { @Override public void run() {
+				Point2D extent = extent(view);
+				if (!extent.equals(extent(Logger.this.view))) {
+					log("extent -1 %.3f %.3f", extent.getX(), extent.getY());
+				}
+				Point2D center = center(view);
+				if (!center.equals(center(Logger.this.view))) {
+					log("pos -1 %.3f %.3f", center.getX(), center.getY());
+				}
+				Logger.this.view.setRect(view);
+			}});
 		}
 	}
 
