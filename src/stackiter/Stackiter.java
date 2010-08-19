@@ -55,6 +55,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	private Logger logger;
 
+	private boolean mouseOver;
+
 	private Point2D mousePoint;
 
 	private Timer timer;
@@ -80,7 +82,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		mousePoint = new Point2D.Double();
 		timer = new Timer(10, this);
 		tray = new Tray(20);
-		viewBounds = new Rectangle2D.Double(-20, -1, 40, 30);
+		viewBounds = new Rectangle2D.Double(-20, -1, 40, 101);
 		viewRect = new Rectangle2D.Double(-20, -1, 40, 30);
 		addComponentListener(new ComponentAdapter() {
 			@Override
@@ -106,7 +108,10 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		if (graspedBlock != null) {
 			graspedBlock.moveTo(point);
 		}
-		handleScroll(point);
+		if (mouseOver) {
+			// Without mouseOver check, I got upward scrolling when over title bar.
+			handleScroll(point);
+		}
 		updateView();
 
 		// TODO Offload this to a separate thread? If so, still lock step to one update per frame.
@@ -242,16 +247,19 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	@Override
 	public void mouseEntered(MouseEvent event) {
 		logger.logEnter();
+		mouseOver = true;
 	}
 
 	@Override
 	public void mouseExited(MouseEvent event) {
 		logger.logLeave();
+		mouseOver = false;
 	}
 
 	@Override
 	public void mouseMoved(MouseEvent event) {
 		mousePoint.setLocation(event.getX(), event.getY());
+		mouseOver = true;
 	}
 
 	@Override
@@ -296,12 +304,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			// Transform.
 			AffineTransform transform = worldToDisplayTransform();
 			// Backdrop.
-			g.drawImage(
-				backdrop,
-				0,
-				(int)apply(transform, point(0, viewBounds.getMinY())).getY() - backdrop.getHeight(),
-				null
-			);
+			Point2D backdropPoint = apply(transform, point(viewBounds.getMinX(), viewBounds.getMinY()));
+			g.drawImage(backdrop, (int)backdropPoint.getX(), (int)backdropPoint.getY() - backdrop.getHeight(), null);
 			// Ground.
 			ground.paint(g, transform);
 			// Live blocks.
@@ -321,20 +325,48 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	private void updateBackdrop() {
 		double scale = worldToDisplayScale();
-		int width = getWidth();
+		int width = (int)Math.ceil(viewBounds.getWidth() * scale);
 		int height = (int)Math.ceil(viewBounds.getHeight() * scale);
-		if (backdrop == null || backdropScale != scale || width != backdrop.getWidth() || height > backdrop.getHeight()) {
-			// Make the backdrop twice as large as we've ever seen a need. Prevents constant reallocation.
-			height = 2 * height;
+		if (backdrop == null || backdropScale != scale) {
 			backdrop = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 			backdropScale = scale;
 			Graphics2D g = backdrop.createGraphics();
 			try {
+				float sectionHeight;
+				// Black background (or can I assume this by default?).
+				g.setColor(Color.BLACK);
+				g.fill(getBounds());
+				// Stars.
+				// I've considered deferring stars to paint time, but this is actually fairly slow here.
+				Random random = new Random(0);
+				int starCount = (int)(0.001 * backdrop.getWidth() * backdrop.getHeight());
+				for (int i = 0; i < starCount; i++) {
+					if (i % (starCount / 20) == 0) {
+						// The stars are already in random places.
+						// Only change the brightness at intervals, for fewer objects and faster speed.
+						g.setColor(Color.getHSBColor(1, 0, i / (float)starCount));
+					}
+					int x = random.nextInt(backdrop.getWidth());
+					int y = random.nextInt(backdrop.getHeight());
+					g.fillRect(x, y, 2, 2);
+				}
+				// Blue base to white.
+				sectionHeight = (float)(20 * scale);
+				float sectionY = backdrop.getHeight() - sectionHeight;
 				g.setPaint(new GradientPaint(
 					0, backdrop.getHeight(), Color.getHSBColor(2/3f, 0.3f, 1f),
-					0, (float)(backdrop.getHeight() - 20*scale), Color.WHITE
+					0, sectionY, Color.WHITE
 				));
-				g.fillRect(0, 0, backdrop.getWidth(), backdrop.getHeight());
+				sectionY -= (float)(5 * scale);
+				g.fillRect(0, (int)sectionY, backdrop.getWidth(), (int)(backdrop.getHeight() - sectionY));
+				// White to transparent (i.e., black starry space).
+				sectionHeight = (float)(30 * scale);
+				float sectionY2 = sectionY - sectionHeight;
+				g.setPaint(new GradientPaint(
+					0, sectionY, Color.WHITE,
+					0, sectionY2, new Color(0, 0, 0, 0)
+				));
+				g.fillRect(0, (int)sectionY2, backdrop.getWidth(), (int)sectionHeight);
 			} finally {
 				g.dispose();
 			}
@@ -346,15 +378,10 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		// Tray.
 		invert(transform);
 		Point2D anchor = apply(transform, point(0, getHeight()));
-		//anchor.setLocation(anchor.getX(), 0);
 		tray.setAnchor(anchor);
 	}
 
 	private void updateView() {
-		viewBounds.setFrameFromDiagonal(
-			viewBounds.getMinX(), viewBounds.getMinY(),
-			viewBounds.getMaxX(), Math.max(30, blockBoundsAllButGrasped.getMaxY() + 5)
-		);
 		updateBackdrop();
 		updateTrayBounds();
 	}
