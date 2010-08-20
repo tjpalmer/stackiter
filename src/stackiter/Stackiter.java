@@ -130,6 +130,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 				logger.logMove(point);
 				logger.logToolPresent(mouseOver);
 			}
+			logger.logDisplaySize(point(getWidth(), getHeight()));
 			logger.logView(viewRelWorld());
 			// Delete lost blocks.
 			blockBoundsAllButGrasped.setRect(0, 0, 0, 0);

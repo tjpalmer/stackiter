@@ -19,6 +19,8 @@ public class Logger implements Closeable {
 		public Block item;
 	}
 
+	Point2D displaySize = new Point2D.Double();
+
 	boolean firstPerTx;
 
 	private Map<Block, ItemInfo> items = new HashMap<Block, ItemInfo>();
@@ -111,12 +113,15 @@ public class Logger implements Closeable {
 		writer.format(message + "\n", args);
 	}
 
-	public void logToolPresent(boolean toolPresent) {
-		// TODO Develop general "state" class(es) for duplication purposes such as here in logger.
-		// TODO The current mechanism is ad hoc.
-		if (toolPresent != this.toolPresent) {
-			this.toolPresent = toolPresent;
-			log("present 0 %s", toolPresent);
+	/**
+	 * @param size pixel width and height as integer values, despite use of Point2D.
+	 */
+	public void logDisplaySize(Point2D size) {
+		if (!displaySize.equals(size)) {
+			displaySize.setLocation(size);
+			// Extent is no good since no guarantee of even/odd.
+			// Therefore size.
+			log("size display %d %d", (int)size.getX(), (int)size.getY());
 		}
 	}
 
@@ -191,6 +196,15 @@ public class Logger implements Closeable {
 				time = currentTime;
 				writer.format("time %d\n", currentTime - startTime);
 			}
+		}
+	}
+
+	public void logToolPresent(boolean toolPresent) {
+		// TODO Develop general "state" class(es) for duplication purposes such as here in logger.
+		// TODO The current mechanism is ad hoc.
+		if (toolPresent != this.toolPresent) {
+			this.toolPresent = toolPresent;
+			log("present 0 %s", toolPresent);
 		}
 	}
 
