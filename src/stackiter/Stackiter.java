@@ -105,7 +105,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 		// Move the grasped block then scroll if needed.
 		// TODO This is a chicken and egg problem here.
-		final Point2D point = applyInv(worldToDisplayTransform(), mousePoint);
+		final Point2D point = appliedInv(worldToDisplayTransform(), mousePoint);
 		if (graspedBlock != null) {
 			graspedBlock.moveTo(point);
 		}
@@ -178,7 +178,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	}
 
 	private Point2D eventPointToWorld(MouseEvent event) {
-		Point2D point = applyInv(worldToDisplayTransform(), point(event.getX(), event.getY()));
+		Point2D point = appliedInv(worldToDisplayTransform(), point(event.getX(), event.getY()));
 		return point;
 	}
 
@@ -292,7 +292,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		if (graspedBlock != null) {
 			// No blocks from tray. Try live blocks.
 			graspedBlock.grasp(point);
-			Point2D pointRelBlock = applyInv(graspedBlock.getTransform(), point);
+			Point2D pointRelBlock = appliedInv(graspedBlock.getTransform(), point);
 			logger.logGrasp(graspedBlock, pointRelBlock);
 		}
 	}
@@ -313,7 +313,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			// Transform.
 			AffineTransform transform = worldToDisplayTransform();
 			// Backdrop.
-			Point2D backdropPoint = apply(transform, point(viewBounds.getMinX(), viewBounds.getMinY()));
+			Point2D backdropPoint = applied(transform, point(viewBounds.getMinX(), viewBounds.getMinY()));
 			g.drawImage(backdrop, (int)backdropPoint.getX(), (int)backdropPoint.getY() - backdrop.getHeight(), null);
 			// Ground.
 			ground.paint(g, transform);
@@ -385,7 +385,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	private void updateTrayBounds() {
 		AffineTransform transform = worldToDisplayTransform();
 		invert(transform);
-		Point2D anchor = apply(transform, point(0, getHeight()));
+		Point2D anchor = applied(transform, point(0, getHeight()));
 		tray.setAnchor(anchor);
 		tray.setHeight(viewRelWorld().getHeight());
 	}

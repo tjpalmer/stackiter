@@ -30,6 +30,10 @@ public class Tray {
 
 	private boolean actionConsumed;
 
+	private Rectangle2D die;
+
+	private Rectangle2D die2;
+
 	public Tray() {
 		blocks = new ArrayList<Block>();
 		random = new Random();
@@ -55,6 +59,21 @@ public class Tray {
 				position.setLocation(position.getX(), position.getY() + 2*extent.getY() + pad);
 			}
 		}});
+		// Update flusher display while we are at it.
+		double trayWidth = getWidth();
+		double dieExtent = Math.min(0.75 * flusherHeight / 2, trayWidth / 5);
+		die = rectangle(
+			(trayWidth - 3*dieExtent) / 2 + dieExtent,
+			flusherHeight + pad - dieExtent,
+			dieExtent,
+			dieExtent
+		);
+		die2 = rectangle(
+			die.getCenterX() + dieExtent,
+			pad + dieExtent,
+			dieExtent,
+			dieExtent
+		);
 	}
 
 	private void flush() {
@@ -83,7 +102,7 @@ public class Tray {
 		if (point.getX() < getWidth()) {
 			// Check flusher first, actually.
 			// TODO Consider making the flusher a first class object.
-			if (anchor.getY() < point.getY() && point.getY() < + flusherHeight + 2*pad) {
+			if (die.contains(point) || die2.contains(point)) {
 				actionConsumed = true;
 				flush();
 			} else {
@@ -119,30 +138,17 @@ public class Tray {
 	}
 
 	private void paintFlusher(Graphics2D graphics, AffineTransform transform) {
+		paintDie(translated(die, anchor), graphics, transform);
+		paintDie(translated(die2, anchor), graphics, transform);
+	}
 
-		// Background for readability and to clarify click priority.
-		// TODO It's a bit too slow for me when translucent. Frame period drops from about 10 to about 15 ms.
-		// TODO Consider blitting or generally reduced frame rate?
-		// TODO Or possibly make a font outline, but that doesn't clarify the click trump.
-		// TODO   Something like this? new Font(null).createGlyphVector(null, "").getGlyphOutline(0);
-		// TODO   Or create an image then dilate it by other means?
-		graphics.setPaint(Color.WHITE);
-		Rectangle2D backdrop = new Rectangle2D.Double(anchor.getX(), anchor.getY(), getWidth(), flusherHeight + pad);
-		backdrop = new Path2D.Double(backdrop, transform).getBounds();
-		graphics.fill(backdrop);
-
-		// TODO Base width on max block size, once we have that constant.
-		// TODO Improve centering also with font metrics.
-		// TODO Standardize buttons and so on.
-		transform = copy(transform);
-		transform.translate(anchor.getX() + pad, anchor.getY() + 2*pad);
-		transform.scale(1, -1);
-		graphics.setFont(new Font(Font.SANS_SERIF, 0, (int)flusherHeight));
-		graphics.transform(transform);
+	private void paintDie(Rectangle2D die, Graphics2D graphics, AffineTransform transform) {
+		Rectangle2D dieDisplay = applied(copy(transform), die);
+		graphics.setColor(Color.WHITE);
+		graphics.fill(dieDisplay);
 		graphics.setColor(Color.BLACK);
-		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		graphics.drawString("Flush", 0, 0);
-
+		graphics.setStroke(new BasicStroke(3));
+		graphics.draw(dieDisplay);
 	}
 
 	private Block randomBlock() {

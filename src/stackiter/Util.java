@@ -5,11 +5,21 @@ import java.awt.geom.*;
 
 public class Util {
 
-	public static Point2D apply(AffineTransform transform, Point2D point) {
+	/**
+	 * TODO Make these "applied" since nondestructive?
+	 */
+	public static Point2D applied(AffineTransform transform, Point2D point) {
 		return transform.transform(point, null);
 	}
 
-	public static Point2D applyInv(AffineTransform transform, Point2D point) {
+	public static Rectangle2D applied(AffineTransform transform, Rectangle2D rectangle) {
+		// TODO Handle this manually more efficiently?
+		Path2D path = new Path2D.Double(rectangle);
+		path.transform(transform);
+		return path.getBounds2D();
+	}
+
+	public static Point2D appliedInv(AffineTransform transform, Point2D point) {
 		try {
 			return transform.inverseTransform(point, null);
 		} catch (Exception e) {
@@ -68,8 +78,16 @@ public class Util {
 		return new Point2D.Double(x, y);
 	}
 
+	public static Rectangle2D rectangle(double centerX, double centerY, double extentX, double extentY) {
+		return new Rectangle2D.Double(centerX - extentX, centerY - extentY, 2 * extentX, 2 * extentY);
+	}
+
 	public static void translate(AffineTransform transform, Point2D point) {
 		transform.translate(point.getX(), point.getY());
+	}
+
+	public static Rectangle2D translated(Rectangle2D rectangle, Point2D point) {
+		return new Rectangle2D.Double(rectangle.getX() + point.getX(), rectangle.getY() + point.getY(), rectangle.getWidth(), rectangle.getHeight());
 	}
 
 	public static AffineTransform translated(AffineTransform transform, Point2D point) {

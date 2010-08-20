@@ -143,7 +143,7 @@ public class Block {
 		// TODO Also bias for thinner sides? Best for crazy shapes would be to look nearby for closest opposing edges.
 		AffineTransform transform = getTransform();
 		// Grasp points in block coordinate frame.
-		Point2D blockPoint = applyInv(transform, point);
+		Point2D blockPoint = appliedInv(transform, point);
 		Point2D blockPointMin = new Point2D.Double();
 		Point2D blockPointMax = new Point2D.Double();
 		// Find the wrapping points.
@@ -156,8 +156,8 @@ public class Block {
 			blockPointMin.setLocation(blockPoint.getX(), bounds.getMinY());
 			blockPointMax.setLocation(blockPoint.getX(), bounds.getMaxY());
 		}
-		Point2D pointMin = apply(transform, blockPointMin);
-		Point2D pointMax = apply(transform, blockPointMax);
+		Point2D pointMin = applied(transform, blockPointMin);
+		Point2D pointMax = applied(transform, blockPointMax);
 		// Calculate forces. Less stable the further from the center.
 		double force = 50;
 		double distX = Math.abs(blockPoint.getX() / bounds.getWidth());
@@ -250,7 +250,7 @@ public class Block {
 				MouseJoint joint = (MouseJoint)edge.joint;
 				Vec2 target = joint.getAnchor1();
 				Point2D point = point(target.x, target.y);
-				point = apply(transform, point);
+				point = applied(transform, point);
 				graphics.drawString(String.valueOf(j), (float)point.getX(), (float)point.getY());
 				edge = edge.next;
 				j++;
