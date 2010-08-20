@@ -83,8 +83,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		timer = new Timer(10, this);
 		tray = new Tray();
 		tray.setLogger(logger);
-		viewBounds = new Rectangle2D.Double(-20, -1, 40, 101);
-		viewRect = new Rectangle2D.Double(-20, -1, 40, 30);
+		viewBounds = new Rectangle2D.Double(-20, -3, 40, 101);
+		viewRect = new Rectangle2D.Double(-20, -3, 40, 30);
 		addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent event) {
