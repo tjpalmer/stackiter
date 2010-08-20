@@ -6,12 +6,27 @@ import java.awt.geom.*;
 public class Util {
 
 	/**
+	 * Assumes no rotation.
+	 */
+	public static Ellipse2D applied(AffineTransform transform, Ellipse2D ellipse) {
+		// TODO Handle this manually more efficiently?
+		Path2D path = new Path2D.Double(ellipse.getBounds2D());
+		path.transform(transform);
+		ellipse = new Ellipse2D.Double();
+		ellipse.setFrame(path.getBounds2D());
+		return ellipse;
+	}
+
+	/**
 	 * TODO Make these "applied" since nondestructive?
 	 */
 	public static Point2D applied(AffineTransform transform, Point2D point) {
 		return transform.transform(point, null);
 	}
 
+	/**
+	 * Assumes no rotation.
+	 */
 	public static Rectangle2D applied(AffineTransform transform, Rectangle2D rectangle) {
 		// TODO Handle this manually more efficiently?
 		Path2D path = new Path2D.Double(rectangle);

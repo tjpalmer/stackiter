@@ -138,17 +138,41 @@ public class Tray {
 	}
 
 	private void paintFlusher(Graphics2D graphics, AffineTransform transform) {
-		paintDie(translated(die, anchor), graphics, transform);
-		paintDie(translated(die2, anchor), graphics, transform);
+		paintDie(translated(die, anchor), 5, graphics, transform);
+		paintDie(translated(die2, anchor), 6, graphics, transform);
 	}
 
-	private void paintDie(Rectangle2D die, Graphics2D graphics, AffineTransform transform) {
-		Rectangle2D dieDisplay = applied(copy(transform), die);
+	private void paintDie(Rectangle2D die, int number, Graphics2D graphics, AffineTransform transform) {
+		// Face.
+		Rectangle2D dieDisplay = applied(transform, die);
 		graphics.setColor(Color.WHITE);
 		graphics.fill(dieDisplay);
 		graphics.setColor(Color.BLACK);
 		graphics.setStroke(new BasicStroke(3));
 		graphics.draw(dieDisplay);
+		// Dots.
+		boolean[][][] dotsAll = {
+			{{false, false, false}, {false, true, false}, {false, false, false}},
+			{{true, false, false}, {false, false, false}, {false, false, true}},
+			{{true, false, false}, {false, true, false}, {false, false, true}},
+			{{true, false, true}, {false, false, false}, {true, false, true}},
+			{{true, false, true}, {false, true, false}, {true, false, true}},
+			{{true, false, true}, {true, false, true}, {true, false, true}},
+		};
+		boolean[][] dots = dotsAll[number - 1];
+		double dotSpacing = die.getWidth() / 4;
+		double dotSize = die.getWidth() / 5;
+		double dotOffset = dotSpacing - dotSize/2;
+		for (int j = 0; j < 3; j++) {
+			double x = dotSpacing*j + dotOffset;
+			for (int i = 0; i < 3; i++) {
+				double y = dotSpacing*i + dotOffset;
+				if (dots[i][j]) {
+					Ellipse2D dot = new Ellipse2D.Double(die.getX() + x, die.getY() + y, dotSize, dotSize);
+					graphics.fill(applied(transform, dot));
+				}
+			}
+		}
 	}
 
 	private Block randomBlock() {
