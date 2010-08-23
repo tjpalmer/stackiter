@@ -97,6 +97,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		blocks = new ArrayList<Block>();
 		world = new World(new AABB(new Vec2(-100,-100), new Vec2(100,150)), new Vec2(0, -10), true);
 		addGround();
+		logger.logItem(ground);
 		setSize(getPreferredSize());
 	}
 
@@ -151,6 +152,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 				}
 			}
 			// Record the new state.
+			logger.logItem(ground);
 			for (Block block: blocks) {
 				logger.logItem(block);
 			}
