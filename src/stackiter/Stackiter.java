@@ -20,6 +20,10 @@ import org.jbox2d.dynamics.*;
 @SuppressWarnings("serial")
 public class Stackiter extends JComponent implements ActionListener, Closeable, MouseListener, MouseMotionListener {
 
+	public enum PressAction {
+		NONE, PRESS, RELEASE
+	}
+
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Stackiter");
 		frame.setLayout(new BorderLayout());
@@ -58,6 +62,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	private boolean mouseOver;
 
 	private Point2D mousePoint;
+
+	private PressAction pressAction = PressAction.NONE;
 
 	private Timer timer;
 
@@ -104,35 +110,51 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	@Override
 	public void actionPerformed(ActionEvent event) {
 
-		// Move the grasped block then scroll if needed.
-		// TODO This is a chicken and egg problem here.
-		final Point2D point = appliedInv(worldToDisplayTransform(), mousePoint);
-		if (graspedBlock != null) {
-			graspedBlock.moveTo(point);
-		}
-		if (mouseOver) {
-			// Without mouseOver check, I got upward scrolling when over title bar.
-			handleScroll(point);
-		}
-		updateView();
-
-		// TODO Offload this to a separate thread? If so, still lock step to one update per frame.
-		// TODO Alternatively, change the delay based on how much time is left.
-		// Step the simulation.
-		world.step(0.02f, 10);
-
 		logger.atomic(new Runnable() { @Override public void run() {
+
+			// Check release before moving grasped block.
+			if (pressAction == PressAction.RELEASE) {
+				handleRelease();
+			}
+
+			// Move the grasped block then scroll if needed.
+			// TODO This is a chicken and egg problem here.
+			if (graspedBlock != null) {
+				graspedBlock.moveTo(mousePoint);
+			}
+
+			// But check grasps after attempting to move any grasped block.
+			if (pressAction == PressAction.PRESS) {
+				handlePress();
+			}
+
+			// And reset the press action now.
+			pressAction = PressAction.NONE;
+
+			if (mouseOver) {
+				// Without mouseOver check, I got upward scrolling when over title bar.
+				handleScroll(mousePoint);
+			}
+			updateView();
+
+			// TODO Offload this to a separate thread? If so, still lock step to one update per frame.
+			// TODO Alternatively, change the delay based on how much time is left.
+			// Step the simulation.
+			world.step(0.02f, 10);
+
 			if (mouseOver) {
 				// Make sure we get the entrance before the move, if both.
 				logger.logToolPresent(mouseOver);
-				logger.logMove(point);
+				logger.logMove(mousePoint);
 			} else {
 				// Make we get the move before the departure, if both.
-				logger.logMove(point);
+				logger.logMove(mousePoint);
 				logger.logToolPresent(mouseOver);
 			}
+
 			logger.logDisplaySize(point(getWidth(), getHeight()));
 			logger.logView(viewRelWorld());
+
 			// Delete lost blocks.
 			blockBoundsAllButGrasped.setRect(0, 0, 0, 0);
 			for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
@@ -151,11 +173,13 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 					}
 				}
 			}
+
 			// Record the new state.
 			logger.logItem(ground);
 			for (Block block: blocks) {
 				logger.logItem(block);
 			}
+
 		}});
 
 		// And queue the repaint.
@@ -183,6 +207,40 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	private Point2D eventPointToWorld(MouseEvent event) {
 		Point2D point = appliedInv(worldToDisplayTransform(), point(event.getX(), event.getY()));
 		return point;
+	}
+
+	private void handlePress() {
+		// Try reserve blocks.
+		graspedBlock = tray.graspedBlock(mousePoint);
+		if (graspedBlock != null) {
+			blocks.add(graspedBlock);
+			graspedBlock.addTo(world);
+		}
+		if (!tray.isActionConsumed()) {
+			for (Block block: blocks) {
+				if (block.contains(mousePoint)) {
+					graspedBlock = block;
+					// Don't break from loop. Make the last drawn have priority for clicking.
+					// That's more intuitive when blocks overlap.
+					// But how often will that be when physics tries to avoid it?
+				}
+			}
+		}
+		if (graspedBlock != null) {
+			// No blocks from tray. Try live blocks.
+			graspedBlock.grasp(mousePoint);
+			Point2D pointRelBlock = appliedInv(graspedBlock.getTransform(), mousePoint);
+			logger.logGrasp(graspedBlock, pointRelBlock);
+		}
+	}
+
+	private void handleRelease() {
+		// TODO Log mouse releases independently from grasps. The grasps are cheating.
+		if (graspedBlock != null) {
+			logger.logRelease(graspedBlock);
+			graspedBlock.release();
+			graspedBlock = null;
+		}
 	}
 
 	private void handleScroll(Point2D toolPoint) {
@@ -214,7 +272,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		}
 
 		// Scale by edge thickness and max speed.
-		// TODO Nonlinear?
 		rateX = rateX / edgeThickness;
 		rateY = rateY / edgeThickness;
 		rateX = 0.5 * Math.pow(1 - Math.abs(rateX), 2) * Math.signum(rateX);
@@ -269,44 +326,24 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	@Override
 	public void mouseMoved(MouseEvent event) {
-		mousePoint.setLocation(event.getX(), event.getY());
+		mousePoint.setLocation(eventPointToWorld(event));
 		mouseOver = true;
 	}
 
 	@Override
 	public void mousePressed(final MouseEvent event) {
-		Point2D point = eventPointToWorld(event);
-		// Try reserve blocks.
-		graspedBlock = tray.graspedBlock(point);
-		if (graspedBlock != null) {
-			blocks.add(graspedBlock);
-			graspedBlock.addTo(world);
-		}
-		if (!tray.isActionConsumed()) {
-			for (Block block: blocks) {
-				if (block.contains(point)) {
-					graspedBlock = block;
-					// Don't break from loop. Make the last drawn have priority for clicking.
-					// That's more intuitive when blocks overlap.
-					// But how often will that be when physics tries to avoid it?
-				}
-			}
-		}
-		if (graspedBlock != null) {
-			// No blocks from tray. Try live blocks.
-			graspedBlock.grasp(point);
-			Point2D pointRelBlock = appliedInv(graspedBlock.getTransform(), point);
-			logger.logGrasp(graspedBlock, pointRelBlock);
-		}
+		// Track latest mouse position.
+		mouseMoved(event);
+		// Defer action to world update.
+		pressAction = PressAction.PRESS;
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent event) {
-		if (graspedBlock != null) {
-			logger.logRelease(graspedBlock);
-			graspedBlock.release();
-			graspedBlock = null;
-		}
+		// Defer action to world update.
+		// Possibly reduces responsiveness to user, but it keeps things more consistent from a standard MDP perspective.
+		// And if the world is fast enough, things will be okay.
+		pressAction = PressAction.RELEASE;
 	}
 
 	@Override
