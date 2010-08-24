@@ -54,6 +54,7 @@ public class Tray {
 				Point2D extent = block.getExtent();
 				block.setPosition(position.getX() + extent.getX() + pad, position.getY() + extent.getY() + pad);
 				// Log the block.
+				// TODO Log reference frame for tray blocks!!!
 				logger.logItem(block);
 				// Move up the line.
 				position.setLocation(position.getX(), position.getY() + 2*extent.getY() + pad);

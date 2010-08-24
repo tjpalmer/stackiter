@@ -61,7 +61,9 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	private boolean mouseOver;
 
-	private Point2D mousePoint;
+	private Point2D mousePoint = new Point2D.Double();
+
+	private Point2D toolPoint = new Point2D.Double();
 
 	private PressAction pressAction = PressAction.NONE;
 
@@ -85,7 +87,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	public Stackiter() {
 		setPreferredSize(new Dimension(640, 480));
 		logger = new Logger();
-		mousePoint = new Point2D.Double();
 		timer = new Timer(10, this);
 		tray = new Tray();
 		tray.setLogger(logger);
@@ -112,6 +113,10 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 		logger.atomic(new Runnable() { @Override public void run() {
 
+			// Recalculate each time for cases of scrolling.
+			// TODO Base instead on moving toolPoint explicitly when scrolling??? Could be risky.
+			toolPoint = appliedInv(worldToDisplayTransform(), mousePoint);
+
 			// Check release before moving grasped block.
 			if (pressAction == PressAction.RELEASE) {
 				handleRelease();
@@ -120,7 +125,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			// Move the grasped block then scroll if needed.
 			// TODO This is a chicken and egg problem here.
 			if (graspedBlock != null) {
-				graspedBlock.moveTo(mousePoint);
+				graspedBlock.moveTo(toolPoint);
 			}
 
 			// But check grasps after attempting to move any grasped block.
@@ -133,7 +138,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 			if (mouseOver) {
 				// Without mouseOver check, I got upward scrolling when over title bar.
-				handleScroll(mousePoint);
+				handleScroll(toolPoint);
 			}
 			updateView();
 
@@ -145,10 +150,10 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			if (mouseOver) {
 				// Make sure we get the entrance before the move, if both.
 				logger.logToolPresent(mouseOver);
-				logger.logMove(mousePoint);
+				logger.logMove(toolPoint);
 			} else {
 				// Make we get the move before the departure, if both.
-				logger.logMove(mousePoint);
+				logger.logMove(toolPoint);
 				logger.logToolPresent(mouseOver);
 			}
 
@@ -204,21 +209,16 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		updateView();
 	}
 
-	private Point2D eventPointToWorld(MouseEvent event) {
-		Point2D point = appliedInv(worldToDisplayTransform(), point(event.getX(), event.getY()));
-		return point;
-	}
-
 	private void handlePress() {
 		// Try reserve blocks.
-		graspedBlock = tray.graspedBlock(mousePoint);
+		graspedBlock = tray.graspedBlock(toolPoint);
 		if (graspedBlock != null) {
 			blocks.add(graspedBlock);
 			graspedBlock.addTo(world);
 		}
 		if (!tray.isActionConsumed()) {
 			for (Block block: blocks) {
-				if (block.contains(mousePoint)) {
+				if (block.contains(toolPoint)) {
 					graspedBlock = block;
 					// Don't break from loop. Make the last drawn have priority for clicking.
 					// That's more intuitive when blocks overlap.
@@ -228,8 +228,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		}
 		if (graspedBlock != null) {
 			// No blocks from tray. Try live blocks.
-			graspedBlock.grasp(mousePoint);
-			Point2D pointRelBlock = appliedInv(graspedBlock.getTransform(), mousePoint);
+			graspedBlock.grasp(toolPoint);
+			Point2D pointRelBlock = appliedInv(graspedBlock.getTransform(), toolPoint);
 			logger.logGrasp(graspedBlock, pointRelBlock);
 		}
 	}
@@ -326,7 +326,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	@Override
 	public void mouseMoved(MouseEvent event) {
-		mousePoint.setLocation(eventPointToWorld(event));
+		mousePoint.setLocation(event.getX(), event.getY());
 		mouseOver = true;
 	}
 
