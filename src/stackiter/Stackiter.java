@@ -8,21 +8,12 @@ import java.awt.geom.*;
 import java.awt.image.*;
 import java.io.*;
 import java.util.*;
-import java.util.List;
 
 import javax.swing.*;
 import javax.swing.Timer;
 
-import org.jbox2d.collision.*;
-import org.jbox2d.common.*;
-import org.jbox2d.dynamics.*;
-
 @SuppressWarnings("serial")
 public class Stackiter extends JComponent implements ActionListener, Closeable, MouseListener, MouseMotionListener {
-
-	public enum PressAction {
-		NONE, PRESS, RELEASE
-	}
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Stackiter");
@@ -47,25 +38,15 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	private double backdropScale;
 
-	Rectangle2D blockBoundsAllButGrasped = new Rectangle2D.Double();
-
-	private List<Block> blocks;
-
 	private double edgeThickness = 2.5;
 
-	private Block ground;
-
-	private Block graspedBlock;
-
 	private Logger logger;
+
+	private boolean mouseDown;
 
 	private boolean mouseOver;
 
 	private Point2D mousePoint = new Point2D.Double();
-
-	private Point2D toolPoint = new Point2D.Double();
-
-	private PressAction pressAction = PressAction.NONE;
 
 	private Timer timer;
 
@@ -85,11 +66,12 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	private World world;
 
 	public Stackiter() {
-		setPreferredSize(new Dimension(640, 480));
+
 		logger = new Logger();
-		timer = new Timer(10, this);
-		tray = new Tray();
-		tray.setLogger(logger);
+		world = new World();
+		world.setLogger(logger);
+		tray = world.getTray();
+
 		viewBounds = new Rectangle2D.Double(-20, -3, 40, 101);
 		viewRect = new Rectangle2D.Double(-20, -3, 40, 30);
 		addComponentListener(new ComponentAdapter() {
@@ -100,12 +82,11 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		});
 		addMouseListener(this);
 		addMouseMotionListener(this);
-		// TODO Move out domain from display.
-		blocks = new ArrayList<Block>();
-		world = new World(new AABB(new Vec2(-100,-100), new Vec2(100,150)), new Vec2(0, -10), true);
-		addGround();
-		logger.logItem(ground);
+		setPreferredSize(new Dimension(640, 480));
 		setSize(getPreferredSize());
+
+		timer = new Timer(10, this);
+
 	}
 
 	@Override
@@ -115,74 +96,32 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 			// Recalculate each time for cases of scrolling.
 			// TODO Base instead on moving toolPoint explicitly when scrolling??? Could be risky.
-			toolPoint = appliedInv(worldToDisplayTransform(), mousePoint);
+			Point2D toolPoint = appliedInv(worldToDisplayTransform(), mousePoint);
 
-			// Check release before moving grasped block.
-			if (pressAction == PressAction.RELEASE) {
-				handleRelease();
-			}
+			// Communicate agent action.
+			// TODO Include flush and clear as other mutually exclusive action choices.
+			// TODO The user can't grasp and flush at the same time, so I'd like not to provide that to computer agents, either.
+			// TODO Of course, we're still not imposing view constraints on the agent yet.
+			world.setToolMode(mouseDown ? ToolMode.GRASP : ToolMode.INACTIVE);
+			world.setToolPoint(toolPoint);
 
-			// Move the grasped block then scroll if needed.
-			// TODO This is a chicken and egg problem here.
-			if (graspedBlock != null) {
-				graspedBlock.moveTo(toolPoint);
-			}
-
-			// But check grasps after attempting to move any grasped block.
-			if (pressAction == PressAction.PRESS) {
-				handlePress();
-			}
-
-			// And reset the press action now.
-			pressAction = PressAction.NONE;
-
+			// Handle view updates.
 			if (mouseOver) {
 				// Without mouseOver check, I got upward scrolling when over title bar.
 				handleScroll(toolPoint);
-			}
-			updateView();
-
-			// TODO Offload this to a separate thread? If so, still lock step to one update per frame.
-			// TODO Alternatively, change the delay based on how much time is left.
-			// Step the simulation.
-			world.step(0.02f, 10);
-
-			if (mouseOver) {
 				// Make sure we get the entrance before the move, if both.
 				logger.logToolPresent(mouseOver);
-				logger.logMove(toolPoint);
-			} else {
-				// Make we get the move before the departure, if both.
-				logger.logMove(toolPoint);
-				logger.logToolPresent(mouseOver);
 			}
+			updateView();
 
 			logger.logDisplaySize(point(getWidth(), getHeight()));
 			logger.logView(viewRelWorld());
 
-			// Delete lost blocks.
-			blockBoundsAllButGrasped.setRect(0, 0, 0, 0);
-			for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
-				Block block = b.next();
-				Shape blockShape = block.transformedShape();
-				Rectangle2D blockBounds = blockShape.getBounds2D();
-				if (blockBounds.getMaxY() < -5) {
-					// It fell off the table. Out of sight, out of mind.
-					b.remove();
-					block.removeFromWorld();
-					logger.logRemoval(block);
-				} else {
-					// Keep track of where the blocks reach.
-					if (block != graspedBlock) {
-						Rectangle2D.union(blockBoundsAllButGrasped, blockBounds, blockBoundsAllButGrasped);
-					}
-				}
-			}
+			world.update();
 
-			// Record the new state.
-			logger.logItem(ground);
-			for (Block block: blocks) {
-				logger.logItem(block);
+			if (!mouseOver) {
+				// Make we get the move (in world update) before the departure, if both.
+				logger.logToolPresent(mouseOver);
 			}
 
 		}});
@@ -190,15 +129,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		// And queue the repaint.
 		repaint();
 
-	}
-
-	private void addGround() {
-		ground = new Block();
-		ground.setColor(Color.getHSBColor(0, 0, 0.5f));
-		ground.setDensity(0);
-		ground.setExtent(viewRect.getWidth()/2 - 5.5, 5);
-		ground.setPosition(0, -5);
-		ground.addTo(world);
 	}
 
 	public void close() {
@@ -209,47 +139,13 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		updateView();
 	}
 
-	private void handlePress() {
-		// Try reserve blocks.
-		graspedBlock = tray.graspedBlock(toolPoint);
-		if (graspedBlock != null) {
-			blocks.add(graspedBlock);
-			graspedBlock.addTo(world);
-		}
-		if (!tray.isActionConsumed()) {
-			for (Block block: blocks) {
-				if (block.contains(toolPoint)) {
-					graspedBlock = block;
-					// Don't break from loop. Make the last drawn have priority for clicking.
-					// That's more intuitive when blocks overlap.
-					// But how often will that be when physics tries to avoid it?
-				}
-			}
-		}
-		if (graspedBlock != null) {
-			// No blocks from tray. Try live blocks.
-			graspedBlock.grasp(toolPoint);
-			Point2D pointRelBlock = appliedInv(graspedBlock.getTransform(), toolPoint);
-			logger.logGrasp(graspedBlock, pointRelBlock);
-		}
-	}
-
-	private void handleRelease() {
-		// TODO Log mouse releases independently from grasps. The grasps are cheating.
-		if (graspedBlock != null) {
-			logger.logRelease(graspedBlock);
-			graspedBlock.release();
-			graspedBlock = null;
-		}
-	}
-
 	private void handleScroll(Point2D toolPoint) {
 
 		double rateX = 0;
 		double rateY = 0;
 		Rectangle2D viewRelWorld = viewRelWorld();
 
-		if (graspedBlock == null && toolPoint.getX() < tray.getAnchor().getX() + tray.getWidth()) {
+		if (world.getGraspedBlock() == null && toolPoint.getX() < tray.getAnchor().getX() + tray.getWidth()) {
 			// No block and over the tray means we are probably thinking about the tray, not scrolling.
 			// TODO Generalize this notion for widgets.
 			return;
@@ -335,7 +231,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		// Track latest mouse position.
 		mouseMoved(event);
 		// Defer action to world update.
-		pressAction = PressAction.PRESS;
+		mouseDown = true;
 	}
 
 	@Override
@@ -343,7 +239,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		// Defer action to world update.
 		// Possibly reduces responsiveness to user, but it keeps things more consistent from a standard MDP perspective.
 		// And if the world is fast enough, things will be okay.
-		pressAction = PressAction.RELEASE;
+		mouseDown = false;
 	}
 
 	@Override
@@ -356,9 +252,9 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			Point2D backdropPoint = applied(transform, point(viewBounds.getMinX(), viewBounds.getMinY()));
 			g.drawImage(backdrop, (int)backdropPoint.getX(), (int)backdropPoint.getY() - backdrop.getHeight(), null);
 			// Ground.
-			ground.paint(g, transform);
+			world.getGround().paint(g, transform);
 			// Live blocks.
-			for (Block block: blocks) {
+			for (Block block: world.getBlocks()) {
 				block.paint(g, transform);
 			}
 			// Tray.

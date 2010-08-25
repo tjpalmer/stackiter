@@ -51,7 +51,7 @@ public class Block {
 		return (MouseJoint)body.getWorld().createJoint(jointDef);
 	}
 
-	public void addTo(World world) {
+	public void addTo(org.jbox2d.dynamics.World world) {
 		setAlive(true);
 		body = world.createBody(bodyDef);
 		body.createShape(shapeDef);
