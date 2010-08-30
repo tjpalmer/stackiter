@@ -135,7 +135,7 @@ public class Logger implements Closeable {
 	public void logItem(final Block item) {
 		atomic(new Runnable() { @Override public void run() {
 			ItemInfo info = getInfo(item);
-			// TODO Could check for changes in alive (if datafied), color, or shape here, too.
+			// TODO Could check for changes in color or shape here, too.
 			// Alive: alive.
 			if (item.isAlive() != info.item.isAlive()) {
 				info.item.setAlive(true);

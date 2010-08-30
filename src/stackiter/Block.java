@@ -147,7 +147,6 @@ public class Block {
 		Point2D blockPointMin = new Point2D.Double();
 		Point2D blockPointMax = new Point2D.Double();
 		// Find the wrapping points.
-		// TODO Consider putting the main point in the middle rather than at the mouse position.
 		Rectangle2D bounds = getBounds();
 		if (bounds.getWidth() < bounds.getHeight()) {
 			blockPointMin.setLocation(bounds.getMinX(), blockPoint.getY());
@@ -267,9 +266,13 @@ public class Block {
 	public void removeFromWorld() {
 		setAlive(false);
 		if (body != null) {
+			// Copy over the transform to remember the live state.
+			bodyDef.angle = (float)getAngle();
+			bodyDef.position.x = (float)getPosition().getX();
+			bodyDef.position.y = (float)getPosition().getY();
+			// TODO Could copy over other info.
+			// Now wipe out the body.
 			body.getWorld().destroyBody(body);
-			// TODO Put the current transform into the bodyDef?
-			// TODO Would need to extract angle for that.
 			body = null;
 		}
 	}

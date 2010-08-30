@@ -31,7 +31,6 @@ public class World {
 	private org.jbox2d.dynamics.World world;
 
 	public World() {
-		// TODO Move out domain from display.
 		blocks = new ArrayList<Block>();
 		world = new org.jbox2d.dynamics.World(new AABB(new Vec2(-100,-100), new Vec2(100,150)), new Vec2(0, -10), true);
 		addGround();
@@ -138,8 +137,6 @@ public class World {
 			}
 			toolModePrev = toolMode;
 
-			// TODO Offload this to a separate thread? If so, still lock step to one update per frame.
-			// TODO Alternatively, change the delay based on how much time is left.
 			// Step the simulation.
 			world.step(0.02f, 10);
 

@@ -17,9 +17,6 @@ public class Util {
 		return ellipse;
 	}
 
-	/**
-	 * TODO Make these "applied" since nondestructive?
-	 */
 	public static Point2D applied(AffineTransform transform, Point2D point) {
 		return transform.transform(point, null);
 	}

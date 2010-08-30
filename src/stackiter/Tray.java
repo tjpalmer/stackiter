@@ -99,7 +99,6 @@ public class Tray {
 		// First check to make sure we're in the range of the tray.
 		point = point(point.getX() - anchor.getX(), point.getY() - anchor.getY());
 		actionConsumed = false;
-		// TODO The width constant again!
 		if (point.getX() < getWidth()) {
 			// Check flusher first, actually.
 			// TODO Consider making the flusher a first class object.

@@ -117,6 +117,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			logger.logDisplaySize(point(getWidth(), getHeight()));
 			logger.logView(viewRelWorld());
 
+			// TODO Offload this to a separate thread? If so, still lock step to one update per frame?
+			// TODO Alternatively, change the delay based on how much time is left. Or is that auto?
 			world.update();
 
 			if (!mouseOver) {
