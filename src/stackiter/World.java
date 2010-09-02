@@ -18,6 +18,8 @@ public class World {
 
 	private Block graspedBlock;
 
+	private List<Item> items = new ArrayList<Item>();
+
 	private Logger logger;
 
 	private ToolMode toolMode = ToolMode.INACTIVE;
@@ -34,6 +36,9 @@ public class World {
 		blocks = new ArrayList<Block>();
 		world = new org.jbox2d.dynamics.World(new AABB(new Vec2(-100,-100), new Vec2(100,150)), new Vec2(0, -10), true);
 		addGround();
+		Stock stock = new Stock();
+		stock.addTo(this);
+		items.add(stock);
 	}
 
 	private void addGround() {
@@ -43,7 +48,8 @@ public class World {
 		// TODO What's the right way to coordinate display size vs. platform size?
 		ground.setExtent(40/2 - 5.5, 5); // 40 == viewRect.getWidth()
 		ground.setPosition(0, -5);
-		ground.addTo(world);
+		ground.addTo(this);
+		items.add(ground);
 	}
 
 	public Iterable<Block> getBlocks() {
@@ -51,12 +57,21 @@ public class World {
 		return blocks;
 	}
 
-	public Block getGraspedBlock() {
+	public org.jbox2d.dynamics.World getDynamicsWorld() {
+		return world;
+	}
+
+	public Item getGraspedItem() {
 		return graspedBlock;
 	}
 
 	public Block getGround() {
 		return ground;
+	}
+
+	public Iterable<Item> getItems() {
+		// TODO Wrap for immutability?
+		return items;
 	}
 
 	public Tray getTray() {
@@ -68,7 +83,8 @@ public class World {
 		graspedBlock = tray.graspedBlock(toolPoint);
 		if (graspedBlock != null) {
 			blocks.add(graspedBlock);
-			graspedBlock.addTo(world);
+			graspedBlock.addTo(this);
+			items.add(graspedBlock);
 		}
 		if (!tray.isActionConsumed()) {
 			for (Block block: blocks) {

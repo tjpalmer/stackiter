@@ -5,6 +5,8 @@ import static stackiter.Util.*;
 import java.awt.*;
 import java.awt.Shape;
 import java.awt.geom.*;
+import java.util.*;
+import java.util.List;
 
 import org.jbox2d.collision.*;
 import org.jbox2d.collision.shapes.*;
@@ -12,7 +14,7 @@ import org.jbox2d.common.*;
 import org.jbox2d.dynamics.*;
 import org.jbox2d.dynamics.joints.*;
 
-public class Block {
+public class Block implements Item {
 
 	private boolean alive;
 
@@ -23,6 +25,8 @@ public class Block {
 	private Color color;
 
 	private boolean debugPaint;
+
+	private List<Block> fixations = new ArrayList<Block>();
 
 	private MouseJoint mainJoint;
 
@@ -51,11 +55,28 @@ public class Block {
 		return (MouseJoint)body.getWorld().createJoint(jointDef);
 	}
 
-	public void addTo(org.jbox2d.dynamics.World world) {
+	private void addFixConstraints(Block other) {
+		if (body != null && other.body != null) {
+			// TODO Verify the joints aren't already added.
+			// TODO Then add the joints.
+			body.getJointList();
+		}
+	}
+
+	public void addTo(World world) {
 		setAlive(true);
-		body = world.createBody(bodyDef);
+		body = world.getDynamicsWorld().createBody(bodyDef);
 		body.createShape(shapeDef);
 		body.setMassFromShapes();
+		for (Block fixed: fixations) {
+			addFixConstraints(fixed);
+		}
+	}
+
+	public void affix(Block other) {
+		fixations.add(other);
+		other.fixations.add(this);
+		addFixConstraints(other);
 	}
 
 	public boolean contains(Point2D point) {
@@ -216,12 +237,13 @@ public class Block {
 		body.wakeUp();
 	}
 
-	public void paint(Graphics2D graphics, AffineTransform transform) {
+	@Override
+	public void paint(Graphics2D graphics, AffineTransform worldRelDisplay) {
 		Graphics2D g = copy(graphics);
 		try {
 			// Shape information.
 			double strokeWidth = 2;
-			Shape shape = transformedShape(copy(transform), strokeWidth);
+			Shape shape = transformedShape(copy(worldRelDisplay), strokeWidth);
 			// Draw the block.
 			g.setColor(color);
 			g.fill(shape);
@@ -233,7 +255,7 @@ public class Block {
 			}
 			g.draw(shape);
 			if (debugPaint) {
-				paintJoints(g, transform);
+				paintJoints(g, worldRelDisplay);
 			}
 		} finally {
 			g.dispose();

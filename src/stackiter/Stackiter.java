@@ -147,7 +147,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		double rateY = 0;
 		Rectangle2D viewRelWorld = viewRelWorld();
 
-		if (world.getGraspedBlock() == null && toolPoint.getX() < tray.getAnchor().getX() + tray.getWidth()) {
+		if (world.getGraspedItem() == null && toolPoint.getX() < tray.getAnchor().getX() + tray.getWidth()) {
 			// No block and over the tray means we are probably thinking about the tray, not scrolling.
 			// TODO Generalize this notion for widgets.
 			return;
@@ -253,11 +253,9 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			// Backdrop.
 			Point2D backdropPoint = applied(transform, point(viewBounds.getMinX(), viewBounds.getMinY()));
 			g.drawImage(backdrop, (int)backdropPoint.getX(), (int)backdropPoint.getY() - backdrop.getHeight(), null);
-			// Ground.
-			world.getGround().paint(g, transform);
-			// Live blocks.
-			for (Block block: world.getBlocks()) {
-				block.paint(g, transform);
+			// Live items.
+			for (Item item: world.getItems()) {
+				item.paint(g, transform);
 			}
 			// Tray.
 			tray.paint(g, transform);
