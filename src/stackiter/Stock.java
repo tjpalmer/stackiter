@@ -4,8 +4,8 @@ import static stackiter.Util.*;
 
 import java.awt.*;
 import java.awt.geom.*;
-import java.util.*;
-import java.util.List;
+//import java.util.*;
+//import java.util.List;
 
 /**
  * Provides an in-world supply of new items.

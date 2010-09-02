@@ -319,11 +319,16 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	}
 
 	private void updateTrayBounds() {
-		AffineTransform transform = worldToDisplayTransform();
-		invert(transform);
-		Point2D anchor = applied(transform, point(0, getHeight()));
-		tray.setAnchor(anchor);
-		tray.setHeight(viewRelWorld().getHeight());
+		if (tray.isFixedToDisplay()) {
+			AffineTransform transform = worldToDisplayTransform();
+			invert(transform);
+			tray.setAnchor(applied(transform, point(0, getHeight())));
+			tray.setHeight(viewRelWorld().getHeight());
+		} else {
+			// It stays fixed in the world.
+			tray.setAnchor(point(viewBounds.getMinX(), 0));
+			tray.setHeight(viewRect.getHeight());
+		}
 	}
 
 	private void updateView() {
@@ -341,6 +346,11 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	private double worldToDisplayScale() {
 		Dimension size = getSize();
 		double xScale = size.getWidth() / viewRect.getWidth();
+		if (!tray.isFixedToDisplay()) {
+			// Make sure they can see the tray, even if the display goes high.
+			// This still breaks down at some point, though.
+			return xScale;
+		}
 		double yScale = size.getHeight() / viewRect.getHeight();
 		// Go with the smaller of the two. Cut off rather than show extra.
 		double scale = xScale * viewRect.getHeight() < size.getHeight() ? yScale : xScale;

@@ -12,9 +12,17 @@ import java.util.List;
  */
 public class Tray {
 
+	private boolean actionConsumed;
+
 	private Point2D anchor;
 
 	private List<Block> blocks;
+
+	private Rectangle2D die;
+
+	private Rectangle2D die2;
+
+	private boolean fixedToDisplay;
 
 	private double flusherHeight = 2;
 
@@ -28,12 +36,6 @@ public class Tray {
 
 	private Random random;
 
-	private boolean actionConsumed;
-
-	private Rectangle2D die;
-
-	private Rectangle2D die2;
-
 	public Tray() {
 		blocks = new ArrayList<Block>();
 		random = new Random();
@@ -41,7 +43,9 @@ public class Tray {
 
 	private void fill() {
 		logger.atomic(new Runnable() { @Override public void run() {
-			Point2D position = point(0, flusherHeight + pad);
+			// Start either flusherHeight above the bottom of the display, or at ground level.
+			double startY = fixedToDisplay ? flusherHeight + pad : 0;
+			Point2D position = point(0, startY);
 			for (int b = 0; position.getY() < height || b < blocks.size(); b++) {
 				// Position and paint the block.
 				Block block;
@@ -75,6 +79,12 @@ public class Tray {
 			dieExtent,
 			dieExtent
 		);
+		if (!fixedToDisplay) {
+			// Drop it into the ground.
+			double drop = flusherHeight + 2*pad;
+			die.setRect(die.getX(), die.getY() - drop, die.getWidth(), die.getHeight());
+			die2.setRect(die2.getX(), die2.getY() - drop, die2.getWidth(), die2.getHeight());
+		}
 	}
 
 	private void flush() {
@@ -126,6 +136,10 @@ public class Tray {
 		return actionConsumed;
 	}
 
+	public boolean isFixedToDisplay() {
+		return fixedToDisplay;
+	}
+
 	public void paint(Graphics2D graphics, AffineTransform transform) {
 		// Blocks.
 		AffineTransform blockTransform = copy(transform);
@@ -135,11 +149,6 @@ public class Tray {
 		}
 		// Flusher.
 		paintFlusher(graphics, transform);
-	}
-
-	private void paintFlusher(Graphics2D graphics, AffineTransform transform) {
-		paintDie(translated(die, anchor), 5, graphics, transform);
-		paintDie(translated(die2, anchor), 6, graphics, transform);
 	}
 
 	private void paintDie(Rectangle2D die, int number, Graphics2D graphics, AffineTransform transform) {
@@ -175,6 +184,11 @@ public class Tray {
 		}
 	}
 
+	private void paintFlusher(Graphics2D graphics, AffineTransform transform) {
+		paintDie(translated(die, anchor), 5, graphics, transform);
+		paintDie(translated(die2, anchor), 6, graphics, transform);
+	}
+
 	private Block randomBlock() {
 		Block block = new Block();
 		block.setColor(randomColor());
@@ -191,6 +205,10 @@ public class Tray {
 
 	public void setAnchor(Point2D anchor) {
 		this.anchor = anchor;
+	}
+
+	public void setFixedToDisplay(boolean fixedToDisplay) {
+		this.fixedToDisplay = fixedToDisplay;
 	}
 
 	public void setHeight(double height) {

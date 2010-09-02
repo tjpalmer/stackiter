@@ -36,9 +36,9 @@ public class World {
 		blocks = new ArrayList<Block>();
 		world = new org.jbox2d.dynamics.World(new AABB(new Vec2(-100,-100), new Vec2(100,150)), new Vec2(0, -10), true);
 		addGround();
-		Stock stock = new Stock();
-		stock.addTo(this);
-		items.add(stock);
+		//Stock stock = new Stock();
+		//stock.addTo(this);
+		//items.add(stock);
 	}
 
 	private void addGround() {
@@ -46,7 +46,7 @@ public class World {
 		ground.setColor(Color.getHSBColor(0, 0, 0.5f));
 		ground.setDensity(0);
 		// TODO What's the right way to coordinate display size vs. platform size?
-		ground.setExtent(40/2 - 5.5, 5); // 40 == viewRect.getWidth()
+		ground.setExtent(40/2, 5); // 40 == viewRect.getWidth()
 		ground.setPosition(0, -5);
 		ground.addTo(this);
 		items.add(ground);
