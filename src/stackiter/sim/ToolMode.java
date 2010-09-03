@@ -1,4 +1,4 @@
-package stackiter;
+package stackiter.sim;
 
 public enum ToolMode {
 

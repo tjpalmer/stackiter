@@ -11,5 +11,5 @@
     <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
     <jar href="stackiter.jar"/>
   </resources>
-  <application-desc main-class="stackiter.Stackiter"/>
+  <application-desc main-class="stackiter.sim.Stackiter"/>
 </jnlp>

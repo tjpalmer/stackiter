@@ -1,6 +1,6 @@
-package stackiter;
+package stackiter.sim;
 
-import static stackiter.Util.*;
+import static stackiter.sim.Util.*;
 
 import java.awt.*;
 import java.awt.geom.*;

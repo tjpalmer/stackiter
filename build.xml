@@ -33,7 +33,7 @@
 		</unzip>
 		<jar destfile="build/stackiter.jar" basedir="build/class">
 			<manifest>
-				<attribute name="Main-Class" value="stackiter.Stackiter"/>
+				<attribute name="Main-Class" value="stackiter.sim.Stackiter"/>
 			</manifest>
 		</jar>
 	</target>
