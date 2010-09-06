@@ -147,33 +147,33 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		double rateY = 0;
 		Rectangle2D viewRelWorld = viewRelWorld();
 
-		if (world.getGraspedItem() == null && toolPoint.getX() < tray.getAnchor().getX() + tray.getWidth()) {
+		if (tray.isFixedToDisplay() && world.getGraspedItem() == null && toolPoint.getX() < tray.getAnchor().getX() + tray.getWidth()) {
 			// No block and over the tray means we are probably thinking about the tray, not scrolling.
 			// TODO Generalize this notion for widgets.
 			return;
 		}
 
-		// See how close we are to the edge.
+		// Find distance past scroll boundaries.
 		if (toolPoint.getX() < viewRelWorld.getMinX() + edgeThickness) {
-			// Scroll left if space available.
-			rateX = Math.min(viewRelWorld.getMinX() - toolPoint.getX(), 0);
+			// Left.
+			rateX = toolPoint.getX() - (viewRelWorld.getMinX() + edgeThickness);
 		} else if (toolPoint.getX() > viewRelWorld.getMaxX() - edgeThickness) {
-			// Scroll right if space available.
-			rateX = Math.max(viewRelWorld.getMaxX() - toolPoint.getX(), 0);
+			// Right.
+			rateX = toolPoint.getX() - (viewRelWorld.getMaxX() - edgeThickness);
 		}
 		if (toolPoint.getY() < viewRelWorld.getMinY() + edgeThickness) {
-			// Scroll down if space available.
-			rateY = Math.min(viewRelWorld.getMinY() - toolPoint.getY(), 0);
+			// Down.
+			rateY = toolPoint.getY() - (viewRelWorld.getMinY() + edgeThickness);
 		} else if (toolPoint.getY() > viewRelWorld.getMaxY() - edgeThickness) {
-			// Scroll up if space available.
-			rateY = Math.max(viewRelWorld.getMaxY() - toolPoint.getY(), 0);
+			// Up.
+			rateY = toolPoint.getY() - (viewRelWorld.getMaxY() - edgeThickness);
 		}
 
-		// Scale by edge thickness and max speed.
+		// Scale by edge thickness and apply quadratic decay.
 		rateX = rateX / edgeThickness;
 		rateY = rateY / edgeThickness;
-		rateX = 0.5 * Math.pow(1 - Math.abs(rateX), 2) * Math.signum(rateX);
-		rateY = 0.5 * Math.pow(1 - Math.abs(rateY), 2) * Math.signum(rateY);
+		rateX = 0.5 * Math.pow(Math.abs(rateX), 2) * Math.signum(rateX);
+		rateY = 0.5 * Math.pow(Math.abs(rateY), 2) * Math.signum(rateY);
 
 		// Impose view bounds.
 		// TODO Do narrow bounds drive this crazy?
