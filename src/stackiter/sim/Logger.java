@@ -23,9 +23,15 @@ public class Logger implements Closeable {
 
 	boolean firstPerTx;
 
-	private Map<Block, ItemInfo> items = new HashMap<Block, ItemInfo>();
+	private int idNext = 4;
 
-	private int nextId = 1;
+	private int idTool = 2;
+
+	private int idTray = 3;
+
+	private int idView = 1;
+
+	private Map<Block, ItemInfo> items = new HashMap<Block, ItemInfo>();
 
 	Point2D toolPoint = new Point2D.Double();
 
@@ -95,7 +101,7 @@ public class Logger implements Closeable {
 		if (info == null) {
 			// New item. Log its static information.
 			info = new ItemInfo();
-			info.id = nextId++;
+			info.id = idNext++;
 			info.item = new Block();
 			items.put(item, info);
 			Point2D extent = item.getExtent();
@@ -128,7 +134,7 @@ public class Logger implements Closeable {
 	public void logGrasp(final Block item, final Point2D pointRelItem) {
 		atomic(new Runnable() { @Override public void run() {
 			ItemInfo info = getInfo(item);
-			log("grasp 0 %d %.3f %.3f", info.id, pointRelItem.getX(), pointRelItem.getY());
+			log("grasp %d %d %.3f %.3f", idTool, info.id, pointRelItem.getX(), pointRelItem.getY());
 		}});
 	}
 
@@ -158,7 +164,7 @@ public class Logger implements Closeable {
 
 	public void logMove(Point2D point) {
 		if (!point.equals(toolPoint)) {
-			log("pos 0 %.3f %.3f", point.getX(), point.getY());
+			log("pos %d %.3f %.3f", idTool, point.getX(), point.getY());
 			toolPoint.setLocation(point);
 		}
 	}
@@ -166,7 +172,7 @@ public class Logger implements Closeable {
 	public void logRelease(final Block item) {
 		atomic(new Runnable() { @Override public void run() {
 			ItemInfo info = getInfo(item);
-			log("release 0 %d", info.id);
+			log("release %d %d", idTool, info.id);
 		}});
 	}
 
@@ -180,11 +186,11 @@ public class Logger implements Closeable {
 	private void logStart() {
 		atomic(new Runnable() { @Override public void run() {
 			// Hardcoded info about the view.
-			log("item -1");
-			log("type -1 view");
+			log("item %d", idView);
+			log("type %d view", idView);
 			// Hardcoded info about the mouse pointer.
-			log("item 0");
-			log("type 0 tool");
+			log("item %d", idTool);
+			log("type %d tool", idTool);
 		}});
 	}
 
@@ -204,7 +210,7 @@ public class Logger implements Closeable {
 		// TODO The current mechanism is ad hoc.
 		if (toolPresent != this.toolPresent) {
 			this.toolPresent = toolPresent;
-			log("present 0 %s", toolPresent);
+			log("present %d %s", idTool, toolPresent);
 		}
 	}
 
@@ -213,11 +219,11 @@ public class Logger implements Closeable {
 			atomic(new Runnable() { @Override public void run() {
 				Point2D extent = extent(view);
 				if (!extent.equals(extent(Logger.this.view))) {
-					log("extent -1 %.3f %.3f", extent.getX(), extent.getY());
+					log("extent %d %.3f %.3f", idView, extent.getX(), extent.getY());
 				}
 				Point2D center = center(view);
 				if (!center.equals(center(Logger.this.view))) {
-					log("pos -1 %.3f %.3f", center.getX(), center.getY());
+					log("pos %d %.3f %.3f", idView, center.getX(), center.getY());
 				}
 				Logger.this.view.setRect(view);
 			}});
