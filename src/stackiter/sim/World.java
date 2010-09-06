@@ -139,6 +139,7 @@ public class World {
 	public void update() {
 		logger.atomic(new Runnable() { @Override public void run() {
 
+			logger.logPressed(toolMode == ToolMode.GRASP);
 			if (toolMode != ToolMode.GRASP) {
 				// Check release before moving grasped block.
 				handleRelease();

@@ -35,6 +35,8 @@ public class Logger implements Closeable {
 
 	private Map<Block, ItemInfo> items = new HashMap<Block, ItemInfo>();
 
+	private boolean pressed;
+
 	Point2D toolPoint = new Point2D.Double();
 
 	private long startTime;
@@ -255,6 +257,13 @@ public class Logger implements Closeable {
 				}
 				Logger.this.view.setRect(view);
 			}});
+		}
+	}
+
+	public void logPressed(boolean pressed) {
+		if (pressed != this.pressed) {
+			log("pressed %d %s", idTool, pressed);
+			this.pressed = pressed;
 		}
 	}
 
