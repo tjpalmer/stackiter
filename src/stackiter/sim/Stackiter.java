@@ -46,7 +46,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	private boolean mouseOver;
 
-	private Point2D mousePoint = new Point2D.Double();
+	private Point2D mousePoint;
 
 	private Timer timer;
 
@@ -94,24 +94,27 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 		logger.atomic(new Runnable() { @Override public void run() {
 
-			// Recalculate each time for cases of scrolling.
-			// TODO Base instead on moving toolPoint explicitly when scrolling??? Could be risky.
-			Point2D toolPoint = appliedInv(worldToDisplayTransform(), mousePoint);
+			if (mousePoint != null) {
+				// Recalculate each time for cases of scrolling.
+				// TODO Base instead on moving toolPoint explicitly when scrolling??? Could be risky.
+				Point2D toolPoint = appliedInv(worldToDisplayTransform(), mousePoint);
 
-			// Communicate agent action.
-			// TODO Include flush and clear as other mutually exclusive action choices.
-			// TODO The user can't grasp and flush at the same time, so I'd like not to provide that to computer agents, either.
-			// TODO Of course, we're still not imposing view constraints on the agent yet.
-			world.setToolMode(mouseDown ? ToolMode.GRASP : ToolMode.INACTIVE);
-			world.setToolPoint(toolPoint);
+				// Communicate agent action.
+				// TODO Include flush and clear as other mutually exclusive action choices.
+				// TODO The user can't grasp and flush at the same time, so I'd like not to provide that to computer agents, either.
+				// TODO Of course, we're still not imposing view constraints on the agent yet.
+				world.setToolMode(mouseDown ? ToolMode.GRASP : ToolMode.INACTIVE);
+				world.setToolPoint(toolPoint);
 
-			// Handle view updates.
-			if (mouseOver) {
-				// Without mouseOver check, I got upward scrolling when over title bar.
-				handleScroll(toolPoint);
-				// Make sure we get the entrance before the move, if both.
-				logger.logToolPresent(mouseOver);
+				// Handle view updates.
+				if (mouseOver) {
+					// Without mouseOver check, I got upward scrolling when over title bar.
+					handleScroll(toolPoint);
+					// Make sure we get the entrance before the move, if both.
+					logger.logToolPresent(mouseOver);
+				}
 			}
+
 			updateView();
 
 			logger.logDisplaySize(point(getWidth(), getHeight()));
@@ -192,11 +195,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			rateY = viewBounds.getMinY() - viewRelWorld.getMinY();
 		}
 
-		// Disable horizontal scrolling for now. It complicates having widgets on the sides.
-		// TODO Define the bounds apart from widgets and use that edge for scrolling? No. You don't want to scroll just to get to the widgets. And bringing in the widgets makes things congested.
-		// TODO Maybe make the widgets actually part of the world sometime instead of floating?
-		rateX = 0;
-
 		// Apply scroll rate, leaving the size unchanged.
 		viewRect.setRect(viewRect.getX() + rateX, viewRect.getY() + rateY, viewRect.getWidth(), viewRect.getHeight());
 
@@ -224,6 +222,9 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	@Override
 	public void mouseMoved(MouseEvent event) {
+		if (mousePoint == null) {
+			mousePoint = new Point2D.Double();
+		}
 		mousePoint.setLocation(event.getX(), event.getY());
 		mouseOver = true;
 	}
@@ -326,7 +327,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			tray.setHeight(viewRelWorld().getHeight());
 		} else {
 			// It stays fixed in the world.
-			tray.setAnchor(point(viewBounds.getMinX(), 0));
+			double minX = world.getGround().getPosition().getX() - world.getGround().getExtent().getX();
+			tray.setAnchor(point(minX, 0));
 			tray.setHeight(viewRect.getHeight());
 		}
 	}
