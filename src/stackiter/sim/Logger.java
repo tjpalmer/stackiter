@@ -23,13 +23,15 @@ public class Logger implements Closeable {
 
 	boolean firstPerTx;
 
-	private int idNext = 4;
+	private int idNext = 5;
 
-	private int idTool = 2;
+	private int idTool = 3;
 
-	private int idTray = 3;
+	private int idTray = 4;
 
-	private int idView = 1;
+	private int idView = 2;
+
+	private int idWorld = 1;
 
 	private Map<Block, ItemInfo> items = new HashMap<Block, ItemInfo>();
 
@@ -40,6 +42,8 @@ public class Logger implements Closeable {
 	private long time;
 
 	private boolean toolPresent;
+
+	private boolean trayLogged;
 
 	private int txDepth;
 
@@ -110,6 +114,10 @@ public class Logger implements Closeable {
 			log("extent %d %.3f %.3f", info.id, extent.getX(), extent.getY());
 			float[] color = item.getColor().getRGBComponents(null);
 			log("color %d %.3f %.3f %.3f %.3f", info.id, color[0], color[1], color[2], color[3]);
+			if (!item.isAlive()) {
+				// Presume all prebirth items are in the tray frame.
+				log("rel %d %d", info.id, idTray);
+			}
 		}
 		return info;
 	}
@@ -144,7 +152,11 @@ public class Logger implements Closeable {
 			// TODO Could check for changes in color or shape here, too.
 			// Alive: alive.
 			if (item.isAlive() != info.item.isAlive()) {
-				info.item.setAlive(true);
+				info.item.setAlive(item.isAlive());
+				if (item.isAlive()) {
+					// Presume all newly alive items are suddenly in the world frame.
+					log("rel %d %d", info.id, idWorld);
+				}
 				log("alive %d %s", info.id, item.isAlive());
 			}
 			// Position: pos.
@@ -211,6 +223,22 @@ public class Logger implements Closeable {
 		if (toolPresent != this.toolPresent) {
 			this.toolPresent = toolPresent;
 			log("present %d %s", idTool, toolPresent);
+		}
+	}
+
+	public void logTray(Tray tray) {
+		if (!trayLogged) {
+			// All this assumes that the tray never changes.
+			trayLogged = true;
+			log("item %d", idTray);
+			log("type %d tray", idTray);
+			Point2D pos = tray.getAnchor();
+			if (tray.isFixedToDisplay()) {
+				// Default is relative to world, so only give rel if to view.
+				log("rel %d %d", idTray, idView);
+				pos = point(pos.getX() - view.getMinX(), pos.getY() - view.getMinY());
+			}
+			log("pos %d %.3f %.3f", idTray, pos.getX(), pos.getY());
 		}
 	}
 

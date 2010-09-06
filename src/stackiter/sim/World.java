@@ -116,6 +116,8 @@ public class World {
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 		tray.setLogger(logger);
+		// Log the ground right away because I like a low number for it.
+		logger.logItem(ground);
 	}
 
 	/**
@@ -136,8 +138,6 @@ public class World {
 
 	public void update() {
 		logger.atomic(new Runnable() { @Override public void run() {
-
-			logger.logItem(ground);
 
 			if (toolMode != ToolMode.GRASP) {
 				// Check release before moving grasped block.

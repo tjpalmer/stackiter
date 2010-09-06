@@ -43,6 +43,8 @@ public class Tray {
 
 	private void fill() {
 		logger.atomic(new Runnable() { @Override public void run() {
+			// Log itself to make sure we're up to date.
+			logger.logTray(Tray.this);
 			// Start either flusherHeight above the bottom of the display, or at ground level.
 			double startY = fixedToDisplay ? flusherHeight + pad : 0;
 			Point2D position = point(0, startY);
@@ -98,7 +100,7 @@ public class Tray {
 	}
 
 	public Point2D getAnchor() {
-		return anchor;
+		return copy(anchor);
 	}
 
 	public double getWidth() {
