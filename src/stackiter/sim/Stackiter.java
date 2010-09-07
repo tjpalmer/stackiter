@@ -76,6 +76,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		world = new World();
 		world.setLogger(logger);
 		tray = world.getTray();
+		agent.setWorld(world);
 
 		double groundDepth = -2 * world.getGround().getExtent().getY();
 		viewBounds = new Rectangle2D.Double(-20, groundDepth, 40, 101);

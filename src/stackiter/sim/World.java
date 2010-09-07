@@ -160,8 +160,10 @@ public class World {
 		for (Item item: items) {
 			item.paint(graphics, worldRelDisplay);
 		}
-		// Tray.
+		// Tray. Includes preborn blocks.
 		tray.paint(graphics, worldRelDisplay);
+		// Tool.
+		tool.paint(graphics, worldRelDisplay);
 	}
 
 	public void setLogger(Logger logger) {

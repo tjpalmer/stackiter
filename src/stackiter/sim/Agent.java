@@ -10,6 +10,8 @@ public interface Agent {
 	 */
 	void act();
 
+	World getWorld();
+
 	/**
 	 * Called after world update. Should run fast!
 	 *
@@ -18,5 +20,7 @@ public interface Agent {
 	 * background processing between steps.
 	 */
 	void sense();
+
+	void setWorld(World world);
 
 }

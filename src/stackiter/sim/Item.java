@@ -24,7 +24,14 @@ public interface Item {
 
 	public Point2D getPosition();
 
+	/**
+	 * Whether the item interacts physically in the world with other items.
+	 */
+	public boolean isAlive();
+
 	public void paint(Graphics2D graphics, AffineTransform worldRelDisplay);
+
+	public void setAlive(boolean alive);
 
 	public void setAngle(double angle);
 

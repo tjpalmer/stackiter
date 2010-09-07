@@ -94,12 +94,24 @@ public class Util {
 		return new Point2D.Double(x, y);
 	}
 
+	public static Line2D segment(Point2D a, Point2D b) {
+		return new Line2D.Double(a, b);
+	}
+
+	public static Line2D segment(double x1, double y1, double x2, double y2) {
+		return new Line2D.Double(x1, y1, x2, y2);
+	}
+
 	public static Rectangle2D rectangle(Point2D center, Point2D extent) {
 		return new Rectangle2D.Double(center.getX() - extent.getX(), center.getY() - extent.getY(), 2 * extent.getX(), 2 * extent.getY());
 	}
 
 	public static Rectangle2D rectangle(double centerX, double centerY, double extentX, double extentY) {
 		return new Rectangle2D.Double(centerX - extentX, centerY - extentY, 2 * extentX, 2 * extentY);
+	}
+
+	public static Point2D scaled(double scale, Point2D point) {
+		return point(scale * point.getX(), scale * point.getY());
 	}
 
 	public static void translate(AffineTransform transform, Point2D point) {

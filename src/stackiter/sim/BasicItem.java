@@ -7,8 +7,12 @@ import java.awt.geom.*;
 
 /**
  * Simple data storage for items.
+ *
+ * TODO Consider making Block and others subclass this for convenience.
  */
 public class BasicItem implements Item {
+
+	private boolean alive;
 
 	private double angle;
 
@@ -50,6 +54,11 @@ public class BasicItem implements Item {
 		return position;
 	}
 
+	@Override
+	public boolean isAlive() {
+		return alive;
+	}
+
 	/**
 	 * Simple rectangle, but no rotation supported at present.
 	 */
@@ -65,6 +74,11 @@ public class BasicItem implements Item {
 		} finally {
 			graphics.dispose();
 		}
+	}
+
+	@Override
+	public void setAlive(boolean alive) {
+		this.alive = alive;
 	}
 
 	public void setAngle(double angle) {
