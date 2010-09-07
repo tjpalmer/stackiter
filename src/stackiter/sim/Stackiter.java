@@ -30,7 +30,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			}
 		});
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		frame.setResizable(false);
+		//frame.setResizable(false);
 		//frame.addNotify();
 		//frame.setExtendedState(Frame.MAXIMIZED_BOTH);
 		frame.setVisible(true);

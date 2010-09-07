@@ -98,11 +98,13 @@ public class World {
 
 	private void handlePress() {
 		// Check for clearing the screen.
+		// TODO Generify widget concept?
 		if (clearer.contains(tool.getPosition())) {
 			for (Block block: blocks) {
 				handleRemoval(block);
 			}
 			blocks.clear();
+			return;
 		}
 		// Try reserve blocks.
 		graspedBlock = tray.graspedBlock(tool.getPosition());

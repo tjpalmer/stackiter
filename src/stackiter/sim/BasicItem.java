@@ -58,7 +58,7 @@ public class BasicItem implements Item {
 		graphics = copy(graphics);
 		try {
 			graphics.setColor(color);
-			Rectangle2D rectangle = rectangle(position.getX(), position.getY(), extent.getX(), extent.getY());
+			Rectangle2D rectangle = rectangle(getPosition(), getExtent());
 			// TODO Support rotation.
 			rectangle = applied(worldRelDisplay, rectangle);
 			graphics.fill(rectangle);
