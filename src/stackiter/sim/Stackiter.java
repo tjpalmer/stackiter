@@ -12,6 +12,8 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
+import stackiter.agents.*;
+
 @SuppressWarnings("serial")
 public class Stackiter extends JComponent implements ActionListener, Closeable, MouseListener, MouseMotionListener {
 
@@ -28,11 +30,14 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			}
 		});
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		frame.addNotify();
-		frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+		frame.setResizable(false);
+		//frame.addNotify();
+		//frame.setExtendedState(Frame.MAXIMIZED_BOTH);
 		frame.setVisible(true);
 		stackiter.start();
 	}
+
+	private Agent agent = new DropperAgent();
 
 	private BufferedImage backdrop;
 
@@ -72,8 +77,9 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		world.setLogger(logger);
 		tray = world.getTray();
 
-		viewBounds = new Rectangle2D.Double(-20, -3, 40, 101);
-		viewRect = new Rectangle2D.Double(-20, -3, 40, 30);
+		double groundDepth = -2 * world.getGround().getExtent().getY();
+		viewBounds = new Rectangle2D.Double(-20, groundDepth, 40, 101);
+		viewRect = new Rectangle2D.Double(-20, groundDepth, 40, 30);
 		addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent event) {
@@ -122,7 +128,9 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 			// TODO Offload this to a separate thread? If so, still lock step to one update per frame?
 			// TODO Alternatively, change the delay based on how much time is left. Or is that auto?
+			agent.act();
 			world.update();
+			agent.sense();
 
 			if (!mouseOver) {
 				// Make we get the move (in world update) before the departure, if both.
@@ -254,12 +262,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			// Backdrop.
 			Point2D backdropPoint = applied(transform, point(viewBounds.getMinX(), viewBounds.getMinY()));
 			g.drawImage(backdrop, (int)backdropPoint.getX(), (int)backdropPoint.getY() - backdrop.getHeight(), null);
-			// Live items.
-			for (Item item: world.getItems()) {
-				item.paint(g, transform);
-			}
-			// Tray.
-			tray.paint(g, transform);
+			// World contents
+			world.paint(g, transform);
 		} finally {
 			g.dispose();
 		}

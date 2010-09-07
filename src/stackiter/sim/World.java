@@ -14,6 +14,8 @@ public class World {
 
 	private List<Block> blocks;
 
+	private Clearer clearer;
+
 	private Block ground;
 
 	private Block graspedBlock;
@@ -22,11 +24,9 @@ public class World {
 
 	private Logger logger;
 
-	private ToolMode toolMode = ToolMode.INACTIVE;
-
 	private ToolMode toolModePrev = ToolMode.INACTIVE;
 
-	private Point2D toolPoint = new Point2D.Double();
+	private Tool tool = new Tool();
 
 	private Tray tray = new Tray();
 
@@ -36,9 +36,18 @@ public class World {
 		blocks = new ArrayList<Block>();
 		world = new org.jbox2d.dynamics.World(new AABB(new Vec2(-100,-100), new Vec2(100,150)), new Vec2(0, -10), true);
 		addGround();
+		// Add the clearer after the ground so it paints later and so on.
+		addClearer();
 		//Stock stock = new Stock();
 		//stock.addTo(this);
 		//items.add(stock);
+	}
+
+	private void addClearer() {
+		clearer = new Clearer();
+		double offset = -ground.getExtent().getY();
+		clearer.setPosition(point(ground.getExtent().getX() + offset, offset));
+		items.add(clearer);
 	}
 
 	private void addGround() {
@@ -46,8 +55,8 @@ public class World {
 		ground.setColor(Color.getHSBColor(0, 0, 0.5f));
 		ground.setDensity(0);
 		// TODO What's the right way to coordinate display size vs. platform size?
-		ground.setExtent(40/2, 5); // 40 == viewRect.getWidth()
-		ground.setPosition(0, -5);
+		ground.setExtent(40/2, 1.5); // 40 == viewRect.getWidth()
+		ground.setPosition(0, -1.5);
 		ground.addTo(this);
 		items.add(ground);
 	}
@@ -69,8 +78,17 @@ public class World {
 		return ground;
 	}
 
+	/**
+	 * Gets a list of the world items in the world coordination frame.
+	 */
 	public Iterable<Item> getItems() {
-		// TODO Wrap for immutability?
+		// TODO Improve this to avoid copying and nonsense?
+		List<Item> items = new ArrayList<Item>();
+		for (Block block: tray.getItems()) {
+			Block copied = block.clone();
+			copied.setPosition(added(copied.getPosition(), tray.getAnchor()));
+		}
+		items.addAll(this.items);
 		return items;
 	}
 
@@ -79,8 +97,15 @@ public class World {
 	}
 
 	private void handlePress() {
+		// Check for clearing the screen.
+		if (clearer.contains(tool.getPosition())) {
+			for (Block block: blocks) {
+				handleRemoval(block);
+			}
+			blocks.clear();
+		}
 		// Try reserve blocks.
-		graspedBlock = tray.graspedBlock(toolPoint);
+		graspedBlock = tray.graspedBlock(tool.getPosition());
 		if (graspedBlock != null) {
 			blocks.add(graspedBlock);
 			graspedBlock.addTo(this);
@@ -88,7 +113,7 @@ public class World {
 		}
 		if (!tray.isActionConsumed()) {
 			for (Block block: blocks) {
-				if (block.contains(toolPoint)) {
+				if (block.contains(tool.getPosition())) {
 					graspedBlock = block;
 					// Don't break from loop. Make the last drawn have priority for clicking.
 					// That's more intuitive when blocks overlap.
@@ -98,8 +123,8 @@ public class World {
 		}
 		if (graspedBlock != null) {
 			// No blocks from tray. Try live blocks.
-			graspedBlock.grasp(toolPoint);
-			Point2D pointRelBlock = appliedInv(graspedBlock.getTransform(), toolPoint);
+			graspedBlock.grasp(tool.getPosition());
+			Point2D pointRelBlock = appliedInv(graspedBlock.getTransform(), tool.getPosition());
 			logger.logGrasp(graspedBlock, pointRelBlock);
 		}
 	}
@@ -113,6 +138,30 @@ public class World {
 		}
 	}
 
+	/**
+	 * Doesn't actually remove from the block list but from the sim and also
+	 * logs.
+	 *
+	 * It _does_ remove it from items.
+	 *
+	 * The issue here is that we often call this method while iterating blocks,
+	 * so that makes it hard to do that removal here.
+	 */
+	private void handleRemoval(Block block) {
+		block.removeFromWorld();
+		logger.logRemoval(block);
+		items.remove(block);
+	}
+
+	public void paint(Graphics2D graphics, AffineTransform worldRelDisplay) {
+		// Live items.
+		for (Item item: items) {
+			item.paint(graphics, worldRelDisplay);
+		}
+		// Tray.
+		tray.paint(graphics, worldRelDisplay);
+	}
+
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 		tray.setLogger(logger);
@@ -124,7 +173,7 @@ public class World {
 	 * A component of the agent's action choice.
 	 */
 	public void setToolMode(ToolMode toolMode) {
-		this.toolMode = toolMode;
+		tool.setMode(toolMode);
 	}
 
 	/**
@@ -133,31 +182,31 @@ public class World {
 	 * @param toolPoint in the world frame.
 	 */
 	public void setToolPoint(Point2D toolPoint) {
-		this.toolPoint.setLocation(toolPoint);
+		tool.setPosition(toolPoint);
 	}
 
 	public void update() {
 		logger.atomic(new Runnable() { @Override public void run() {
 
-			logger.logPressed(toolMode == ToolMode.GRASP);
-			if (toolMode != ToolMode.GRASP) {
+			logger.logPressed(tool.getMode() == ToolMode.GRASP);
+			if (tool.getMode() != ToolMode.GRASP) {
 				// Check release before moving grasped block.
 				handleRelease();
 			}
 			if (graspedBlock != null) {
 				// Move the grasped block, if any.
-				graspedBlock.moveTo(toolPoint);
+				graspedBlock.moveTo(tool.getPosition());
 			}
-			if (toolMode == ToolMode.GRASP && toolModePrev != ToolMode.GRASP) {
+			if (tool.getMode() == ToolMode.GRASP && toolModePrev != ToolMode.GRASP) {
 				// But new check grasps after attempting to move any grasped block.
 				handlePress();
 			}
-			toolModePrev = toolMode;
+			toolModePrev = tool.getMode();
 
 			// Step the simulation.
 			world.step(0.02f, 10);
 
-			logger.logMove(toolPoint);
+			logger.logMove(tool.getPosition());
 
 			// Delete lost blocks.
 			for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
@@ -167,8 +216,7 @@ public class World {
 				if (blockBounds.getMaxY() < -5) {
 					// It fell off the table. Out of sight, out of mind.
 					b.remove();
-					block.removeFromWorld();
-					logger.logRemoval(block);
+					handleRemoval(block);
 				}
 			}
 

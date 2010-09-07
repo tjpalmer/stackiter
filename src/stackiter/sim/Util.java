@@ -5,6 +5,10 @@ import java.awt.geom.*;
 
 public class Util {
 
+	public static Point2D added(Point2D a, Point2D b) {
+		return point(a.getX() + b.getX(), a.getY() + b.getY());
+	}
+
 	/**
 	 * Assumes no rotation.
 	 */
@@ -88,6 +92,10 @@ public class Util {
 
 	public static Point2D point(double x, double y) {
 		return new Point2D.Double(x, y);
+	}
+
+	public static Rectangle2D rectangle(Point2D center, Point2D extent) {
+		return new Rectangle2D.Double(center.getX() - extent.getX(), center.getY() - extent.getY(), 2 * extent.getX(), 2 * extent.getY());
 	}
 
 	public static Rectangle2D rectangle(double centerX, double centerY, double extentX, double extentY) {

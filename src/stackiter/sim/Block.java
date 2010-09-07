@@ -14,7 +14,7 @@ import org.jbox2d.common.*;
 import org.jbox2d.dynamics.*;
 import org.jbox2d.dynamics.joints.*;
 
-public class Block implements Item {
+public class Block implements Cloneable, Item {
 
 	private boolean alive;
 
@@ -84,9 +84,21 @@ public class Block implements Item {
 		return shape.contains(point);
 	}
 
+	@Override
+	public Block clone() {
+		Block copied = new Block();
+		copied.alive = alive;
+		copied.color = color;
+		copied.setAngle(getAngle());
+		copied.setPosition(getPosition());
+		copied.setExtent(getExtent());
+		return copied;
+	}
+
 	/**
 	 * @return angle in rats (radians / pi).
 	 */
+	@Override
 	public double getAngle() {
 		if (body == null) {
 			return bodyDef.angle / Math.PI;
@@ -97,7 +109,7 @@ public class Block implements Item {
 		}
 	}
 
-	private Rectangle2D getBounds() {
+	public Rectangle2D getBounds() {
 		Point2D extent = getExtent();
 		Rectangle2D rectangle = new Rectangle2D.Double(-extent.getX(), -extent.getY(), 2 * extent.getX(), 2 * extent.getY());
 		return rectangle;
@@ -107,6 +119,7 @@ public class Block implements Item {
 		return color;
 	}
 
+	@Override
 	public Point2D getExtent() {
 		// TODO Just store our own shape info instead of this dual mess.
 		double width;
@@ -135,6 +148,7 @@ public class Block implements Item {
 		return point(width / 2, height / 2);
 	}
 
+	@Override
 	public Point2D getPosition() {
 		Vec2 position;
 		if (body == null) {
@@ -326,8 +340,16 @@ public class Block implements Item {
 		shapeDef.setAsBox((float)extentX, (float)extentY);
 	}
 
+	public void setExtent(Point2D extent) {
+		setExtent(extent.getX(), extent.getY());
+	}
+
 	public void setPosition(double x, double y) {
 		bodyDef.position = new Vec2((float)x, (float)y);
+	}
+
+	public void setPosition(Point2D position) {
+		setPosition(position.getX(), position.getY());
 	}
 
 	public void setRotation(double rotation) {

@@ -4,13 +4,11 @@ import static stackiter.sim.Util.*;
 
 import java.awt.*;
 import java.awt.geom.*;
-//import java.util.*;
-//import java.util.List;
 
 /**
  * Provides an in-world supply of new items.
  */
-public class Stock implements Item {
+public class Stock extends BasicItem {
 
 	private Block base = new Block();
 
@@ -44,14 +42,6 @@ public class Stock implements Item {
 		//		base.affix(roof);
 	}
 
-	private void updateCasing() {
-		AffineTransform transform = base.getTransform();
-		Point2D position = point(casingOffset.getX(), casingOffset.getY() + base.getExtent().getY());
-		position = applied(transform, position);
-		casing.setAngle(base.getAngle());
-		casing.setPosition(position.getX(), position.getY());
-	}
-
 	void addTo(World world) {
 		base.addTo(world);
 		//		roof.addTo(world);
@@ -64,6 +54,14 @@ public class Stock implements Item {
 		base.paint(graphics, worldRelDisplay);
 		casing.paint(graphics, worldRelDisplay);
 		// TODO Paint button.
+	}
+
+	private void updateCasing() {
+		AffineTransform transform = base.getTransform();
+		Point2D position = point(casingOffset.getX(), casingOffset.getY() + base.getExtent().getY());
+		position = applied(transform, position);
+		casing.setAngle(base.getAngle());
+		casing.setPosition(position.getX(), position.getY());
 	}
 
 }

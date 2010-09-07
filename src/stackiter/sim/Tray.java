@@ -103,6 +103,10 @@ public class Tray {
 		return copy(anchor);
 	}
 
+	public Iterable<Block> getItems() {
+		return blocks;
+	}
+
 	public double getWidth() {
 		return 2 * (maxBlockExtent + pad);
 	}
