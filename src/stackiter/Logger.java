@@ -41,7 +41,9 @@ public class Logger implements Closeable {
 			dir.mkdirs();
 			SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd-HHmmss-SSS");
 			String logName = String.format("stackiter-%s.log", format.format(new Date(startTime)));
-			FileOutputStream out = new FileOutputStream(new File(dir, logName));
+			File logFile = new File(dir, logName);
+			System.out.println(logFile);
+			FileOutputStream out = new FileOutputStream(logFile);
 			writer = new Formatter(new BufferedWriter(new OutputStreamWriter(out, "UTF-8"), 1<<16));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
