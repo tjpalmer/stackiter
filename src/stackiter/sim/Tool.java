@@ -10,6 +10,8 @@ import java.awt.geom.*;
  */
 public class Tool extends BasicItem {
 
+	private Color hotColor = Color.getHSBColor(1/12f, 1, 1);
+
 	public Tool() {
 		setExtent(point(1, 1));
 	}
@@ -27,12 +29,15 @@ public class Tool extends BasicItem {
 			// Find the bounds for the cross-hairs.
 			Rectangle2D outer = applied(worldRelDisplay, rectangle(getPosition(), getExtent()));
 			Rectangle2D inner = applied(worldRelDisplay, rectangle(getPosition(), scaled(0.2, getExtent())));
+			// Base color on mode.
+			// TODO Provide a parameter on active color?
+			Color color = mode == ToolMode.INACTIVE ? getColor() : hotColor;
 			// Draw them darker.
-			graphics.setColor(getColor().darker());
+			graphics.setColor(color.darker());
 			graphics.setStroke(new BasicStroke(3));
 			drawCrosshairs(graphics, outer, inner);
 			// Draw them brighter.
-			graphics.setColor(getColor());
+			graphics.setColor(color);
 			graphics.setStroke(new BasicStroke(1));
 			drawCrosshairs(graphics, outer, inner);
 		} finally {
