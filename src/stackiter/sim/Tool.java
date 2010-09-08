@@ -12,11 +12,11 @@ public class Tool extends BasicItem {
 
 	private Color hotColor = Color.getHSBColor(1/12f, 1, 1);
 
+	private ToolMode mode = ToolMode.INACTIVE;
+
 	public Tool() {
 		setExtent(point(1, 1));
 	}
-
-	private ToolMode mode;
 
 	public ToolMode getMode() {
 		return mode;

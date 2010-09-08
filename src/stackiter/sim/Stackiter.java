@@ -97,7 +97,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		// Clear the cursor for the display here.
 		// We use a custom "cursor" that doesn't always follow the actual mouse cursor.
 		BufferedImage blankImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-		Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(blankImage, new Point(1, 1), "blank");
+		Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(blankImage, new Point(0, 0), "blank");
 		setCursor(blankCursor);
 
 	}
