@@ -37,8 +37,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		stackiter.start();
 	}
 
-	private Agent agent = new DropperAgent();
-
 	private BufferedImage backdrop;
 
 	private double backdropScale;
@@ -81,7 +79,9 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		mouseTool = world.addTool();
 		// Log the tool to get it a lower ID.
 		logger.logTool(mouseTool);
-		agent.setWorld(world);
+
+		world.addAgent(new ClearerAgent());
+		world.addAgent(new DropperAgent());
 
 		double groundDepth = -2 * world.getGround().getExtent().getY();
 		viewBounds = new Rectangle2D.Double(-20, groundDepth, 40, 101);
@@ -140,9 +140,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 			// TODO Offload this to a separate thread? If so, still lock step to one update per frame?
 			// TODO Alternatively, change the delay based on how much time is left. Or is that auto?
-			agent.act();
 			world.update();
-			agent.sense();
 
 			if (!mouseOver) {
 				// Make we get the move (in world update) before the departure, if both.

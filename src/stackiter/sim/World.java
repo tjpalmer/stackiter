@@ -23,6 +23,8 @@ public class World {
 
 	}
 
+	private List<Agent> agents = new ArrayList<Agent>();
+
 	private List<Block> blocks;
 
 	private Clearer clearer;
@@ -48,6 +50,11 @@ public class World {
 		//Stock stock = new Stock();
 		//stock.addTo(this);
 		//items.add(stock);
+	}
+
+	public void addAgent(Agent agent) {
+		agents.add(agent);
+		agent.setWorld(this);
 	}
 
 	private void addClearer() {
@@ -212,6 +219,12 @@ public class World {
 	public void update() {
 		logger.atomic(new Runnable() { @Override public void run() {
 
+			// Let agents choose actions.
+			for (Agent agent: agents) {
+				agent.act();
+			}
+
+			// Find out what actions they are.
 			for (Tool tool: tools.keySet()) {
 				logger.logTool(tool);
 				ToolInfo toolInfo = tools.get(tool);
@@ -249,6 +262,11 @@ public class World {
 			logger.logItem(ground);
 			for (Block block: blocks) {
 				logger.logItem(block);
+			}
+
+			// Tell the agents what's up now, in case they care before next update.
+			for (Agent agent: agents) {
+				agent.sense();
 			}
 
 		}});
