@@ -51,6 +51,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	private boolean mouseOver;
 
+	private Tool mouseTool;
+
 	private Point2D mousePoint;
 
 	private Timer timer;
@@ -76,6 +78,9 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		world = new World();
 		world.setLogger(logger);
 		tray = world.getTray();
+		mouseTool = world.addTool();
+		// Log the tool to get it a lower ID.
+		logger.logTool(mouseTool);
 		agent.setWorld(world);
 
 		double groundDepth = -2 * world.getGround().getExtent().getY();
@@ -116,15 +121,15 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 				// TODO Include flush and clear as other mutually exclusive action choices.
 				// TODO The user can't grasp and flush at the same time, so I'd like not to provide that to computer agents, either.
 				// TODO Of course, we're still not imposing view constraints on the agent yet.
-				world.setToolMode(mouseDown ? ToolMode.GRASP : ToolMode.INACTIVE);
-				world.setToolPoint(toolPoint);
+				mouseTool.setMode(mouseDown ? ToolMode.GRASP : ToolMode.INACTIVE);
+				mouseTool.setPosition(toolPoint);
 
 				// Handle view updates.
 				if (mouseOver) {
 					// Without mouseOver check, I got upward scrolling when over title bar.
 					handleScroll(toolPoint);
 					// Make sure we get the entrance before the move, if both.
-					logger.logToolPresent(mouseOver);
+					logger.logToolPresent(mouseTool, mouseOver);
 				}
 			}
 
@@ -141,7 +146,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 			if (!mouseOver) {
 				// Make we get the move (in world update) before the departure, if both.
-				logger.logToolPresent(mouseOver);
+				logger.logToolPresent(mouseTool, mouseOver);
 			}
 
 		}});

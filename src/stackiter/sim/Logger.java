@@ -12,22 +12,35 @@ import java.util.*;
  */
 public class Logger implements Closeable {
 
+	/**
+	 * We mostly log 3 decimal places, so if we're equal within 4, don't worry
+	 * about changes.
+	 */
+	private static final double EPSILON = 1e-4;
+
 	private static class ItemInfo {
 		// Id not actually held in the item.
 		public int id;
 		// Duped info to compare for changes.
-		public Block item;
+		public Item item;
+	}
+
+	private static class ToolInfo {
+		// Id not actually held in the item.
+		public int id;
+		// Only meaningful for mouse tools, so far, but here it is.
+		public boolean present;
+		// Duped info to compare for changes.
+		public Tool tool;
 	}
 
 	Point2D displaySize = new Point2D.Double();
 
 	boolean firstPerTx;
 
-	private int idNext = 5;
+	private int idNext = 4;
 
-	private int idTool = 3;
-
-	private int idTray = 4;
+	private int idTray = 3;
 
 	private int idView = 2;
 
@@ -35,15 +48,11 @@ public class Logger implements Closeable {
 
 	private Map<Block, ItemInfo> items = new HashMap<Block, ItemInfo>();
 
-	private boolean pressed;
-
-	Point2D toolPoint = new Point2D.Double();
-
 	private long startTime;
 
 	private long time;
 
-	private boolean toolPresent;
+	private Map<Tool, ToolInfo> tools = new HashMap<Tool, ToolInfo>();
 
 	private boolean trayLogged;
 
@@ -110,11 +119,11 @@ public class Logger implements Closeable {
 			// New item. Log its static information.
 			info = new ItemInfo();
 			info.id = idNext++;
-			info.item = new Block();
+			info.item = new BasicItem();
 			items.put(item, info);
 			Point2D extent = item.getExtent();
 			log("item %d", info.id);
-			log("type %d box", info.id, extent.getX(), extent.getY());
+			log("type %d box", info.id);
 			log("extent %d %.3f %.3f", info.id, extent.getX(), extent.getY());
 			float[] color = item.getColor().getRGBComponents(null);
 			log("color %d %.3f %.3f %.3f %.3f", info.id, color[0], color[1], color[2], color[3]);
@@ -122,6 +131,22 @@ public class Logger implements Closeable {
 				// Presume all prebirth items are in the tray frame.
 				log("rel %d %d", info.id, idTray);
 			}
+		}
+		return info;
+	}
+
+	private ToolInfo getInfo(Tool tool) {
+		ToolInfo info = tools.get(tool);
+		if (info == null) {
+			// New item. Log its static information.
+			info = new ToolInfo();
+			info.id = idNext++;
+			info.tool = new Tool();
+			tools.put(tool, info);
+			log("item %d", info.id);
+			log("type %d tool", info.id);
+			float[] color = tool.getColor().getRGBComponents(null);
+			log("color %d %.3f %.3f %.3f %.3f", info.id, color[0], color[1], color[2], color[3]);
 		}
 		return info;
 	}
@@ -135,7 +160,7 @@ public class Logger implements Closeable {
 	 * @param size pixel width and height as integer values, despite use of Point2D.
 	 */
 	public void logDisplaySize(Point2D size) {
-		if (!displaySize.equals(size)) {
+		if (!approx(displaySize, size, EPSILON)) {
 			displaySize.setLocation(size);
 			// Extent is no good since no guarantee of even/odd.
 			// Therefore size.
@@ -143,10 +168,11 @@ public class Logger implements Closeable {
 		}
 	}
 
-	public void logGrasp(final Block item, final Point2D pointRelItem) {
+	public void logGrasp(final Tool tool, final Block item, final Point2D pointRelItem) {
 		atomic(new Runnable() { @Override public void run() {
+			ToolInfo toolInfo = getInfo(tool);
 			ItemInfo info = getInfo(item);
-			log("grasp %d %d %.3f %.3f", idTool, info.id, pointRelItem.getX(), pointRelItem.getY());
+			log("grasp %d %d %.3f %.3f", toolInfo.id, info.id, pointRelItem.getX(), pointRelItem.getY());
 		}});
 	}
 
@@ -165,30 +191,24 @@ public class Logger implements Closeable {
 			}
 			// Position: pos.
 			Point2D position = item.getPosition();
-			if (!position.equals(info.item.getPosition())) {
-				info.item.setPosition(position.getX(), position.getY());
+			if (!approx(position, info.item.getPosition(), EPSILON)) {
+				info.item.setPosition(position);
 				log("pos %d %.3f %.3f", info.id, position.getX(), position.getY());
 			}
 			// Angle: rot.
 			double angle = item.getAngle();
-			if (Math.abs(angle - info.item.getAngle()) > 0.001) {
+			if (!approx(angle, info.item.getAngle(), EPSILON)) {
 				info.item.setAngle(angle);
 				log("rot %d %.3f", info.id, angle);
 			}
 		}});
 	}
 
-	public void logMove(Point2D point) {
-		if (!point.equals(toolPoint)) {
-			log("pos %d %.3f %.3f", idTool, point.getX(), point.getY());
-			toolPoint.setLocation(point);
-		}
-	}
-
-	public void logRelease(final Block item) {
+	public void logRelease(final Tool tool, final Block item) {
 		atomic(new Runnable() { @Override public void run() {
+			ToolInfo toolInfo = getInfo(tool);
 			ItemInfo info = getInfo(item);
-			log("release %d %d", idTool, info.id);
+			log("release %d %d", toolInfo.id, info.id);
 		}});
 	}
 
@@ -204,9 +224,6 @@ public class Logger implements Closeable {
 			// Hardcoded info about the view.
 			log("item %d", idView);
 			log("type %d view", idView);
-			// Hardcoded info about the mouse pointer.
-			log("item %d", idTool);
-			log("type %d tool", idTool);
 		}});
 	}
 
@@ -221,12 +238,34 @@ public class Logger implements Closeable {
 		}
 	}
 
-	public void logToolPresent(boolean toolPresent) {
-		// TODO Develop general "state" class(es) for duplication purposes such as here in logger.
-		// TODO The current mechanism is ad hoc.
-		if (toolPresent != this.toolPresent) {
-			this.toolPresent = toolPresent;
-			log("present %d %s", idTool, toolPresent);
+	public void logTool(final Tool tool) {
+		atomic(new Runnable() { @Override public void run() {
+			ToolInfo info = getInfo(tool);
+			// Position: pos.
+			Point2D position = tool.getPosition();
+			if (!approx(position, info.tool.getPosition(), EPSILON)) {
+				info.tool.setPosition(position);
+				log("pos %d %.3f %.3f", info.id, position.getX(), position.getY());
+			}
+			// Mode: pressed.
+			if (tool.getMode() != info.tool.getMode()) {
+				// TODO Could log the actual mode, but I'm not convinced I'm ever going to care past binary.
+				info.tool.setMode(tool.getMode());
+				log("pressed %d %s", info.id, tool.getMode() != ToolMode.INACTIVE);
+			}
+		}});
+	}
+
+	/**
+	 * Really, this is about mouse tools. From a UI perspective, it might be
+	 * nice to know when the mouse comes or goes from the window, even if that
+	 * doesn't directly affect world state.
+	 */
+	public void logToolPresent(Tool tool, boolean toolPresent) {
+		ToolInfo info = getInfo(tool);
+		if (toolPresent != info.present) {
+			info.present = toolPresent;
+			log("present %d %s", info.id, toolPresent);
 		}
 	}
 
@@ -247,6 +286,7 @@ public class Logger implements Closeable {
 	}
 
 	public void logView(final Rectangle2D view) {
+		// TODO Approximate equality?
 		if (!view.equals(this.view)) {
 			atomic(new Runnable() { @Override public void run() {
 				Point2D extent = extent(view);
@@ -259,13 +299,6 @@ public class Logger implements Closeable {
 				}
 				Logger.this.view.setRect(view);
 			}});
-		}
-	}
-
-	public void logPressed(boolean pressed) {
-		if (pressed != this.pressed) {
-			log("pressed %d %s", idTool, pressed);
-			this.pressed = pressed;
 		}
 	}
 

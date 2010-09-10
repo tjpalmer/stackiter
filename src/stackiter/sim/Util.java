@@ -43,6 +43,14 @@ public class Util {
 		}
 	}
 
+	public static boolean approx(double a, double b, double epsilon) {
+		return Math.abs(a - b) < epsilon;
+	}
+
+	public static boolean approx(Point2D a, Point2D b, double epsilon) {
+		return a.distanceSq(b) < epsilon*epsilon;
+	}
+
 	public static AffineTransform copy(AffineTransform transform) {
 		return (AffineTransform)transform.clone();
 	}

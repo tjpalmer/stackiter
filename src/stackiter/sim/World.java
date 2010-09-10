@@ -24,9 +24,9 @@ public class World {
 
 	private Logger logger;
 
-	private ToolMode toolModePrev = ToolMode.INACTIVE;
+	private Map<Tool, ToolMode> toolModePrevs = new HashMap<Tool, ToolMode>();
 
-	private Tool tool = new Tool();
+	private List<Tool> tools = new ArrayList<Tool>();
 
 	private Tray tray = new Tray();
 
@@ -59,6 +59,19 @@ public class World {
 		ground.setPosition(0, -1.5);
 		ground.addTo(this);
 		items.add(ground);
+	}
+
+	/**
+	 * Agents affect world state by means of tools. That is, actions are
+	 * expressed here. Generally, each agent should have a tool.
+	 */
+	public Tool addTool() {
+		Tool tool = new Tool();
+		tools.add(tool);
+		toolModePrevs.put(tool, ToolMode.INACTIVE);
+		// TODO Means for tracking old tool position, too?
+		// TODO We might want to limit how far the tool really can move in a time step.
+		return tool;
 	}
 
 	public Iterable<Block> getBlocks() {
@@ -96,7 +109,7 @@ public class World {
 		return tray;
 	}
 
-	private void handlePress() {
+	private void handlePress(Tool tool) {
 		// Check for clearing the screen.
 		// TODO Generify widget concept?
 		if (clearer.contains(tool.getPosition())) {
@@ -127,14 +140,14 @@ public class World {
 			// No blocks from tray. Try live blocks.
 			graspedBlock.grasp(tool.getPosition());
 			Point2D pointRelBlock = appliedInv(graspedBlock.getTransform(), tool.getPosition());
-			logger.logGrasp(graspedBlock, pointRelBlock);
+			logger.logGrasp(tool, graspedBlock, pointRelBlock);
 		}
 	}
 
-	private void handleRelease() {
+	private void handleRelease(Tool tool) {
 		// TODO Log mouse releases independently from grasps. The grasps are cheating.
 		if (graspedBlock != null) {
-			logger.logRelease(graspedBlock);
+			logger.logRelease(tool, graspedBlock);
 			graspedBlock.release();
 			graspedBlock = null;
 		}
@@ -162,8 +175,10 @@ public class World {
 		}
 		// Tray. Includes preborn blocks.
 		tray.paint(graphics, worldRelDisplay);
-		// Tool.
-		tool.paint(graphics, worldRelDisplay);
+		// Tools. Paint these after items on purpose.
+		for (Tool tool: tools) {
+			tool.paint(graphics, worldRelDisplay);
+		}
 	}
 
 	public void setLogger(Logger logger) {
@@ -173,44 +188,29 @@ public class World {
 		logger.logItem(ground);
 	}
 
-	/**
-	 * A component of the agent's action choice.
-	 */
-	public void setToolMode(ToolMode toolMode) {
-		tool.setMode(toolMode);
-	}
-
-	/**
-	 * A component of the agent's action choice.
-	 *
-	 * @param toolPoint in the world frame.
-	 */
-	public void setToolPoint(Point2D toolPoint) {
-		tool.setPosition(toolPoint);
-	}
-
 	public void update() {
 		logger.atomic(new Runnable() { @Override public void run() {
 
-			logger.logPressed(tool.getMode() == ToolMode.GRASP);
-			if (tool.getMode() != ToolMode.GRASP) {
-				// Check release before moving grasped block.
-				handleRelease();
+			for (Tool tool: tools) {
+				logger.logTool(tool);
+				if (tool.getMode() != ToolMode.GRASP) {
+					// Check release before moving grasped block.
+					handleRelease(tool);
+				}
+				if (graspedBlock != null) {
+					// Move the grasped block, if any.
+					graspedBlock.moveTo(tool.getPosition());
+				}
+				ToolMode toolModePrev = toolModePrevs.get(tool);
+				if (tool.getMode() == ToolMode.GRASP && toolModePrev != ToolMode.GRASP) {
+					// But new check grasps after attempting to move any grasped block.
+					handlePress(tool);
+				}
+				toolModePrevs.put(tool, tool.getMode());
 			}
-			if (graspedBlock != null) {
-				// Move the grasped block, if any.
-				graspedBlock.moveTo(tool.getPosition());
-			}
-			if (tool.getMode() == ToolMode.GRASP && toolModePrev != ToolMode.GRASP) {
-				// But new check grasps after attempting to move any grasped block.
-				handlePress();
-			}
-			toolModePrev = tool.getMode();
 
 			// Step the simulation.
 			world.step(0.02f, 10);
-
-			logger.logMove(tool.getPosition());
 
 			// Delete lost blocks.
 			for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
