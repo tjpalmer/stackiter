@@ -10,8 +10,6 @@ import java.awt.geom.*;
  */
 public class Tool extends BasicItem {
 
-	private Color hotColor = Color.getHSBColor(1/12f, 1, 1);
-
 	private ToolMode mode = ToolMode.INACTIVE;
 
 	public Tool() {
@@ -31,7 +29,7 @@ public class Tool extends BasicItem {
 			Rectangle2D inner = applied(worldRelDisplay, rectangle(getPosition(), scaled(0.2, getExtent())));
 			// Base color on mode.
 			// TODO Provide a parameter on active color?
-			Color color = mode == ToolMode.INACTIVE ? getColor() : hotColor;
+			Color color = mode == ToolMode.INACTIVE ? getColor() : getColor().darker();
 			// Draw them darker.
 			graphics.setColor(color.darker());
 			graphics.setStroke(new BasicStroke(3));

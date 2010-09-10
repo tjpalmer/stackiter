@@ -98,6 +98,10 @@ public class Util {
 		return transform;
 	}
 
+	public static Point2D point() {
+		return new Point2D.Double();
+	}
+
 	public static Point2D point(double x, double y) {
 		return new Point2D.Double(x, y);
 	}

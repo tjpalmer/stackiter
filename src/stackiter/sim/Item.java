@@ -25,6 +25,19 @@ public interface Item {
 	public Point2D getPosition();
 
 	/**
+	 * A way of tracking object identity across copies (and time). When exposing
+	 * world state, you aren't guaranteed to get original objects, but the soul
+	 * should be the same.
+	 *
+	 * Depending on your context, though, it might be unfair to use this. Humans
+	 * have to figure this out the hard way, and some agents might ought to as
+	 * well.
+	 *
+	 * This is also easier to manage than ID generation.
+	 */
+	public Object getSoul();
+
+	/**
 	 * Whether the item interacts physically in the world with other items.
 	 */
 	public boolean isAlive();

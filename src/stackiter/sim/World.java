@@ -104,6 +104,7 @@ public class World {
 		for (Block block: tray.getItems()) {
 			Block copied = block.clone();
 			copied.setPosition(added(copied.getPosition(), tray.getAnchor()));
+			items.add(copied);
 		}
 		items.addAll(this.items);
 		return items;
@@ -175,6 +176,14 @@ public class World {
 	 * so that makes it hard to do that removal here.
 	 */
 	private void handleRemoval(Block block) {
+		// Release grasps.
+		// TODO This isn't super efficient, since handleRelease does a relookup. Consider reorg.
+		for (Map.Entry<Tool, ToolInfo> entry: tools.entrySet()) {
+			if (entry.getValue().graspedBlock == block) {
+				handleRelease(entry.getKey());
+			}
+		}
+		// Remove the block.
 		block.removeFromWorld();
 		logger.logRemoval(block);
 		items.remove(block);

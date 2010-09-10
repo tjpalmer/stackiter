@@ -32,6 +32,8 @@ public class Block implements Cloneable, Item {
 
 	private PolygonDef shapeDef;
 
+	private Object soul = new Object();
+
 	public Block() {
 		// Placeholders.
 		bodyDef = new BodyDef();
@@ -89,6 +91,7 @@ public class Block implements Cloneable, Item {
 		Block copied = new Block();
 		copied.alive = alive;
 		copied.color = color;
+		copied.soul = soul;
 		copied.setAngle(getAngle());
 		copied.setPosition(getPosition());
 		copied.setExtent(getExtent());
@@ -157,6 +160,11 @@ public class Block implements Cloneable, Item {
 			position = body.getXForm().position;
 		}
 		return point(position.x, position.y);
+	}
+
+	@Override
+	public Object getSoul() {
+		return soul;
 	}
 
 	public AffineTransform getTransform() {

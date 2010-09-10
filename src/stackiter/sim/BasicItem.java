@@ -20,6 +20,8 @@ public class BasicItem implements Item {
 
 	private Point2D extent = new Point2D.Double();
 
+	private Object soul = new Object();
+
 	private Point2D position = new Point2D.Double();
 
 	public boolean contains(Point2D point) {
@@ -52,6 +54,11 @@ public class BasicItem implements Item {
 	@Override
 	public Point2D getPosition() {
 		return position;
+	}
+
+	@Override
+	public Object getSoul() {
+		return soul;
 	}
 
 	@Override
