@@ -12,21 +12,28 @@ import org.jbox2d.common.*;
 
 public class World {
 
+	/**
+	 * For tracking internal (and previous) states of tools.
+	 */
+	private class ToolInfo {
+
+		Block graspedBlock;
+
+		Tool old = new Tool();
+
+	}
+
 	private List<Block> blocks;
 
 	private Clearer clearer;
 
 	private Block ground;
 
-	private Block graspedBlock;
-
 	private List<Item> items = new ArrayList<Item>();
 
 	private Logger logger;
 
-	private Map<Tool, ToolMode> toolModePrevs = new HashMap<Tool, ToolMode>();
-
-	private List<Tool> tools = new ArrayList<Tool>();
+	private Map<Tool, ToolInfo> tools = new HashMap<Tool, ToolInfo>();
 
 	private Tray tray = new Tray();
 
@@ -67,10 +74,7 @@ public class World {
 	 */
 	public Tool addTool() {
 		Tool tool = new Tool();
-		tools.add(tool);
-		toolModePrevs.put(tool, ToolMode.INACTIVE);
-		// TODO Means for tracking old tool position, too?
-		// TODO We might want to limit how far the tool really can move in a time step.
+		tools.put(tool, new ToolInfo());
 		return tool;
 	}
 
@@ -83,8 +87,8 @@ public class World {
 		return world;
 	}
 
-	public Item getGraspedItem() {
-		return graspedBlock;
+	public Item getGraspedItem(Tool tool) {
+		return tools.get(tool).graspedBlock;
 	}
 
 	public Block getGround() {
@@ -120,7 +124,8 @@ public class World {
 			return;
 		}
 		// Try reserve blocks.
-		graspedBlock = tray.graspedBlock(tool.getPosition());
+		ToolInfo toolInfo = tools.get(tool);
+		Block graspedBlock = tray.graspedBlock(tool.getPosition());
 		if (graspedBlock != null) {
 			blocks.add(graspedBlock);
 			graspedBlock.addTo(this);
@@ -129,7 +134,11 @@ public class World {
 		if (!tray.isActionConsumed()) {
 			for (Block block: blocks) {
 				if (block.contains(tool.getPosition())) {
-					graspedBlock = block;
+					if (!block.isGrasped()) {
+						// For now, don't allow double-grasping.
+						// TODO Support double-grasping.
+						graspedBlock = block;
+					}
 					// Don't break from loop. Make the last drawn have priority for clicking.
 					// That's more intuitive when blocks overlap.
 					// But how often will that be when physics tries to avoid it?
@@ -142,14 +151,17 @@ public class World {
 			Point2D pointRelBlock = appliedInv(graspedBlock.getTransform(), tool.getPosition());
 			logger.logGrasp(tool, graspedBlock, pointRelBlock);
 		}
+		// Remember the block we got (or didn't).
+		toolInfo.graspedBlock = graspedBlock;
 	}
 
 	private void handleRelease(Tool tool) {
-		// TODO Log mouse releases independently from grasps. The grasps are cheating.
-		if (graspedBlock != null) {
-			logger.logRelease(tool, graspedBlock);
-			graspedBlock.release();
-			graspedBlock = null;
+		ToolInfo toolInfo = tools.get(tool);
+		if (toolInfo.graspedBlock != null) {
+			logger.logRelease(tool, toolInfo.graspedBlock);
+			// TODO What if multiple tools have the same block?
+			toolInfo.graspedBlock.release();
+			toolInfo.graspedBlock = null;
 		}
 	}
 
@@ -176,7 +188,7 @@ public class World {
 		// Tray. Includes preborn blocks.
 		tray.paint(graphics, worldRelDisplay);
 		// Tools. Paint these after items on purpose.
-		for (Tool tool: tools) {
+		for (Tool tool: tools.keySet()) {
 			tool.paint(graphics, worldRelDisplay);
 		}
 	}
@@ -191,22 +203,22 @@ public class World {
 	public void update() {
 		logger.atomic(new Runnable() { @Override public void run() {
 
-			for (Tool tool: tools) {
+			for (Tool tool: tools.keySet()) {
 				logger.logTool(tool);
+				ToolInfo toolInfo = tools.get(tool);
 				if (tool.getMode() != ToolMode.GRASP) {
 					// Check release before moving grasped block.
 					handleRelease(tool);
 				}
-				if (graspedBlock != null) {
+				if (toolInfo.graspedBlock != null) {
 					// Move the grasped block, if any.
-					graspedBlock.moveTo(tool.getPosition());
+					toolInfo.graspedBlock.moveTo(tool.getPosition());
 				}
-				ToolMode toolModePrev = toolModePrevs.get(tool);
-				if (tool.getMode() == ToolMode.GRASP && toolModePrev != ToolMode.GRASP) {
+				if (tool.getMode() == ToolMode.GRASP && toolInfo.old.getMode() != ToolMode.GRASP) {
 					// But new check grasps after attempting to move any grasped block.
 					handlePress(tool);
 				}
-				toolModePrevs.put(tool, tool.getMode());
+				toolInfo.old.setMode(tool.getMode());
 			}
 
 			// Step the simulation.

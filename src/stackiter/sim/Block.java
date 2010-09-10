@@ -229,6 +229,11 @@ public class Block implements Cloneable, Item {
 		return alive;
 	}
 
+	public boolean isGrasped() {
+		// TODO If we support other kinds of constraints (that 'affix' stuff), then this won't be good enough.
+		return body.getJointList() != null;
+	}
+
 	private boolean isRotated() {
 		if (body == null) {
 			return bodyDef.angle != 0;

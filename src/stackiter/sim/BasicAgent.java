@@ -13,6 +13,13 @@ public class BasicAgent implements Agent {
 		return world;
 	}
 
+	/**
+	 * For setting up once the world is attached.
+	 */
+	protected void init() {
+		// Nothing by default.
+	}
+
 	@Override
 	public void sense() {
 		// Do nothing by default.
@@ -20,6 +27,7 @@ public class BasicAgent implements Agent {
 
 	public void setWorld(World world) {
 		this.world = world;
+		init();
 	}
 
 }

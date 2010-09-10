@@ -170,7 +170,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		double rateY = 0;
 		Rectangle2D viewRelWorld = viewRelWorld();
 
-		if (tray.isFixedToDisplay() && world.getGraspedItem() == null && toolPoint.getX() < tray.getAnchor().getX() + tray.getWidth()) {
+		if (tray.isFixedToDisplay() && world.getGraspedItem(mouseTool) == null && toolPoint.getX() < tray.getAnchor().getX() + tray.getWidth()) {
 			// No block and over the tray means we are probably thinking about the tray, not scrolling.
 			// TODO Generalize this notion for widgets.
 			return;
