@@ -1,4 +1,4 @@
-<project name="stackiter" default="dist-shrunk">
+<project name="stackiter" default="dist-orig">
 
 	<target name="clean">
 		<delete dir="build"/>
