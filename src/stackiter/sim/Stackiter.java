@@ -84,8 +84,9 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		world.addAgent(new DropperAgent());
 
 		double groundDepth = -2 * world.getGround().getExtent().getY();
-		viewBounds = new Rectangle2D.Double(-20, groundDepth, 40, 101);
-		viewRect = new Rectangle2D.Double(-20, groundDepth, 40, 30);
+		double groundWidth = 40; // 2 * world.getGround().getExtent().getX(); <-- Visual glitch here needs resolved.
+		viewBounds = new Rectangle2D.Double(-20, groundDepth, groundWidth, 101);
+		viewRect = new Rectangle2D.Double(-20, groundDepth, groundWidth, 30);
 		addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent event) {
@@ -339,11 +340,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			invert(transform);
 			tray.setAnchor(applied(transform, point(0, getHeight())));
 			tray.setHeight(viewRelWorld().getHeight());
-		} else {
-			// It stays fixed in the world.
-			double minX = world.getGround().getPosition().getX() - world.getGround().getExtent().getX();
-			tray.setAnchor(point(minX, 0));
-			tray.setHeight(viewRect.getHeight());
 		}
 	}
 

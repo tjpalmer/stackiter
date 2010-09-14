@@ -216,6 +216,14 @@ public class World {
 		tray.setLogger(logger);
 		// Log the ground right away because I like a low number for it.
 		logger.logItem(ground);
+
+		// Tray.
+		// It logs on fill. That's why the setup is here.
+		// TODO Figure out a better organization for logger vs. tray.
+		// TODO Maybe tray logger setting could log its current state immediately despite prior setup?
+		double minX = ground.getPosition().getX() - ground.getExtent().getX();
+		tray.setAnchor(point(minX, 0));
+		tray.setHeight(30);
 	}
 
 	public void update() {
