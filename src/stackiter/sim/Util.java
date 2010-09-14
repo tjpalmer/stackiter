@@ -114,6 +114,10 @@ public class Util {
 		return new Line2D.Double(x1, y1, x2, y2);
 	}
 
+	public static Rectangle2D rectangle() {
+		return new Rectangle2D.Double();
+	}
+
 	public static Rectangle2D rectangle(Point2D center, Point2D extent) {
 		return new Rectangle2D.Double(center.getX() - extent.getX(), center.getY() - extent.getY(), 2 * extent.getX(), 2 * extent.getY());
 	}

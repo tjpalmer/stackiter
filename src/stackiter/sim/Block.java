@@ -14,7 +14,7 @@ import org.jbox2d.common.*;
 import org.jbox2d.dynamics.*;
 import org.jbox2d.dynamics.joints.*;
 
-public class Block implements Cloneable, Item {
+public class Block implements Item {
 
 	private boolean alive;
 

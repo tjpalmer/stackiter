@@ -24,6 +24,21 @@ public class BasicItem implements Item {
 
 	private Point2D position = new Point2D.Double();
 
+	@Override
+	public Item clone() {
+		BasicItem copied;
+		try {
+			copied = (BasicItem)super.clone();
+		} catch (Exception e) {
+			// Should never happen.
+			throw new RuntimeException(e);
+		}
+		// Make sure we actually have copies of the mutable objects.
+		copied.extent = copy(extent);
+		copied.position = copy(position);
+		return copied;
+	}
+
 	public boolean contains(Point2D point) {
 		return rectangle(position, extent).contains(point);
 	}

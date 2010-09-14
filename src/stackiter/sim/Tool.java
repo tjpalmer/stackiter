@@ -16,6 +16,11 @@ public class Tool extends BasicItem {
 		setExtent(point(1, 1));
 	}
 
+	@Override
+	public Tool clone() {
+		return (Tool)super.clone();
+	}
+
 	public ToolMode getMode() {
 		return mode;
 	}

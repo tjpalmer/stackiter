@@ -12,8 +12,6 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
-import stackiter.agents.*;
-
 @SuppressWarnings("serial")
 public class Stackiter extends JComponent implements ActionListener, Closeable, MouseListener, MouseMotionListener {
 
@@ -72,7 +70,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	public Stackiter() {
 
-		logger = new Logger();
+		logger = new FilterLogger(new TextLogger());
 		world = new World();
 		world.setLogger(logger);
 		tray = world.getTray();
@@ -80,8 +78,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		// Log the tool to get it a lower ID.
 		logger.logTool(mouseTool);
 
-		world.addAgent(new ClearerAgent());
-		world.addAgent(new DropperAgent());
+		//world.addAgent(new ClearerAgent());
+		//world.addAgent(new DropperAgent());
 
 		double groundDepth = -2 * world.getGround().getExtent().getY();
 		viewBounds = new Rectangle2D.Double(-20, groundDepth, 40, 101);

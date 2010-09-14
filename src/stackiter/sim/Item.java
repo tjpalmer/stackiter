@@ -3,7 +3,12 @@ package stackiter.sim;
 import java.awt.*;
 import java.awt.geom.*;
 
-public interface Item {
+public interface Item extends Cloneable {
+
+	/**
+	 * Should provide a deep copy.
+	 */
+	public Item clone();
 
 	public boolean contains(Point2D point);
 

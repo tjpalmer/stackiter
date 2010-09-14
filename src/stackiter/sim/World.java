@@ -35,6 +35,8 @@ public class World {
 
 	private Logger logger;
 
+	private long steps;
+
 	private Map<Tool, ToolInfo> tools = new HashMap<Tool, ToolInfo>();
 
 	private Tray tray = new Tray();
@@ -217,7 +219,9 @@ public class World {
 	}
 
 	public void update() {
-		logger.atomic(new Runnable() { @Override public void run() {
+		logger.atomic(new Runnable() {
+
+		@Override public void run() {
 
 			// Let agents choose actions.
 			for (Agent agent: agents) {
@@ -244,7 +248,12 @@ public class World {
 			}
 
 			// Step the simulation.
-			world.step(0.02f, 10);
+			double stepTime = 0.02;
+			world.step((float)stepTime, 10);
+			steps++;
+			// We log half sim time since that's also what we show the user.
+			// Might make for odd gravity perhaps or whatnot, but whatever.
+			logger.logSimTime(steps, 0.5 * stepTime * steps);
 
 			// Delete lost blocks.
 			for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
