@@ -28,7 +28,7 @@ public interface Logger extends Closeable {
 
 	void logRelease(final Tool tool, final Block item);
 
-	void logRemoval(final Block item);
+	void logRemoval(final Item item);
 
 	/**
 	 * Logs both step count and sim time. JBox2D requires a constant step time,

@@ -126,7 +126,7 @@ public class FilterLogger extends AtomicLogger {
 	}
 
 	@Override
-	public void logRemoval(Block item) {
+	public void logRemoval(Item item) {
 		if (everLogged.contains(item.getSoul())) {
 			removals.add(item);
 		} else {
@@ -192,6 +192,12 @@ public class FilterLogger extends AtomicLogger {
 						logger.logGrasp(grasp.tool, grasp.item, grasp.pointRelItem);
 					}
 					grasps.clear();
+
+					// Removals.
+					for (Item item: removals) {
+						logger.logRemoval(item);
+					}
+					removals.clear();
 
 				}});
 			}

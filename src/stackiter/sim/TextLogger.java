@@ -206,7 +206,7 @@ public class TextLogger extends AtomicLogger implements Logger {
 	}
 
 	@Override
-	public void logRemoval(final Block item) {
+	public void logRemoval(final Item item) {
 		atomic(new Runnable() { @Override public void run() {
 			ItemInfo info = getInfo(item);
 			log("destroy %d", info.id);
