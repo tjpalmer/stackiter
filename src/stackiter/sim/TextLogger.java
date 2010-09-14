@@ -36,6 +36,8 @@ public class TextLogger extends AtomicLogger implements Logger {
 
 	Point2D displaySize = new Point2D.Double();
 
+	private boolean doFlush;
+
 	boolean firstPerTx;
 
 	private int idNext = 4;
@@ -101,6 +103,24 @@ public class TextLogger extends AtomicLogger implements Logger {
 			writer.close();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
+	protected void endStep() {
+		super.endStep();
+		if (doFlush) {
+			doFlush = false;
+			writer.flush();
+		}
+	}
+
+	@Override
+	public void flush() {
+		if (getTxDepth() == 0) {
+			writer.flush();
+		} else {
+			doFlush = true;
 		}
 	}
 

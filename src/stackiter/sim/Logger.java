@@ -17,6 +17,8 @@ public interface Logger extends Closeable {
 
 	void close();
 
+	void flush();
+
 	/**
 	 * @param size pixel width and height as integer values, despite use of Point2D.
 	 */

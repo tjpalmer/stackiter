@@ -78,6 +78,11 @@ public class FilterLogger extends AtomicLogger {
 	}
 
 	@Override
+	public void flush() {
+		logger.flush();
+	}
+
+	@Override
 	public void logDisplaySize(Point2D size) {
 		displaySize.setLocation(size);
 	}
@@ -198,6 +203,9 @@ public class FilterLogger extends AtomicLogger {
 						logger.logRemoval(item);
 					}
 					removals.clear();
+
+					// Presumably we run rarely enough that this is a good time to flush.
+					logger.flush();
 
 				}});
 			}
