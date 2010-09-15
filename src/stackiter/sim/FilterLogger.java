@@ -21,6 +21,8 @@ public class FilterLogger extends AtomicLogger {
 		Tool tool;
 	}
 
+	private boolean cleared;
+
 	private Point2D displaySize = point();
 
 	private Set<Object> everLogged = new HashSet<Object>();
@@ -80,6 +82,13 @@ public class FilterLogger extends AtomicLogger {
 	@Override
 	public void flush() {
 		logger.flush();
+	}
+
+	@Override
+	public void logClear() {
+		cleared = true;
+		// Log clears.
+		requestLog();
 	}
 
 	@Override
@@ -166,6 +175,10 @@ public class FilterLogger extends AtomicLogger {
 					logger.logView(view);
 					if (tray != null) {
 						logger.logTray(tray);
+					}
+					if (cleared) {
+						logger.logClear();
+						cleared = false;
 					}
 
 					// Tools.

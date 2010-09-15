@@ -80,7 +80,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		// Log the tool to get it a lower ID.
 		logger.logTool(mouseTool);
 
-		world.addAgent(new ClearerAgent());
+		world.addAgent(new ClearerAgent(30));
 		world.addAgent(new DropperAgent());
 
 		double groundDepth = -2 * world.getGround().getExtent().getY();

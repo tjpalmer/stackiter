@@ -131,6 +131,7 @@ public class World {
 				handleRemoval(block);
 			}
 			blocks.clear();
+			logger.logClear();
 			return;
 		}
 		// Try reserve blocks.

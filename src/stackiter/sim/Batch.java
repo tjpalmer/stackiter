@@ -12,7 +12,7 @@ public class Batch {
 	public static void main(String[] args) {
 		World world = new World();
 		world.setLogger(new FilterLogger(new TextLogger()));
-		world.addAgent(new ClearerAgent());
+		world.addAgent(new ClearerAgent(30));
 		world.addAgent(new DropperAgent());
 		long steps = 0;
 		long stepsPerSecond = 100;

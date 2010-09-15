@@ -24,6 +24,13 @@ public interface Logger extends Closeable {
 	 */
 	void logDisplaySize(Point2D size);
 
+	/**
+	 * The clear button was used.
+	 *
+	 * Just for convenience when interpreting logs.
+	 */
+	void logClear();
+
 	void logGrasp(final Tool tool, final Block item, final Point2D pointRelItem);
 
 	void logItem(final Item item);

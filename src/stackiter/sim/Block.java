@@ -18,6 +18,11 @@ public class Block implements Item {
 
 	private boolean alive;
 
+	/**
+	 * Bogus just for copies.
+	 */
+	private double angularVelocity = 0;
+
 	private Body body;
 
 	private BodyDef bodyDef;
@@ -27,6 +32,11 @@ public class Block implements Item {
 	private boolean debugPaint;
 
 	private List<Block> fixations = new ArrayList<Block>();
+
+	/**
+	 * Bogus just for copies.
+	 */
+	private Point2D linearVelocity = point();
 
 	private MouseJoint mainJoint;
 
@@ -81,11 +91,6 @@ public class Block implements Item {
 		addFixConstraints(other);
 	}
 
-	public boolean contains(Point2D point) {
-		Shape shape = transformedShape();
-		return shape.contains(point);
-	}
-
 	@Override
 	public Block clone() {
 		Block copied = new Block();
@@ -96,6 +101,12 @@ public class Block implements Item {
 		copied.setPosition(getPosition());
 		copied.setExtent(getExtent());
 		return copied;
+	}
+
+	@Override
+	public boolean contains(Point2D point) {
+		Shape shape = transformedShape();
+		return shape.contains(point);
 	}
 
 	/**
@@ -112,12 +123,23 @@ public class Block implements Item {
 		}
 	}
 
+	@Override
+	public double getAngularVelocity() {
+		if (body == null) {
+			return angularVelocity;
+		} else {
+			return body.m_angularVelocity;
+		}
+	}
+
+	@Override
 	public Rectangle2D getBounds() {
 		Point2D extent = getExtent();
 		Rectangle2D rectangle = new Rectangle2D.Double(-extent.getX(), -extent.getY(), 2 * extent.getX(), 2 * extent.getY());
 		return rectangle;
 	}
 
+	@Override
 	public Color getColor() {
 		return color;
 	}
@@ -149,6 +171,15 @@ public class Block implements Item {
 			height = aabb.upperBound.y - aabb.lowerBound.y;
 		}
 		return point(width / 2, height / 2);
+	}
+
+	@Override
+	public Point2D getLinearVelocity() {
+		if (body == null) {
+			return linearVelocity;
+		} else {
+			return point(body.m_linearVelocity.x, body.m_linearVelocity.y);
+		}
 	}
 
 	@Override
@@ -233,6 +264,7 @@ public class Block implements Item {
 		}
 	}
 
+	@Override
 	public boolean isAlive() {
 		return alive;
 	}
@@ -337,10 +369,20 @@ public class Block implements Item {
 	/**
 	 * @param angle in rats (radians / pi).
 	 */
+	@Override
 	public void setAngle(double angle) {
 		bodyDef.angle = (float)(angle * Math.PI);
 	}
 
+	/**
+	 * Bogus just for copies.
+	 */
+	@Override
+	public void setAngularVelocity(double angularVelocity) {
+		this.angularVelocity = angularVelocity;
+	}
+
+	@Override
 	public void setColor(Color color) {
 		this.color = color;
 	}
@@ -353,8 +395,17 @@ public class Block implements Item {
 		shapeDef.setAsBox((float)extentX, (float)extentY);
 	}
 
+	@Override
 	public void setExtent(Point2D extent) {
 		setExtent(extent.getX(), extent.getY());
+	}
+
+	/**
+	 * Bogus just for copies.
+	 */
+	@Override
+	public void setLinearVelocity(Point2D linearVelocity) {
+		this.linearVelocity.setLocation(linearVelocity);
 	}
 
 	public void setPosition(double x, double y) {

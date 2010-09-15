@@ -14,6 +14,8 @@ public interface Item extends Cloneable {
 
 	public double getAngle();
 
+	public double getAngularVelocity();
+
 	/**
 	 * Bounds relative to the object transform.
 	 */
@@ -26,6 +28,8 @@ public interface Item extends Cloneable {
 	 * TODO position. Reconsider this.
 	 */
 	public Point2D getExtent();
+
+	public Point2D getLinearVelocity();
 
 	public Point2D getPosition();
 
@@ -53,9 +57,13 @@ public interface Item extends Cloneable {
 
 	public void setAngle(double angle);
 
+	public void setAngularVelocity(double angularVelocity);
+
 	public void setColor(Color color);
 
 	public void setExtent(Point2D extent);
+
+	public void setLinearVelocity(Point2D linearVelocity);
 
 	public void setPosition(Point2D position);
 

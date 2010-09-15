@@ -16,13 +16,17 @@ public class BasicItem implements Item {
 
 	private double angle;
 
+	private double angularVelocity;
+
 	private Color color = Color.WHITE;
 
-	private Point2D extent = new Point2D.Double();
+	private Point2D extent = point();
+
+	private Point2D linearVelocity = point();
 
 	private Object soul = new Object();
 
-	private Point2D position = new Point2D.Double();
+	private Point2D position = point();
 
 	@Override
 	public Item clone() {
@@ -39,6 +43,7 @@ public class BasicItem implements Item {
 		return copied;
 	}
 
+	@Override
 	public boolean contains(Point2D point) {
 		return rectangle(position, extent).contains(point);
 	}
@@ -46,6 +51,11 @@ public class BasicItem implements Item {
 	@Override
 	public double getAngle() {
 		return angle;
+	}
+
+	@Override
+	public double getAngularVelocity() {
+		return angularVelocity;
 	}
 
 	@Override
@@ -64,6 +74,11 @@ public class BasicItem implements Item {
 	@Override
 	public Point2D getExtent() {
 		return extent;
+	}
+
+	@Override
+	public Point2D getLinearVelocity() {
+		return linearVelocity;
 	}
 
 	@Override
@@ -103,18 +118,32 @@ public class BasicItem implements Item {
 		this.alive = alive;
 	}
 
+	@Override
 	public void setAngle(double angle) {
 		this.angle = angle;
 	}
 
+	@Override
+	public void setAngularVelocity(double angularVelocity) {
+		this.angularVelocity = angularVelocity;
+	}
+
+	@Override
 	public void setColor(Color color) {
 		this.color = color;
 	}
 
+	@Override
 	public void setExtent(Point2D extent) {
 		this.extent.setLocation(extent);
 	}
 
+	@Override
+	public void setLinearVelocity(Point2D linearVelocity) {
+		this.linearVelocity.setLocation(linearVelocity);
+	}
+
+	@Override
 	public void setPosition(Point2D position) {
 		this.position.setLocation(position);
 	}

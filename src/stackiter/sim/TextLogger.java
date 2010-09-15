@@ -169,6 +169,11 @@ public class TextLogger extends AtomicLogger implements Logger {
 	}
 
 	@Override
+	public void logClear() {
+		log("clear");
+	}
+
+	@Override
 	public void logDisplaySize(Point2D size) {
 		if (!approx(displaySize, size, EPSILON)) {
 			displaySize.setLocation(size);

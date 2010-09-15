@@ -16,6 +16,12 @@ public class ClearerAgent extends BasicAgent {
 
 	private Tool tool;
 
+	private final int delay;
+
+	public ClearerAgent(double delaySeconds) {
+		this.delay = (int)(100 * delaySeconds);
+	}
+
 	@Override
 	public void act() {
 		// This assumes the clearer doesn't move.
@@ -31,7 +37,7 @@ public class ClearerAgent extends BasicAgent {
 		}
 		// Stackiter UI generally runs at about 100 Hz.
 		// TODO Be better about sim time?
-		if (count == 6000) {
+		if (count == delay) {
 			tool.setMode(ToolMode.GRASP);
 			count = 0;
 		} else {

@@ -42,6 +42,8 @@ public class DropperAgent extends BasicAgent {
 
 	private Random random = new Random();
 
+	private int stableCount;
+
 	private Item targetItem;
 
 	/**
@@ -56,6 +58,7 @@ public class DropperAgent extends BasicAgent {
 	@Override
 	public void act() {
 		Iterable<Item> items = getWorld().getItems();
+		// Find our target.
 		CURRENT: if (targetItem != null) {
 			// Find the new state of the current target.
 			for (Item item: items) {
@@ -86,8 +89,21 @@ public class DropperAgent extends BasicAgent {
 				if (tool.getMode() == ToolMode.INACTIVE) {
 					// We haven't actually grasped yet.
 					if (targetItem != null) {
-						tool.setPosition(targetItem.getPosition());
-						tool.setMode(ToolMode.GRASP);
+						// Find the max speed so we can know if we're stable.
+						double maxSpeedSquared = 0;
+						for (Item item: items) {
+							double angularVelocity = item.getAngularVelocity();
+							maxSpeedSquared = Math.max(angularVelocity * angularVelocity, maxSpeedSquared);
+							maxSpeedSquared = Math.max(item.getLinearVelocity().distanceSq(0, 0), maxSpeedSquared);
+						}
+						if (maxSpeedSquared < 0.0001) {
+							stableCount++;
+						}
+						// See if we've been stable for 0.1 seconds.
+						if (stableCount >= 10) {
+							tool.setPosition(targetItem.getPosition());
+							tool.setMode(ToolMode.GRASP);
+						}
 					}
 				} else {
 					// We've already grabbed something, we think.
@@ -124,6 +140,7 @@ public class DropperAgent extends BasicAgent {
 		targetItem = null;
 		tool.setMode(ToolMode.INACTIVE);
 		mode = Mode.EMPTY;
+		stableCount = 0;
 	}
 
 	@Override
