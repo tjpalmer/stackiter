@@ -17,7 +17,7 @@ public class World {
 	 */
 	private class ToolInfo {
 
-		Block graspedBlock;
+		Block graspedItem;
 
 		Tool old = new Tool();
 
@@ -87,6 +87,27 @@ public class World {
 		return tool;
 	}
 
+	/**
+	 * If the tool has a block grasped, it shouldn't be able to move past the
+	 * block. Alternatively, if we let it slip some, it should drop the block if
+	 * it gets too far.
+	 *
+	 * The point of this is to allow physical cues to the learning system that
+	 * there is a relationship between the tool and the item without having to
+	 * remember the past state of the tool clicking on the particular item. That
+	 * is, I'm trying to avoid hidden state at the moment. Confusion is still
+	 * possible, but it probably improves the ability to have good evidence for
+	 * the relationship.
+	 */
+	private void constrainTool(Tool tool, Block graspedItem) {
+		if (graspedItem == null) {
+			return;
+		}
+		Point2D graspedPoint = graspedItem.getGraspPosition();
+		Point2D toolPoint = applied(graspedItem.getTransform(), graspedPoint);
+		tool.setPosition(toolPoint);
+	}
+
 	public Iterable<Block> getBlocks() {
 		// TODO Wrap for immutability?
 		return blocks;
@@ -97,7 +118,7 @@ public class World {
 	}
 
 	public Item getGraspedItem(Tool tool) {
-		return tools.get(tool).graspedBlock;
+		return tools.get(tool).graspedItem;
 	}
 
 	public Block getGround() {
@@ -163,16 +184,16 @@ public class World {
 			logger.logGrasp(tool, graspedBlock, pointRelBlock);
 		}
 		// Remember the block we got (or didn't).
-		toolInfo.graspedBlock = graspedBlock;
+		toolInfo.graspedItem = graspedBlock;
 	}
 
 	private void handleRelease(Tool tool) {
 		ToolInfo toolInfo = tools.get(tool);
-		if (toolInfo.graspedBlock != null) {
-			logger.logRelease(tool, toolInfo.graspedBlock);
+		if (toolInfo.graspedItem != null) {
+			logger.logRelease(tool, toolInfo.graspedItem);
 			// TODO What if multiple tools have the same block?
-			toolInfo.graspedBlock.release();
-			toolInfo.graspedBlock = null;
+			toolInfo.graspedItem.release();
+			toolInfo.graspedItem = null;
 		}
 	}
 
@@ -189,7 +210,7 @@ public class World {
 		// Release grasps.
 		// TODO This isn't super efficient, since handleRelease does a relookup. Consider reorg.
 		for (Map.Entry<Tool, ToolInfo> entry: tools.entrySet()) {
-			if (entry.getValue().graspedBlock == block) {
+			if (entry.getValue().graspedItem == block) {
 				handleRelease(entry.getKey());
 			}
 		}
@@ -239,15 +260,17 @@ public class World {
 
 			// Find out what actions they are.
 			for (Tool tool: tools.keySet()) {
-				logger.logTool(tool);
+				// Log tools after world update, because of constraints.
+				// Just handle grasp/release here, so it can affect the world.
+				// Note that we now hide the "force" state if we don't log attempted tool position.
 				ToolInfo toolInfo = tools.get(tool);
 				if (tool.getMode() != ToolMode.GRASP) {
 					// Check release before moving grasped block.
 					handleRelease(tool);
 				}
-				if (toolInfo.graspedBlock != null) {
+				if (toolInfo.graspedItem != null) {
 					// Move the grasped block, if any.
-					toolInfo.graspedBlock.moveTo(tool.getPosition());
+					toolInfo.graspedItem.moveTo(tool.getPosition());
 				}
 				if (tool.getMode() == ToolMode.GRASP && toolInfo.old.getMode() != ToolMode.GRASP) {
 					// But new check grasps after attempting to move any grasped block.
@@ -274,6 +297,12 @@ public class World {
 					b.remove();
 					handleRemoval(block);
 				}
+			}
+
+			for (Map.Entry<Tool, ToolInfo> t: tools.entrySet()) {
+				Tool tool = t.getKey();
+				constrainTool(tool, t.getValue().graspedItem);
+				logger.logTool(tool);
 			}
 
 			// Record the new state.

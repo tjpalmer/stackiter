@@ -124,12 +124,18 @@ public class DropperAgent extends BasicAgent {
 					targetPosition.setLocation(targetX, tool.getPosition().getY());
 					tool.setPosition(targetPosition);
 					mode = Mode.RAISED;
+				} else {
+					// Because of constraints, we need to keep resetting this until we get there.
+					tool.setPosition(targetPosition);
 				}
 				break;
 			}
 			case RAISED: {
 				if (approx(targetItem.getPosition(), targetPosition, EPSILON)) {
 					clearTarget();
+				} else {
+					// Because of constraints, we need to keep resetting this until we get there.
+					tool.setPosition(targetPosition);
 				}
 				break;
 			}

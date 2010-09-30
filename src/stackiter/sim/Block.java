@@ -173,6 +173,19 @@ public class Block implements Item {
 		return point(width / 2, height / 2);
 	}
 
+	/**
+	 * Grasp position relative to the object, or null if there is no grasp.
+	 *
+	 * TODO If allow multiple grasp, parameterize this.
+	 */
+	public Point2D getGraspPosition() {
+		if (!isGrasped()) {
+			return null;
+		}
+		Vec2 anchor = mainJoint.m_localAnchor;
+		return point(anchor.x, anchor.y);
+	}
+
 	@Override
 	public Point2D getLinearVelocity() {
 		if (body == null) {

@@ -21,6 +21,10 @@ public interface Agent {
 	 */
 	void sense();
 
+	/**
+	 * Any initial changes to the world should be done inside this call.
+	 * Adding a tool is one common option.
+	 */
 	void setWorld(World world);
 
 }
