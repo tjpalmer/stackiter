@@ -53,6 +53,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 	private Point2D mousePoint;
 
+	private Robot robot;
+
 	private Timer timer;
 
 	private Tray tray;
@@ -71,41 +73,47 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	private World world;
 
 	public Stackiter() {
+		try {
 
-		logger = new FilterLogger(new TextLogger());
-		world = new World();
-		world.setLogger(logger);
-		tray = world.getTray();
-		mouseTool = world.addTool();
-		// Log the tool to get it a lower ID.
-		logger.logTool(mouseTool);
+			robot = new Robot();
 
-		world.addAgent(new ClearerAgent(30));
-		world.addAgent(new DropperAgent());
+			logger = new FilterLogger(new TextLogger());
+			world = new World();
+			world.setLogger(logger);
+			tray = world.getTray();
+			mouseTool = world.addTool();
+			// Log the tool to get it a lower ID.
+			logger.logTool(mouseTool);
 
-		double groundDepth = -2 * world.getGround().getExtent().getY();
-		double groundWidth = 40; // 2 * world.getGround().getExtent().getX(); <-- Visual glitch here needs resolved.
-		viewBounds = new Rectangle2D.Double(-20, groundDepth, groundWidth, 101);
-		viewRect = new Rectangle2D.Double(-20, groundDepth, groundWidth, 30);
-		addComponentListener(new ComponentAdapter() {
-			@Override
-			public void componentResized(ComponentEvent event) {
-				Stackiter.this.componentResized(event);
-			}
-		});
-		addMouseListener(this);
-		addMouseMotionListener(this);
-		setPreferredSize(new Dimension(640, 480));
-		setSize(getPreferredSize());
+			world.addAgent(new ClearerAgent(30));
+			world.addAgent(new DropperAgent());
 
-		timer = new Timer(10, this);
+			double groundDepth = -2 * world.getGround().getExtent().getY();
+			double groundWidth = 40; // 2 * world.getGround().getExtent().getX(); <-- Visual glitch here needs resolved.
+			viewBounds = new Rectangle2D.Double(-20, groundDepth, groundWidth, 101);
+			viewRect = new Rectangle2D.Double(-20, groundDepth, groundWidth, 30);
+			addComponentListener(new ComponentAdapter() {
+				@Override
+				public void componentResized(ComponentEvent event) {
+					Stackiter.this.componentResized(event);
+				}
+			});
+			addMouseListener(this);
+			addMouseMotionListener(this);
+			setPreferredSize(new Dimension(640, 480));
+			setSize(getPreferredSize());
 
-		// Clear the cursor for the display here.
-		// We use a custom "cursor" that doesn't always follow the actual mouse cursor.
-		BufferedImage blankImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-		Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(blankImage, new Point(0, 0), "blank");
-		setCursor(blankCursor);
+			timer = new Timer(10, this);
 
+			// Clear the cursor for the display here.
+			// We use a custom "cursor" that doesn't always follow the actual mouse cursor.
+			BufferedImage blankImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+			Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(blankImage, new Point(0, 0), "blank");
+			setCursor(blankCursor);
+
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
@@ -113,10 +121,34 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 		logger.atomic(new Runnable() { @Override public void run() {
 
+			Point2D toolPoint = null;
+
 			if (mousePoint != null) {
 				// Recalculate each time for cases of scrolling.
 				// TODO Base instead on moving toolPoint explicitly when scrolling??? Could be risky.
-				Point2D toolPoint = appliedInv(worldToDisplayTransform(), mousePoint);
+				AffineTransform worldToDisplayTransform = worldToDisplayTransform();
+				toolPoint = appliedInv(worldToDisplayTransform, mousePoint);
+
+				if (world.getGraspedItem(mouseTool) != null) {
+					// Constrain the target location.
+					// This mattered once blocks could constrain tool location (carrying them off the screen).
+					Point2D oldToolPoint = copy(toolPoint);
+					toolPoint.setLocation(
+						Math.min(toolPoint.getX(), viewBounds.getMaxX()),
+						Math.min(toolPoint.getY(), viewBounds.getMaxY())
+					);
+					toolPoint.setLocation(
+						Math.max(toolPoint.getX(), viewBounds.getMinX()),
+						Math.max(toolPoint.getY(), viewBounds.getMinY())
+					);
+					// See if we changed anything.
+					if (!toolPoint.equals(oldToolPoint)) {
+						// If so, move the mouse to the contrained spot.
+						worldToDisplayTransform.transform(toolPoint, mousePoint);
+						Point displayPoint = getLocationOnScreen();
+						robot.mouseMove(displayPoint.x + (int)mousePoint.getX(), displayPoint.y + (int)mousePoint.getY());
+					}
+				}
 
 				// Communicate agent action.
 				// TODO Include flush and clear as other mutually exclusive action choices.
@@ -125,10 +157,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 				mouseTool.setMode(mouseDown ? ToolMode.GRASP : ToolMode.INACTIVE);
 				mouseTool.setPosition(toolPoint);
 
-				// Handle view updates.
 				if (mouseOver) {
-					// Without mouseOver check, I got upward scrolling when over title bar.
-					handleScroll(toolPoint);
 					// Make sure we get the entrance before the move, if both.
 					logger.logToolPresent(mouseTool, mouseOver);
 				}
@@ -143,7 +172,13 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			// TODO Alternatively, change the delay based on how much time is left. Or is that auto?
 			world.update();
 
-			if (!mouseOver) {
+			if (mouseOver) {
+				// Without mouseOver check, I got upward scrolling when over title bar.
+				// Further, scroll after world update, so we don't lose our tool point, which might have changed.
+				if (toolPoint != null) {
+					handleScroll(mouseTool.getPosition());
+				}
+			} else {
 				// Make we get the move (in world update) before the departure, if both.
 				logger.logToolPresent(mouseTool, mouseOver);
 			}
