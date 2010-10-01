@@ -131,7 +131,7 @@ public class DropperAgent extends BasicAgent {
 				break;
 			}
 			case RAISED: {
-				if (approx(targetItem.getPosition(), targetPosition, EPSILON)) {
+				if (approx(targetItem.getPosition(), targetPosition, EPSILON) && approx(targetItem.getLinearVelocity(), point(), EPSILON)) {
 					clearTarget();
 				} else {
 					// Because of constraints, we need to keep resetting this until we get there.
