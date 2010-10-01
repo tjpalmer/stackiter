@@ -330,13 +330,13 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	protected void paintComponent(Graphics graphics) {
 		Graphics2D g = copy(graphics);
 		try {
-			// Transform.
-			AffineTransform transform = worldToDisplayTransform();
 			// Backdrop.
+			AffineTransform transform = worldToDisplayTransform();
 			Point2D backdropPoint = applied(transform, point(viewBounds.getMinX(), viewBounds.getMinY()));
 			g.drawImage(backdrop, (int)backdropPoint.getX(), (int)backdropPoint.getY() - backdrop.getHeight(), null);
 			// World contents
-			world.paint(g, transform);
+			g.transform(transform);
+			world.paint(g);
 		} finally {
 			g.dispose();
 		}

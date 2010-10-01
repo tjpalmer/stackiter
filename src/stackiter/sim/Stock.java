@@ -48,11 +48,11 @@ public class Stock extends BasicItem {
 	}
 
 	@Override
-	public void paint(Graphics2D graphics, AffineTransform worldRelDisplay) {
+	public void paint(Graphics2D graphics) {
 		//		roof.paint(graphics, worldRelDisplay);
 		updateCasing();
-		base.paint(graphics, worldRelDisplay);
-		casing.paint(graphics, worldRelDisplay);
+		base.paint(graphics);
+		casing.paint(graphics);
 		// TODO Paint button.
 	}
 

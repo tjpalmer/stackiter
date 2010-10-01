@@ -220,16 +220,16 @@ public class World {
 		items.remove(block);
 	}
 
-	public void paint(Graphics2D graphics, AffineTransform worldRelDisplay) {
+	public void paint(Graphics2D graphics) {
 		// Live items.
 		for (Item item: items) {
-			item.paint(graphics, worldRelDisplay);
+			item.paint(graphics);
 		}
 		// Tray. Includes preborn blocks.
-		tray.paint(graphics, worldRelDisplay);
+		tray.paint(graphics);
 		// Tools. Paint these after items on purpose.
 		for (Tool tool: tools.keySet()) {
-			tool.paint(graphics, worldRelDisplay);
+			tool.paint(graphics);
 		}
 	}
 

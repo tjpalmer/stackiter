@@ -310,31 +310,33 @@ public class Block implements Item {
 	}
 
 	@Override
-	public void paint(Graphics2D graphics, AffineTransform worldRelDisplay) {
+	public void paint(Graphics2D graphics) {
 		Graphics2D g = copy(graphics);
 		try {
-			// Shape information.
-			double strokeWidth = 2;
-			Shape shape = transformedShape(copy(worldRelDisplay), strokeWidth);
 			// Draw the block.
+			// Fill the full shape to avoid distance between fill and stroke.
 			g.setColor(color);
-			g.fill(shape);
+			g.fill(transformedShape());
+			// Shape information.
+			double strokeWidth = 0.1f;
 			g.setColor(color.darker());
 			g.setStroke(new BasicStroke((float)strokeWidth));
 			if (isRotated()) {
 				// Seems a bit too slow to do antialiasing. Even in this specific context.
 				// g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			}
-			g.draw(shape);
+			// Stroke inset shape to avoid border overlap.
+			Shape insetShape = transformedShape(new AffineTransform(), strokeWidth);
+			g.draw(insetShape);
 			if (debugPaint) {
-				paintJoints(g, worldRelDisplay);
+				paintJoints(g);
 			}
 		} finally {
 			g.dispose();
 		}
 	}
 
-	private void paintJoints(Graphics2D graphics, AffineTransform transform) {
+	private void paintJoints(Graphics2D graphics) {
 		if (isAlive()) {
 			graphics.setColor(Color.BLACK);
 			int j = 0;
@@ -343,7 +345,6 @@ public class Block implements Item {
 				MouseJoint joint = (MouseJoint)edge.joint;
 				Vec2 target = joint.getAnchor1();
 				Point2D point = point(target.x, target.y);
-				point = applied(transform, point);
 				graphics.drawString(String.valueOf(j), (float)point.getX(), (float)point.getY());
 				edge = edge.next;
 				j++;

@@ -146,25 +146,28 @@ public class Tray {
 		return fixedToDisplay;
 	}
 
-	public void paint(Graphics2D graphics, AffineTransform transform) {
-		// Blocks.
-		AffineTransform blockTransform = copy(transform);
-		blockTransform.translate(anchor.getX(), anchor.getY());
-		for (Block block: blocks) {
-			block.paint(graphics, blockTransform);
+	public void paint(Graphics2D graphics) {
+		Graphics2D g = copy(graphics);
+		try {
+			g.translate(anchor.getX(), anchor.getY());
+			// Blocks.
+			for (Block block: blocks) {
+				block.paint(g);
+			}
+			// Flusher.
+			paintFlusher(g);
+		} finally {
+			g.dispose();
 		}
-		// Flusher.
-		paintFlusher(graphics, transform);
 	}
 
-	private void paintDie(Rectangle2D die, int number, Graphics2D graphics, AffineTransform transform) {
+	private void paintDie(Rectangle2D die, int number, Graphics2D graphics) {
 		// Face.
-		Rectangle2D dieDisplay = applied(transform, die);
 		graphics.setColor(Color.WHITE);
-		graphics.fill(dieDisplay);
+		graphics.fill(die);
 		graphics.setColor(Color.BLACK);
-		graphics.setStroke(new BasicStroke(3));
-		graphics.draw(dieDisplay);
+		graphics.setStroke(new BasicStroke(0.2f));
+		graphics.draw(die);
 		// Dots.
 		boolean[][][] dotsAll = {
 			{{false, false, false}, {false, true, false}, {false, false, false}},
@@ -184,15 +187,15 @@ public class Tray {
 				double y = dotSpacing*i + dotOffset;
 				if (dots[i][j]) {
 					Ellipse2D dot = new Ellipse2D.Double(die.getX() + x, die.getY() + y, dotSize, dotSize);
-					graphics.fill(applied(transform, dot));
+					graphics.fill(dot);
 				}
 			}
 		}
 	}
 
-	private void paintFlusher(Graphics2D graphics, AffineTransform transform) {
-		paintDie(translated(die, anchor), 5, graphics, transform);
-		paintDie(translated(die2, anchor), 6, graphics, transform);
+	private void paintFlusher(Graphics2D graphics) {
+		paintDie(die, 5, graphics);
+		paintDie(die2, 6, graphics);
 	}
 
 	private Block randomBlock() {

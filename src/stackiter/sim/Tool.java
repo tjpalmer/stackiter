@@ -26,22 +26,22 @@ public class Tool extends BasicItem {
 	}
 
 	@Override
-	public void paint(Graphics2D graphics, AffineTransform worldRelDisplay) {
+	public void paint(Graphics2D graphics) {
 		graphics = copy(graphics);
 		try {
 			// Find the bounds for the cross-hairs.
-			Rectangle2D outer = applied(worldRelDisplay, rectangle(getPosition(), getExtent()));
-			Rectangle2D inner = applied(worldRelDisplay, rectangle(getPosition(), scaled(0.2, getExtent())));
+			Rectangle2D outer = rectangle(getPosition(), getExtent());
+			Rectangle2D inner = rectangle(getPosition(), scaled(0.2, getExtent()));
 			// Base color on mode.
 			// TODO Provide a parameter on active color?
 			Color color = mode == ToolMode.INACTIVE ? getColor() : getColor().darker();
 			// Draw them darker.
 			graphics.setColor(color.darker());
-			graphics.setStroke(new BasicStroke(3));
+			graphics.setStroke(new BasicStroke(0.2f));
 			drawCrosshairs(graphics, outer, inner);
 			// Draw them brighter.
 			graphics.setColor(color);
-			graphics.setStroke(new BasicStroke(1));
+			graphics.setStroke(new BasicStroke(0.05f));
 			drawCrosshairs(graphics, outer, inner);
 		} finally {
 			graphics.dispose();

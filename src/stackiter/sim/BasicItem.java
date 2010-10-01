@@ -100,13 +100,11 @@ public class BasicItem implements Item {
 	 * Simple rectangle, but no rotation supported at present.
 	 */
 	@Override
-	public void paint(Graphics2D graphics, AffineTransform worldRelDisplay) {
+	public void paint(Graphics2D graphics) {
 		graphics = copy(graphics);
 		try {
 			graphics.setColor(color);
 			Rectangle2D rectangle = rectangle(getPosition(), getExtent());
-			// TODO Support rotation.
-			rectangle = applied(worldRelDisplay, rectangle);
 			graphics.fill(rectangle);
 		} finally {
 			graphics.dispose();
