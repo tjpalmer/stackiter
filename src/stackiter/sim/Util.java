@@ -76,6 +76,10 @@ public class Util {
 		return (Point2D)point.clone();
 	}
 
+	public static double dot(Point2D a, Point2D b) {
+		return a.getX() * b.getX() + a.getY() * b.getY();
+	}
+
 	/**
 	 * @return the extent (half width, half height) of the bounding rectangle.
 	 */

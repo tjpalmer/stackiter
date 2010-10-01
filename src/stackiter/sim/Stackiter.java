@@ -175,20 +175,22 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 					// Without mouseOver check, I got upward scrolling when over title bar.
 					// Further, scroll after world update, so we don't lose our tool point, which might have changed.
 					handleScroll(mouseTool.getPosition());
-					if (world.getGraspedItem(mouseTool) != null) {
+					Item graspedItem = world.getGraspedItem(mouseTool);
+					if (graspedItem != null) {
 						// Constrain the mouse to the tool position if holding an object.
 						// Otherwise, the seeming position on the screen can be far off from the target.
-						// TODO Does this increase arm strain too much?
 						Point2D delta = subtracted(toolPoint, mouseTool.getPosition());
-						double distance = norm(delta);
-						// Reduce the effect when moving small distances (less than 2 units here).
-						double effect = Math.min(1, distance/2);
-						// This giant exponent here makes very fine distances almost untouched.
-						double scale = 1 - 0.03 * Math.pow(effect, 30);
-						Point2D snapPoint = added(mouseTool.getPosition(), scaled(scale, delta));
-						moveMouse(snapPoint);
-						// TODO A side effect is that this makes scrolling hard while carrying an object.
-						// TODO Is that okay?
+						double relativeDir = dot(delta, graspedItem.getLinearVelocity());
+						if (relativeDir < 0) {
+							// The block is not headed toward the tool, so move the mouse to limit spring effect.
+							// Technically, the user should be allowed to target any position.
+							// However, we either need to show that position, or let the visible tool reflect the actual location better.
+							// This is one option for the latter.
+							// Showing tool and target would be nice but complicated.
+							// The human already has vaguer info than the computer anyway. The knowledge of action is somewhat internal to the human.
+							Point2D snapPoint = added(mouseTool.getPosition(), scaled(0.95, delta));
+							moveMouse(snapPoint);
+						}
 					}
 				}
 			} else {
