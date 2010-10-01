@@ -98,6 +98,10 @@ public class Util {
 		return transform;
 	}
 
+	public static double norm(Point2D point) {
+		return point.distance(0, 0);
+	}
+
 	public static Point2D point() {
 		return new Point2D.Double();
 	}
@@ -128,6 +132,10 @@ public class Util {
 
 	public static Point2D scaled(double scale, Point2D point) {
 		return point(scale * point.getX(), scale * point.getY());
+	}
+
+	public static Point2D subtracted(Point2D a, Point2D b) {
+		return point(a.getX() - b.getX(), a.getY() - b.getY());
 	}
 
 	public static void translate(AffineTransform transform, Point2D point) {

@@ -85,7 +85,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			// Log the tool to get it a lower ID.
 			logger.logTool(mouseTool);
 
-			world.addAgent(new ClearerAgent(30));
+			//world.addAgent(new ClearerAgent(30));
 			world.addAgent(new DropperAgent());
 
 			double groundDepth = -2 * world.getGround().getExtent().getY();
@@ -126,13 +126,12 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			if (mousePoint != null) {
 				// Recalculate each time for cases of scrolling.
 				// TODO Base instead on moving toolPoint explicitly when scrolling??? Could be risky.
-				AffineTransform worldToDisplayTransform = worldToDisplayTransform();
-				toolPoint = appliedInv(worldToDisplayTransform, mousePoint);
+				toolPoint = appliedInv(worldToDisplayTransform(), mousePoint);
 
 				if (world.getGraspedItem(mouseTool) != null) {
 					// Constrain the target location.
 					// This mattered once blocks could constrain tool location (carrying them off the screen).
-					Point2D oldToolPoint = copy(toolPoint);
+					Point2D goalToolPoint = copy(toolPoint);
 					toolPoint.setLocation(
 						Math.min(toolPoint.getX(), viewBounds.getMaxX()),
 						Math.min(toolPoint.getY(), viewBounds.getMaxY())
@@ -142,11 +141,9 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 						Math.max(toolPoint.getY(), viewBounds.getMinY())
 					);
 					// See if we changed anything.
-					if (!toolPoint.equals(oldToolPoint)) {
+					if (!toolPoint.equals(goalToolPoint)) {
 						// If so, move the mouse to the contrained spot.
-						worldToDisplayTransform.transform(toolPoint, mousePoint);
-						Point displayPoint = getLocationOnScreen();
-						robot.mouseMove(displayPoint.x + (int)mousePoint.getX(), displayPoint.y + (int)mousePoint.getY());
+						moveMouse(toolPoint);
 					}
 				}
 
@@ -163,6 +160,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 				}
 			}
 
+			// TODO Why view before world???
 			updateView();
 
 			logger.logDisplaySize(point(getWidth(), getHeight()));
@@ -173,10 +171,25 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			world.update();
 
 			if (mouseOver) {
-				// Without mouseOver check, I got upward scrolling when over title bar.
-				// Further, scroll after world update, so we don't lose our tool point, which might have changed.
-				if (toolPoint != null) {
+				if (mousePoint != null) {
+					// Without mouseOver check, I got upward scrolling when over title bar.
+					// Further, scroll after world update, so we don't lose our tool point, which might have changed.
 					handleScroll(mouseTool.getPosition());
+					if (world.getGraspedItem(mouseTool) != null) {
+						// Constrain the mouse to the tool position if holding an object.
+						// Otherwise, the seeming position on the screen can be far off from the target.
+						// TODO Does this increase arm strain too much?
+						Point2D delta = subtracted(toolPoint, mouseTool.getPosition());
+						double distance = norm(delta);
+						// Reduce the effect when moving small distances (less than 2 units here).
+						double effect = Math.min(1, distance/2);
+						// This giant exponent here makes very fine distances almost untouched.
+						double scale = 1 - 0.03 * Math.pow(effect, 30);
+						Point2D snapPoint = added(mouseTool.getPosition(), scaled(scale, delta));
+						moveMouse(snapPoint);
+						// TODO A side effect is that this makes scrolling hard while carrying an object.
+						// TODO Is that okay?
+					}
 				}
 			} else {
 				// Make we get the move (in world update) before the departure, if both.
@@ -297,6 +310,12 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		// Possibly reduces responsiveness to user, but it keeps things more consistent from a standard MDP perspective.
 		// And if the world is fast enough, things will be okay.
 		mouseDown = false;
+	}
+
+	private void moveMouse(Point2D toolPoint) {
+		worldToDisplayTransform().transform(toolPoint, mousePoint);
+		Point displayPoint = getLocationOnScreen();
+		robot.mouseMove(displayPoint.x + (int)mousePoint.getX(), displayPoint.y + (int)mousePoint.getY());
 	}
 
 	@Override
