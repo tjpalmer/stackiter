@@ -122,13 +122,16 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		logger.atomic(new Runnable() { @Override public void run() {
 
 			Point2D toolPoint = null;
+			Point2D oldToolPoint = copy(mouseTool.getPosition());
+			boolean hadGrasped = false;
 
 			if (mousePoint != null) {
 				// Recalculate each time for cases of scrolling.
 				// TODO Base instead on moving toolPoint explicitly when scrolling??? Could be risky.
 				toolPoint = appliedInv(worldToDisplayTransform(), mousePoint);
 
-				if (world.getGraspedItem(mouseTool) != null) {
+				hadGrasped = world.getGraspedItem(mouseTool) != null;
+				if (hadGrasped) {
 					// Constrain the target location.
 					// This mattered once blocks could constrain tool location (carrying them off the screen).
 					Point2D goalToolPoint = copy(toolPoint);
@@ -160,12 +163,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 				}
 			}
 
-			// TODO Why view before world???
-			updateView();
-
-			logger.logDisplaySize(point(getWidth(), getHeight()));
-			logger.logView(viewRelWorld());
-
 			// TODO Offload this to a separate thread? If so, still lock step to one update per frame?
 			// TODO Alternatively, change the delay based on how much time is left. Or is that auto?
 			world.update();
@@ -174,7 +171,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 				if (mousePoint != null) {
 					// Without mouseOver check, I got upward scrolling when over title bar.
 					// Further, scroll after world update, so we don't lose our tool point, which might have changed.
-					handleScroll(mouseTool.getPosition());
 					Item graspedItem = world.getGraspedItem(mouseTool);
 					if (graspedItem != null) {
 						// Constrain the mouse to the tool position if holding an object.
@@ -191,12 +187,22 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 							Point2D snapPoint = added(mouseTool.getPosition(), scaled(0.95, delta));
 							moveMouse(snapPoint);
 						}
+					} else if (hadGrasped) {
+						mouseTool.setPosition(oldToolPoint);
+						moveMouse(oldToolPoint);
 					}
+					// Handle scroll after finalizing state.
+					handleScroll(mouseTool.getPosition());
 				}
 			} else {
 				// Make we get the move (in world update) before the departure, if both.
 				logger.logToolPresent(mouseTool, mouseOver);
 			}
+
+			// Update view settings now that we've finalized out mouse position and world state.
+			updateView();
+			logger.logDisplaySize(point(getWidth(), getHeight()));
+			logger.logView(viewRelWorld());
 
 		}});
 
@@ -314,8 +320,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 		mouseDown = false;
 	}
 
-	private void moveMouse(Point2D toolPoint) {
-		worldToDisplayTransform().transform(toolPoint, mousePoint);
+	private void moveMouse(Point2D point) {
+		worldToDisplayTransform().transform(point, mousePoint);
 		Point displayPoint = getLocationOnScreen();
 		robot.mouseMove(displayPoint.x + (int)mousePoint.getX(), displayPoint.y + (int)mousePoint.getY());
 	}
