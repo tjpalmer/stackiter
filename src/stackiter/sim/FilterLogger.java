@@ -50,7 +50,7 @@ public class FilterLogger extends AtomicLogger {
 
 	private final Logger logger;
 
-	private Map<Object, Release> releases = new LinkedHashMap<Object, Release>();
+	private Map<Soul, Release> releases = new LinkedHashMap<Soul, Release>();
 
 	private List<Item> removals = new ArrayList<Item>();
 

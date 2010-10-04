@@ -33,6 +33,8 @@ public class Block implements Item {
 
 	private List<Block> fixations = new ArrayList<Block>();
 
+	private Point2D linearAcceleration = point();
+
 	/**
 	 * Bogus just for copies.
 	 */
@@ -42,7 +44,7 @@ public class Block implements Item {
 
 	private PolygonDef shapeDef;
 
-	private Object soul = new Object();
+	private Soul soul = new Soul();
 
 	public Block() {
 		// Placeholders.
@@ -186,6 +188,10 @@ public class Block implements Item {
 		return point(anchor.x, anchor.y);
 	}
 
+	public Point2D getLinearAcceleration() {
+		return linearAcceleration;
+	}
+
 	@Override
 	public Point2D getLinearVelocity() {
 		if (body == null) {
@@ -207,7 +213,7 @@ public class Block implements Item {
 	}
 
 	@Override
-	public Object getSoul() {
+	public Soul getSoul() {
 		return soul;
 	}
 
@@ -412,6 +418,10 @@ public class Block implements Item {
 	@Override
 	public void setExtent(Point2D extent) {
 		setExtent(extent.getX(), extent.getY());
+	}
+
+	public void setLinearAcceleration(Point2D linearAcceleration) {
+		this.linearAcceleration = linearAcceleration;
 	}
 
 	/**

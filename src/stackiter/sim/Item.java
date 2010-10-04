@@ -29,6 +29,8 @@ public interface Item extends Cloneable {
 	 */
 	public Point2D getExtent();
 
+	public Point2D getLinearAcceleration();
+
 	public Point2D getLinearVelocity();
 
 	public Point2D getPosition();
@@ -44,7 +46,7 @@ public interface Item extends Cloneable {
 	 *
 	 * This is also easier to manage than ID generation.
 	 */
-	public Object getSoul();
+	public Soul getSoul();
 
 	/**
 	 * Whether the item interacts physically in the world with other items.
@@ -62,6 +64,8 @@ public interface Item extends Cloneable {
 	public void setColor(Color color);
 
 	public void setExtent(Point2D extent);
+
+	public void setLinearAcceleration(Point2D linearAcceleration);
 
 	public void setLinearVelocity(Point2D linearVelocity);
 

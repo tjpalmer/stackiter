@@ -22,9 +22,11 @@ public class BasicItem implements Item {
 
 	private Point2D extent = point();
 
+	private Point2D linearAcceleration = point();
+
 	private Point2D linearVelocity = point();
 
-	private Object soul = new Object();
+	private Soul soul = new Soul();
 
 	private Point2D position = point();
 
@@ -76,6 +78,10 @@ public class BasicItem implements Item {
 		return extent;
 	}
 
+	public Point2D getLinearAcceleration() {
+		return linearAcceleration;
+	}
+
 	@Override
 	public Point2D getLinearVelocity() {
 		return linearVelocity;
@@ -87,7 +93,7 @@ public class BasicItem implements Item {
 	}
 
 	@Override
-	public Object getSoul() {
+	public Soul getSoul() {
 		return soul;
 	}
 
@@ -134,6 +140,10 @@ public class BasicItem implements Item {
 	@Override
 	public void setExtent(Point2D extent) {
 		this.extent.setLocation(extent);
+	}
+
+	public void setLinearAcceleration(Point2D linearAcceleration) {
+		this.linearAcceleration.setLocation(linearAcceleration);
 	}
 
 	@Override

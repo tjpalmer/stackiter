@@ -48,7 +48,7 @@ public class TextLogger extends AtomicLogger implements Logger {
 
 	private int idWorld = 1;
 
-	private Map<Object, ItemInfo> items = new HashMap<Object, ItemInfo>();
+	private Map<Soul, ItemInfo> items = new HashMap<Soul, ItemInfo>();
 
 	private double simTime;
 
@@ -58,7 +58,7 @@ public class TextLogger extends AtomicLogger implements Logger {
 
 	private long time;
 
-	private Map<Object, ToolInfo> tools = new HashMap<Object, ToolInfo>();
+	private Map<Soul, ToolInfo> tools = new HashMap<Soul, ToolInfo>();
 
 	private boolean trayLogged;
 
