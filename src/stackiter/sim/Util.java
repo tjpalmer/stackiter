@@ -5,6 +5,8 @@ import java.awt.geom.*;
 
 public class Util {
 
+	public static double TWO_PI = 2 * Math.PI;
+
 	public static Point2D added(Point2D a, Point2D b) {
 		return point(a.getX() + b.getX(), a.getY() + b.getY());
 	}
@@ -122,6 +124,10 @@ public class Util {
 		return new Line2D.Double(x1, y1, x2, y2);
 	}
 
+	public static int signApprox(double x, double epsilon) {
+		return (int)(Math.abs(x) < epsilon ? 0 : Math.signum(x));
+	}
+
 	public static Rectangle2D rectangle() {
 		return new Rectangle2D.Double();
 	}
@@ -140,6 +146,16 @@ public class Util {
 
 	public static Point2D subtracted(Point2D a, Point2D b) {
 		return point(a.getX() - b.getX(), a.getY() - b.getY());
+	}
+
+	public static double subtractedAngle(double a, double b) {
+		double diff = (a - b) % TWO_PI;
+		if (diff >= Math.PI) {
+			diff -= TWO_PI;
+		} else if (diff < -Math.PI) {
+			diff += TWO_PI;
+		}
+		return diff;
 	}
 
 	public static void translate(AffineTransform transform, Point2D point) {

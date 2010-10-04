@@ -8,8 +8,6 @@ import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
 
-import javax.crypto.EncryptedPrivateKeyInfo;
-
 import org.jbox2d.collision.*;
 import org.jbox2d.collision.shapes.*;
 import org.jbox2d.common.*;
@@ -18,9 +16,13 @@ import org.jbox2d.dynamics.joints.*;
 
 public class Block implements Item {
 
-	private static final double EPSILON = 0.1;
+	private static final double EPSILON = 5;
 
 	private boolean alive;
+
+	private double angularAcceleration;
+
+	private boolean angularAccelerationCrossedZero;
 
 	/**
 	 * Bogus just for copies.
@@ -42,6 +44,9 @@ public class Block implements Item {
 	private boolean linearAccelerationCrossedZero;
 
 	private Point2D linearJerk = point();
+
+	// TODO Do I care? Seems like accel is good enough?
+	// private boolean linearJerkCrossedZero;
 
 	/**
 	 * Bogus just for copies.
@@ -105,7 +110,11 @@ public class Block implements Item {
 	public Block clone() {
 		Block copied = new Block();
 		copied.alive = alive;
+		copied.angularAcceleration = getAngularAcceleration();
+		copied.angularVelocity = getAngularVelocity();
 		copied.color = color;
+		copied.linearAcceleration.setLocation(getLinearAcceleration());
+		copied.linearVelocity.setLocation(getLinearVelocity());
 		copied.soul = soul;
 		copied.setAngle(getAngle());
 		copied.setPosition(getPosition());
@@ -131,6 +140,11 @@ public class Block implements Item {
 			double angle = -Math.signum(xForm.R.col2.x) * Math.acos(xForm.R.col1.x);
 			return angle / Math.PI;
 		}
+	}
+
+	@Override
+	public double getAngularAcceleration() {
+		return angularAcceleration;
 	}
 
 	@Override
@@ -334,8 +348,8 @@ public class Block implements Item {
 			// Draw the block.
 			// Fill the full shape to avoid distance between fill and stroke.
 			Color color = this.color;
-			if (linearAccelerationCrossedZero) {
-				color = color.brighter().brighter();
+			if (angularAccelerationCrossedZero || linearAccelerationCrossedZero) {
+				color = Color.WHITE;
 			}
 			g.setColor(color);
 			g.fill(transformedShape());
@@ -410,6 +424,16 @@ public class Block implements Item {
 		bodyDef.angle = (float)(angle * Math.PI);
 	}
 
+	@Override
+	public void setAngularAcceleration(double angularAcceleration) {
+		// Track to/from zero.
+		int signNew = signApprox(angularAcceleration, EPSILON);
+		int signOld = signApprox(this.angularAcceleration, EPSILON);
+		angularAccelerationCrossedZero = !(signNew == signOld);
+		// Now do the update.
+		this.angularAcceleration = angularAcceleration;
+	}
+
 	/**
 	 * Bogus just for copies.
 	 */
@@ -437,15 +461,30 @@ public class Block implements Item {
 	}
 
 	public void setLinearAcceleration(Point2D linearAcceleration) {
-		boolean normZeroNew = norm(linearAcceleration) < EPSILON;
-		boolean normZeroOld = norm(this.linearAcceleration) < EPSILON;
-		// Track to/from zero acceleration.
-		linearAccelerationCrossedZero = dot(linearAcceleration, this.linearAcceleration) < 0 || normZeroNew != normZeroOld;
+		// Track to/from zero.
+		// This is dependent on world axes, but ground and gravity gives some excuse for the distinction.
+		double epsilon = 50;
+		int xSignNew = signApprox(linearAcceleration.getX(), epsilon);
+		int ySignNew = signApprox(linearAcceleration.getY(), epsilon);
+		int xSignOld = signApprox(this.linearAcceleration.getX(), epsilon);
+		int ySignOld = signApprox(this.linearAcceleration.getY(), epsilon);
+		linearAccelerationCrossedZero = !(xSignNew == xSignOld && ySignNew == ySignOld);
 		// Now do the update.
 		this.linearAcceleration.setLocation(linearAcceleration);
 	}
 
+	/**
+	 * TODO Do I really care about explicit jerk?
+	 */
 	public void setLinearJerk(Point2D linearJerk) {
+		//		// Track to/from zero.
+		//		// This is dependent on world axes, but ground and gravity gives some excuse for the distinction.
+		//		int xSignNew = signApprox(linearJerk.getX(), EPSILON);
+		//		int ySignNew = signApprox(linearJerk.getY(), EPSILON);
+		//		int xSignOld = signApprox(this.linearJerk.getX(), EPSILON);
+		//		int ySignOld = signApprox(this.linearJerk.getY(), EPSILON);
+		//		linearJerkCrossedZero = !(xSignNew == xSignOld && ySignNew == ySignOld);
+		//		// Now do the update.
 		this.linearJerk.setLocation(linearJerk);
 	}
 

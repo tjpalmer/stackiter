@@ -14,6 +14,8 @@ public interface Item extends Cloneable {
 
 	public double getAngle();
 
+	public double getAngularAcceleration();
+
 	public double getAngularVelocity();
 
 	/**
@@ -63,6 +65,8 @@ public interface Item extends Cloneable {
 
 	public void setAngle(double angle);
 
+	public void setAngularAcceleration(double angularAcceleration);
+
 	public void setAngularVelocity(double angularVelocity);
 
 	public void setColor(Color color);
@@ -71,6 +75,9 @@ public interface Item extends Cloneable {
 
 	public void setLinearAcceleration(Point2D linearAcceleration);
 
+	/**
+	 * TODO Do I really care about explicit jerk?
+	 */
 	public void setLinearJerk(Point2D linearJerk);
 
 	public void setLinearVelocity(Point2D linearVelocity);

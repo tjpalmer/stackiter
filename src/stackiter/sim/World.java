@@ -31,6 +31,11 @@ public class World {
 		/**
 		 * TODO Full old state at some point?
 		 */
+		double oldAngularVelocity;
+
+		/**
+		 * TODO Full old state at some point?
+		 */
 		Point2D oldLinearAcceleration = point();
 
 		/**
@@ -193,6 +198,7 @@ public class World {
 		// TODO Generify widget concept?
 		if (clearer.contains(tool.getPosition())) {
 			for (Block block: blocks) {
+				// Calling this in a block look is super inefficient n^2.
 				handleRemoval(block);
 			}
 			blocks.clear();
@@ -261,7 +267,14 @@ public class World {
 		// Remove the block.
 		block.removeFromWorld();
 		logger.logRemoval(block);
-		items.remove(block);
+		// This isn't efficient to step through one at a time.
+		ITEMS: for (Iterator<ItemInfo> i = items.iterator(); i.hasNext();) {
+			ItemInfo info = i.next();
+			if (info.item == block) {
+				i.remove();
+				break ITEMS;
+			}
+		}
 	}
 
 	public void paint(Graphics2D graphics) {
@@ -349,10 +362,13 @@ public class World {
 				// Update acceleration.
 				Point2D linearAcceleration = scaled(scale, subtracted(info.item.getLinearVelocity(), info.oldLinearVelocity));
 				info.item.setLinearAcceleration(linearAcceleration);
+				double angularAcceleration = scale * (info.item.getAngularVelocity() - info.oldAngularVelocity);
+				info.item.setAngularAcceleration(angularAcceleration);
 				// Now with that, update jerk.
 				Point2D linearJerk = scaled(scale, subtracted(info.item.getLinearAcceleration(), info.oldLinearAcceleration));
 				info.item.setLinearJerk(linearJerk);
 				// Now update the old values for next time.
+				info.oldAngularVelocity = info.item.getAngularVelocity();
 				info.oldLinearAcceleration.setLocation(info.item.getLinearAcceleration());
 				info.oldLinearVelocity.setLocation(info.item.getLinearVelocity());
 				//System.out.println(info.item.getColor() + ": " + info.item.getLinearAcceleration() + " and " + info.item.getLinearJerk());

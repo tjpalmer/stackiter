@@ -16,6 +16,8 @@ public class BasicItem implements Item {
 
 	private double angle;
 
+	private double angularAcceleration;
+
 	private double angularVelocity;
 
 	private Color color = Color.WHITE;
@@ -55,6 +57,11 @@ public class BasicItem implements Item {
 	@Override
 	public double getAngle() {
 		return angle;
+	}
+
+	@Override
+	public double getAngularAcceleration() {
+		return angularAcceleration;
 	}
 
 	@Override
@@ -133,6 +140,11 @@ public class BasicItem implements Item {
 	@Override
 	public void setAngle(double angle) {
 		this.angle = angle;
+	}
+
+	@Override
+	public void setAngularAcceleration(double angularAcceleration) {
+		this.angularAcceleration = angularAcceleration;
 	}
 
 	@Override
