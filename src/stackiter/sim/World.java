@@ -13,6 +13,34 @@ import org.jbox2d.common.*;
 public class World {
 
 	/**
+	 * We run the sim longer than we claim. This makes it feel snappier.
+	 *
+	 * TODO Maybe a different physical scale would also have worked?
+	 *
+	 * TODO Make this a member of World instances instead of a global?
+	 */
+	public static final double TIME_SCALE = 2;
+
+	/**
+	 * For tracking extra item information not stored directly in the items.
+	 */
+	private class ItemInfo {
+
+		Item item;
+
+		/**
+		 * TODO Full old state at some point?
+		 */
+		Point2D oldLinearAcceleration = point();
+
+		/**
+		 * TODO Full old state at some point?
+		 */
+		Point2D oldLinearVelocity = point();
+
+	}
+
+	/**
 	 * For tracking internal (and previous) states of tools.
 	 */
 	private class ToolInfo {
@@ -31,7 +59,7 @@ public class World {
 
 	private Block ground;
 
-	private List<Item> items = new ArrayList<Item>();
+	private List<ItemInfo> items = new ArrayList<ItemInfo>();
 
 	private Logger logger;
 
@@ -63,7 +91,7 @@ public class World {
 		clearer = new Clearer();
 		double offset = -ground.getExtent().getY();
 		clearer.setPosition(point(ground.getExtent().getX() + offset, offset));
-		items.add(clearer);
+		addItem(clearer);
 	}
 
 	private void addGround() {
@@ -74,7 +102,13 @@ public class World {
 		ground.setExtent(40/2, 1.5); // 40 == viewRect.getWidth()
 		ground.setPosition(0, -1.5);
 		ground.addTo(this);
-		items.add(ground);
+		addItem(ground);
+	}
+
+	private void addItem(Item item) {
+		ItemInfo info = new ItemInfo();
+		info.item = item;
+		items.add(info);
 	}
 
 	/**
@@ -136,8 +170,18 @@ public class World {
 			copied.setPosition(added(copied.getPosition(), tray.getAnchor()));
 			items.add(copied);
 		}
-		items.addAll(this.items);
+		for (ItemInfo info: this.items) {
+			items.add(info.item);
+		}
 		return items;
+	}
+
+	/**
+	 * The amount of sim time that we claim passes for each update.
+	 */
+	public double getStepTime() {
+		// Just hardcoded for now.
+		return 0.01;
 	}
 
 	public Tray getTray() {
@@ -161,7 +205,7 @@ public class World {
 		if (graspedBlock != null) {
 			blocks.add(graspedBlock);
 			graspedBlock.addTo(this);
-			items.add(graspedBlock);
+			addItem(graspedBlock);
 		}
 		if (!tray.isActionConsumed()) {
 			for (Block block: blocks) {
@@ -222,8 +266,8 @@ public class World {
 
 	public void paint(Graphics2D graphics) {
 		// Live items.
-		for (Item item: items) {
-			item.paint(graphics);
+		for (ItemInfo info: items) {
+			info.item.paint(graphics);
 		}
 		// Tray. Includes preborn blocks.
 		tray.paint(graphics);
@@ -280,12 +324,12 @@ public class World {
 			}
 
 			// Step the simulation.
-			double stepTime = 0.02;
-			world.step((float)stepTime, 10);
+			// We step twice the claimed step time because things feel snappier that way.
+			world.step((float)(TIME_SCALE * getStepTime()), 10);
 			steps++;
 			// We log half sim time since that's also what we show the user.
 			// Might make for odd gravity perhaps or whatnot, but whatever.
-			logger.logSimTime(steps, 0.5 * stepTime * steps);
+			logger.logSimTime(steps, getStepTime() * steps);
 
 			// Delete lost blocks.
 			for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {
@@ -299,6 +343,22 @@ public class World {
 				}
 			}
 
+			// Update accelerations (something the engine doesn't track for us).
+			for (ItemInfo info: items) {
+				double scale = 1 / getStepTime();
+				// Update acceleration.
+				Point2D linearAcceleration = scaled(scale, subtracted(info.item.getLinearVelocity(), info.oldLinearVelocity));
+				info.item.setLinearAcceleration(linearAcceleration);
+				// Now with that, update jerk.
+				Point2D linearJerk = scaled(scale, subtracted(info.item.getLinearAcceleration(), info.oldLinearAcceleration));
+				info.item.setLinearJerk(linearJerk);
+				// Now update the old values for next time.
+				info.oldLinearAcceleration.setLocation(info.item.getLinearAcceleration());
+				info.oldLinearVelocity.setLocation(info.item.getLinearVelocity());
+				//System.out.println(info.item.getColor() + ": " + info.item.getLinearAcceleration() + " and " + info.item.getLinearJerk());
+			}
+
+			// Constrain and log tool states.
 			for (Map.Entry<Tool, ToolInfo> t: tools.entrySet()) {
 				Tool tool = t.getKey();
 				constrainTool(tool, t.getValue().graspedItem);

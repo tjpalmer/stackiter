@@ -8,6 +8,8 @@ import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
 
+import javax.crypto.EncryptedPrivateKeyInfo;
+
 import org.jbox2d.collision.*;
 import org.jbox2d.collision.shapes.*;
 import org.jbox2d.common.*;
@@ -15,6 +17,8 @@ import org.jbox2d.dynamics.*;
 import org.jbox2d.dynamics.joints.*;
 
 public class Block implements Item {
+
+	private static final double EPSILON = 0.1;
 
 	private boolean alive;
 
@@ -34,6 +38,10 @@ public class Block implements Item {
 	private List<Block> fixations = new ArrayList<Block>();
 
 	private Point2D linearAcceleration = point();
+
+	private boolean linearAccelerationCrossedZero;
+
+	private Point2D linearJerk = point();
 
 	/**
 	 * Bogus just for copies.
@@ -192,12 +200,16 @@ public class Block implements Item {
 		return linearAcceleration;
 	}
 
+	public Point2D getLinearJerk() {
+		return linearJerk;
+	}
+
 	@Override
 	public Point2D getLinearVelocity() {
 		if (body == null) {
 			return linearVelocity;
 		} else {
-			return point(body.m_linearVelocity.x, body.m_linearVelocity.y);
+			return scaled(World.TIME_SCALE, point(body.m_linearVelocity.x, body.m_linearVelocity.y));
 		}
 	}
 
@@ -321,6 +333,10 @@ public class Block implements Item {
 		try {
 			// Draw the block.
 			// Fill the full shape to avoid distance between fill and stroke.
+			Color color = this.color;
+			if (linearAccelerationCrossedZero) {
+				color = color.brighter().brighter();
+			}
 			g.setColor(color);
 			g.fill(transformedShape());
 			// Shape information.
@@ -421,7 +437,16 @@ public class Block implements Item {
 	}
 
 	public void setLinearAcceleration(Point2D linearAcceleration) {
-		this.linearAcceleration = linearAcceleration;
+		boolean normZeroNew = norm(linearAcceleration) < EPSILON;
+		boolean normZeroOld = norm(this.linearAcceleration) < EPSILON;
+		// Track to/from zero acceleration.
+		linearAccelerationCrossedZero = dot(linearAcceleration, this.linearAcceleration) < 0 || normZeroNew != normZeroOld;
+		// Now do the update.
+		this.linearAcceleration.setLocation(linearAcceleration);
+	}
+
+	public void setLinearJerk(Point2D linearJerk) {
+		this.linearJerk.setLocation(linearJerk);
 	}
 
 	/**

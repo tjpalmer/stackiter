@@ -26,10 +26,14 @@ public interface Item extends Cloneable {
 	/**
 	 * TODO Extent can be convenient, but it assumes a geometrically centered
 	 * TODO position. Reconsider this.
+	 *
+	 * TODO Change all these getters to receiving a point to fill????
 	 */
 	public Point2D getExtent();
 
 	public Point2D getLinearAcceleration();
+
+	public Point2D getLinearJerk();
 
 	public Point2D getLinearVelocity();
 
@@ -66,6 +70,8 @@ public interface Item extends Cloneable {
 	public void setExtent(Point2D extent);
 
 	public void setLinearAcceleration(Point2D linearAcceleration);
+
+	public void setLinearJerk(Point2D linearJerk);
 
 	public void setLinearVelocity(Point2D linearVelocity);
 
