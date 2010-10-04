@@ -16,8 +16,6 @@ import org.jbox2d.dynamics.joints.*;
 
 public class Block implements Item {
 
-	private static final double EPSILON = 5;
-
 	private boolean alive;
 
 	private double angularAcceleration;
@@ -427,9 +425,8 @@ public class Block implements Item {
 	@Override
 	public void setAngularAcceleration(double angularAcceleration) {
 		// Track to/from zero.
-		int signNew = signApprox(angularAcceleration, EPSILON);
-		int signOld = signApprox(this.angularAcceleration, EPSILON);
-		angularAccelerationCrossedZero = !(signNew == signOld);
+		// TODO Epsilon here is somewhat arbitrary. Learn cutoffs for interesting sample times automatically?
+		angularAccelerationCrossedZero = crossedZero(angularAcceleration, this.angularAcceleration, FilterLogger.ANGULAR_ACCELERATION_EPSILON);
 		// Now do the update.
 		this.angularAcceleration = angularAcceleration;
 	}
@@ -463,12 +460,8 @@ public class Block implements Item {
 	public void setLinearAcceleration(Point2D linearAcceleration) {
 		// Track to/from zero.
 		// This is dependent on world axes, but ground and gravity gives some excuse for the distinction.
-		double epsilon = 50;
-		int xSignNew = signApprox(linearAcceleration.getX(), epsilon);
-		int ySignNew = signApprox(linearAcceleration.getY(), epsilon);
-		int xSignOld = signApprox(this.linearAcceleration.getX(), epsilon);
-		int ySignOld = signApprox(this.linearAcceleration.getY(), epsilon);
-		linearAccelerationCrossedZero = !(xSignNew == xSignOld && ySignNew == ySignOld);
+		// TODO Epsilon here is somewhat arbitrary. Learn cutoffs for interesting sample times automatically?
+		linearAccelerationCrossedZero = crossedZero(linearAcceleration, this.linearAcceleration, FilterLogger.LINEAR_ACCELERATION_EPSILON);
 		// Now do the update.
 		this.linearAcceleration.setLocation(linearAcceleration);
 	}

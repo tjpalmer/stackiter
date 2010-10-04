@@ -45,6 +45,8 @@ public class BasicItem implements Item {
 		}
 		// Make sure we actually have copies of the mutable objects.
 		copied.extent = copy(extent);
+		copied.linearAcceleration = copy(linearAcceleration);
+		copied.linearVelocity = copy(linearVelocity);
 		copied.position = copy(position);
 		return copied;
 	}

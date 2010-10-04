@@ -21,6 +21,27 @@ public class FilterLogger extends AtomicLogger {
 		Tool tool;
 	}
 
+	/**
+	 * What counts as "zero" for important time steps.
+	 */
+	public static double ANGULAR_ACCELERATION_EPSILON = 5;
+
+	/**
+	 * An overall throttle on noisy events. We ignore events even across items,
+	 * if too closely spaced in time.
+	 */
+	public static double BUSY_NOISE_DURATION = 0.05;
+
+	/**
+	 * What counts as "zero" for important time steps.
+	 */
+	public static double LINEAR_ACCELERATION_EPSILON = 50;
+
+	/**
+	 * How long a noisy event should be off before we notice it again.
+	 */
+	public static double NOISY_EVENT_DURATION = 0.5;
+
 	private boolean cleared;
 
 	private Point2D displaySize = point();
@@ -50,6 +71,8 @@ public class FilterLogger extends AtomicLogger {
 
 	private final Logger logger;
 
+	private Map<Soul, Double> noisyEventTimes = new HashMap<Soul, Double>();
+
 	private Map<Soul, Release> releases = new LinkedHashMap<Soul, Release>();
 
 	private List<Item> removals = new ArrayList<Item>();
@@ -65,6 +88,24 @@ public class FilterLogger extends AtomicLogger {
 
 	public FilterLogger(Logger logger) {
 		this.logger = logger;
+	}
+
+	private void clearFinishedNoisyEvents() {
+		if (!noisyEventTimes.isEmpty()) {
+			for (Iterator<Map.Entry<Soul, Double>> e = noisyEventTimes.entrySet().iterator(); e.hasNext();) {
+				Map.Entry<Soul, Double> entry = e.next();
+				if (simTime - entry.getValue() > NOISY_EVENT_DURATION) {
+					// The event has expired.
+					e.remove();
+				}
+			}
+			if (noisyEventTimes.isEmpty()) {
+				// Everything has stopped moving. Let's see what's up.
+				// TODO Log whenever _anything_ (rather than everything) stops?
+				requestLog();
+				//System.out.println("$");
+			}
+		}
 	}
 
 	@Override
@@ -118,6 +159,17 @@ public class FilterLogger extends AtomicLogger {
 
 	@Override
 	public void logItem(Item item) {
+		Item old = items.get(item.getSoul());
+		if (old != null) {
+			// See if the acceleration changes indicate an event we want to track.
+			if (
+				crossedZero(item.getAngularAcceleration(), old.getAngularAcceleration(), ANGULAR_ACCELERATION_EPSILON) ||
+				crossedZero(item.getLinearAcceleration(), old.getLinearAcceleration(), LINEAR_ACCELERATION_EPSILON)
+			) {
+				trackNoisyEvent(item.getSoul());
+			}
+		}
+		// Now update the item, in any case.
 		items.put(item.getSoul(), item.clone());
 	}
 
@@ -147,6 +199,7 @@ public class FilterLogger extends AtomicLogger {
 			// Never seen. Just ignore it.
 			// TODO Do any outstanding releases reference it?
 			items.remove(item.getSoul());
+			// TODO Remove associated noisy events?
 		}
 	}
 
@@ -154,13 +207,15 @@ public class FilterLogger extends AtomicLogger {
 	public void logSimTime(long steps, double seconds) {
 		this.steps = steps;
 		simTime = seconds;
+		// Check if any noisy events have ended.
+		clearFinishedNoisyEvents();
 	}
 
 	private void logStateIfReadyAndWanted() {
 		// Don't actually log yet if we are in a transaction.
 		if (getTxDepth() == 0) {
-			// TODO Check here to see if _no_ movement occurred after a time with movement.
 			// TODO Expose item velocity.
+			// TODO Check here to see if _no_ movement occurred after a time with movement.
 			// TODO If so, we also want to log now.
 			if (logWanted) {
 				logWanted = false;
@@ -228,6 +283,17 @@ public class FilterLogger extends AtomicLogger {
 	@Override
 	public void logTool(Tool tool) {
 		// TODO Log changes in tool mode?
+		Tool old = tools.get(tool.getSoul());
+		if (old != null) {
+			// Log changes in tool mode, even without grasps/ungrasps.
+			// Allows non-cheating, and it shouldn't often happen, anyway.
+			// By non-cheating, I mean we want to _discover_ relations, not have them prepackaged.
+			// A grasp or ungrasp is a relation. A press or unpress is specific just to the tool.
+			if (old.getMode() != tool.getMode()) {
+				// These are clean events, not noisy ones.
+				requestLog();
+			}
+		}
 		tools.put(tool.getSoul(), tool.clone());
 	}
 
@@ -255,6 +321,33 @@ public class FilterLogger extends AtomicLogger {
 	private void requestLog() {
 		logWanted = true;
 		logStateIfReadyAndWanted();
+	}
+
+	/**
+	 * Event tracking can blur on and off. We could smooth values across time at
+	 * a lower level, but for now, just lump everything together and smooth at
+	 * the high (even boolean level).
+	 */
+	private void trackNoisyEvent(Soul soul) {
+		boolean doLog = true;
+		if (noisyEventTimes.containsKey(soul)) {
+			// We've seen this item move too recently for this to be interesting.
+			doLog = false;
+		} else {
+			EVENTS: for (double eventTime: noisyEventTimes.values()) {
+				if (simTime - eventTime <= BUSY_NOISE_DURATION) {
+					// Things have just been too busy recently.
+					doLog = false;
+					break EVENTS;
+				}
+			}
+		}
+		if (doLog) {
+			requestLog();
+			//System.out.println('.');
+		}
+		// Remember the last time we saw this thing in motion.
+		noisyEventTimes.put(soul, simTime);
 	}
 
 }

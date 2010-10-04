@@ -78,6 +78,28 @@ public class Util {
 		return (Point2D)point.clone();
 	}
 
+	/**
+	 * Whether or not the value changed to or from zero (within epsilon).
+	 */
+	public static boolean crossedZero(double current, double old, double epsilon) {
+		int signNew = signApprox(current, epsilon);
+		int signOld = signApprox(old, epsilon);
+		return !(signNew == signOld);
+	}
+
+	/**
+	 * Whether or not the x or y components changed to or from zero (within
+	 * epsilon). This is dependent on world axes, but ground and gravity gives
+	 * some excuse for the distinction.
+	 */
+	public static boolean crossedZero(Point2D current, Point2D old, double epsilon) {
+		int xSignNew = signApprox(current.getX(), epsilon);
+		int ySignNew = signApprox(current.getY(), epsilon);
+		int xSignOld = signApprox(old.getX(), epsilon);
+		int ySignOld = signApprox(old.getY(), epsilon);
+		return !(xSignNew == xSignOld && ySignNew == ySignOld);
+	}
+
 	public static double dot(Point2D a, Point2D b) {
 		return a.getX() * b.getX() + a.getY() * b.getY();
 	}
