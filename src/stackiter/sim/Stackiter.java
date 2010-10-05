@@ -124,6 +124,13 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			boolean hadGrasped = false;
 
 			if (mousePoint != null) {
+				if (mouseOver) {
+					// Handle scroll first, but based on last time's position.
+					// You get crazy jumpy effects otherwise.
+					// Also, without mouseOver check, I got upward scrolling when over title bar.
+					handleScroll(mouseTool.getPosition());
+				}
+
 				// Recalculate each time for cases of scrolling.
 				// TODO Base instead on moving toolPoint explicitly when scrolling??? Could be risky.
 				toolPoint = appliedInv(worldToDisplayTransform(), mousePoint);
@@ -167,8 +174,6 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 			if (mouseOver) {
 				if (mousePoint != null) {
-					// Without mouseOver check, I got upward scrolling when over title bar.
-					// Further, scroll after world update, so we don't lose our tool point, which might have changed.
 					Item graspedItem = world.getGraspedItem(mouseTool);
 					if (graspedItem != null) {
 						// Constrain the mouse to the tool position if holding an object.
@@ -186,11 +191,10 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 							moveMouse(snapPoint);
 						}
 					} else if (hadGrasped) {
+						// Put mouse back to release position to avoid crazy jump.
 						mouseTool.setPosition(oldToolPoint);
 						moveMouse(oldToolPoint);
 					}
-					// Handle scroll after finalizing state.
-					handleScroll(mouseTool.getPosition());
 				}
 			} else {
 				// Make we get the move (in world update) before the departure, if both.
@@ -379,7 +383,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 					0, sectionY, Color.WHITE
 				));
 				sectionY -= (float)(5 * scale);
-				g.fillRect(0, (int)sectionY, backdrop.getWidth(), (int)(backdrop.getHeight() - sectionY));
+				g.fillRect(0, (int)sectionY - 1, backdrop.getWidth(), (int)(backdrop.getHeight() - sectionY));
 				// White to transparent (i.e., black starry space).
 				sectionHeight = (float)(30 * scale);
 				float sectionY2 = sectionY - sectionHeight;

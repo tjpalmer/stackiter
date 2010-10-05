@@ -350,7 +350,8 @@ public class Block implements Item {
 			// Fill the full shape to avoid distance between fill and stroke.
 			Color color = this.color;
 			if (angularAccelerationCrossedZero || linearAccelerationCrossedZero) {
-				color = Color.WHITE;
+				// Uncomment to see possibly logged activity.
+				// color = Color.WHITE;
 			}
 			g.setColor(color);
 			g.fill(transformedShape());
