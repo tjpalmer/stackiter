@@ -24,18 +24,21 @@ public class FilterLogger extends AtomicLogger {
 	/**
 	 * What counts as "zero" for important time steps.
 	 */
-	public static double ANGULAR_ACCELERATION_EPSILON = 5;
+	public static double ANGULAR_ACCELERATION_EPSILON = 15;
 
 	/**
 	 * An overall throttle on noisy events. We ignore events even across items,
 	 * if too closely spaced in time.
+	 *
+	 * TODO The current style affects capture of domino effects.
+	 * TODO Consider window-averaging jerk and capture all big changes instead.
 	 */
 	public static double BUSY_NOISE_DURATION = 0.05;
 
 	/**
 	 * What counts as "zero" for important time steps.
 	 */
-	public static double LINEAR_ACCELERATION_EPSILON = 50;
+	public static double LINEAR_ACCELERATION_EPSILON = 35;
 
 	/**
 	 * How long a noisy event should be off before we notice it again.
@@ -344,7 +347,7 @@ public class FilterLogger extends AtomicLogger {
 		}
 		if (doLog) {
 			requestLog();
-			//System.out.println('.');
+			//System.out.println('^');
 		}
 		// Remember the last time we saw this thing in motion.
 		noisyEventTimes.put(soul, simTime);

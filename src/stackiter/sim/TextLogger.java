@@ -212,11 +212,29 @@ public class TextLogger extends AtomicLogger implements Logger {
 				info.item.setPosition(position);
 				log("pos %d %.3f %.3f", info.id, position.getX(), position.getY());
 			}
+			// Linear velocity: posvel.
+			// Velocities matter for logging if we don't log every frame.
+			// We could log acceleration, too, since we use that (or jerk) for key state detection.
+			// However, we detect up front today before logging. If we changed that to after-the-fact detection,
+			// we'd be logging full amounts anyway and be able to calculate it.
+			// I think I'll likely only use velocity for now in the actual concept learning?
+			// TODO Do log acceleration if we decide we need it for concept learning.
+			Point2D linearVelocity = item.getLinearVelocity();
+			if (!approx(linearVelocity, info.item.getLinearVelocity(), EPSILON)) {
+				info.item.setLinearVelocity(linearVelocity);
+				log("posvel %d %.3f %.3f", info.id, linearVelocity.getX(), linearVelocity.getY());
+			}
 			// Angle: rot.
 			double angle = item.getAngle();
 			if (!approx(angle, info.item.getAngle(), EPSILON)) {
 				info.item.setAngle(angle);
 				log("rot %d %.3f", info.id, angle);
+			}
+			// Angular velocity: rotvel.
+			double angularVelocity = item.getAngularVelocity();
+			if (!approx(angularVelocity, info.item.getAngularVelocity(), EPSILON)) {
+				info.item.setAngularVelocity(angularVelocity);
+				log("rotvel %d %.3f", info.id, angularVelocity);
 			}
 		}});
 	}

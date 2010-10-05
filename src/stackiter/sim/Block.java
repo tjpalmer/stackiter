@@ -145,12 +145,15 @@ public class Block implements Item {
 		return angularAcceleration;
 	}
 
+	/**
+	 * In rats/second (where rats = rads/pi).
+	 */
 	@Override
 	public double getAngularVelocity() {
 		if (body == null) {
 			return angularVelocity;
 		} else {
-			return body.m_angularVelocity;
+			return body.m_angularVelocity / Math.PI;
 		}
 	}
 
