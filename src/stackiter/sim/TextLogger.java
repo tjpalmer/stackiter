@@ -6,6 +6,7 @@ import java.awt.geom.*;
 import java.io.*;
 import java.text.*;
 import java.util.*;
+import java.util.zip.*;
 
 /**
  * Logs in text format to a temp file.
@@ -75,12 +76,17 @@ public class TextLogger extends AtomicLogger implements Logger {
 			File dir = new File(System.getProperty("java.io.tmpdir"), "stackiter");
 			dir.mkdirs();
 			SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd-HHmmss-SSS");
-			String logName = String.format("stackiter-%s.log", format.format(new Date(startTime)));
+			String logName = String.format("stackiter-%s.log.gz", format.format(new Date(startTime)));
 			File logFile = new File(dir, logName);
 			// TODO What's the right way to expose the log file name?
 			System.out.println(logFile);
-			FileOutputStream out = new FileOutputStream(logFile);
-			writer = new Formatter(new BufferedWriter(new OutputStreamWriter(out, "UTF-8"), 1<<16));
+			OutputStream out = new FileOutputStream(logFile);
+			try {
+				writer = new Formatter(new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(out), "UTF-8"), 1<<16));
+			} catch (Exception e) {
+				out.close();
+				throw e;
+			}
 			// Initial info.
 			logStart();
 		} catch (Exception e) {
