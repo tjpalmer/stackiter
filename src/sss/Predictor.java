@@ -1,8 +1,8 @@
 package sss;
 
-public class Predictor<Item, Value> {
+public class Predictor<Entity, Value> {
 
-	public Predictor(Item item, Attribute<Item, Value> attribute) {
+	public Predictor(Entity entity, Attribute<Entity, Value> attribute) {
 		// TODO
 	}
 

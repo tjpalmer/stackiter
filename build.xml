@@ -31,6 +31,7 @@
 			<!-- Explicitly leave out files referencing Processing since I don't want to worry about them for ProGuard or otherwise. -->
 			<patternset includes="**/*.class" excludes="**/SPH*.class"/>
 		</unzip>
+		<unzip dest="build/class" src="lib/jama.jar"/>
 		<jar destfile="build/stackiter.jar" basedir="build/class">
 			<manifest>
 				<attribute name="Main-Class" value="stackiter.sim.Stackiter"/>
@@ -42,11 +43,11 @@
 		<move file="build/stackiter.jar" tofile="build/stackiter-orig.jar"/>
 		<taskdef resource="proguard/ant/task.properties" classpath="lib/proguard.jar"/>
 		<proguard>
-			-libraryjars ${java.home}/lib/rt.jar
+			-libraryjars "${java.home}/lib/rt.jar"
 			-injars build/stackiter-orig.jar
 			-outjars build/stackiter.jar
 			-keepclasseswithmembers public class * {
-					public static void main(java.lang.String[]);
+				public static void main(java.lang.String[]);
 			}
 		</proguard>
 	</target>

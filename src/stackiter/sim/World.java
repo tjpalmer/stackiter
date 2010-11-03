@@ -13,15 +13,6 @@ import org.jbox2d.common.*;
 public class World {
 
 	/**
-	 * We run the sim longer than we claim. This makes it feel snappier.
-	 *
-	 * TODO Maybe a different physical scale would also have worked?
-	 *
-	 * TODO Make this a member of World instances instead of a global?
-	 */
-	public static final double TIME_SCALE = 2;
-
-	/**
 	 * For tracking extra item information not stored directly in the items.
 	 */
 	private class ItemInfo {
@@ -55,6 +46,15 @@ public class World {
 		Tool old = new Tool();
 
 	}
+
+	/**
+	 * We run the sim longer than we claim. This makes it feel snappier.
+	 *
+	 * TODO Maybe a different physical scale would also have worked?
+	 *
+	 * TODO Make this a member of World instances instead of a global?
+	 */
+	public static final double TIME_SCALE = 2;
 
 	private List<Agent> agents = new ArrayList<Agent>();
 
@@ -179,6 +179,13 @@ public class World {
 			items.add(info.item);
 		}
 		return items;
+	}
+
+	/**
+	 * The amount of simulation time that has passed.
+	 */
+	public double getSimTime() {
+		return getStepTime() * steps;
 	}
 
 	/**
@@ -342,7 +349,7 @@ public class World {
 			steps++;
 			// We log half sim time since that's also what we show the user.
 			// Might make for odd gravity perhaps or whatnot, but whatever.
-			logger.logSimTime(steps, getStepTime() * steps);
+			logger.logSimTime(steps, getSimTime());
 
 			// Delete lost blocks.
 			for (Iterator<Block> b = blocks.iterator(); b.hasNext();) {

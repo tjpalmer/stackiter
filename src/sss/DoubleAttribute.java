@@ -1,12 +1,12 @@
 package sss;
 
-public abstract class DoubleAttribute<Item> implements Attribute<Item, Double> {
+public abstract class DoubleAttribute<Entity> implements Attribute<Entity, Double> {
 
 	@Override
-	public Double get(Item item) {
-		return getDouble(item);
+	public Double get(Entity entity) {
+		return getDouble(entity);
 	}
 
-	public abstract double getDouble(Item item);
+	public abstract double getDouble(Entity entity);
 
 }

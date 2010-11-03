@@ -7,6 +7,14 @@ import stackiter.sim.*;
 
 public final class ItemAttribute {
 
+	public static final DoubleAttribute<Item> ANGLE =
+		new DoubleAttribute<Item>() {
+			@Override
+			public double getDouble(Item item) {
+				return item.getAngle();
+			}
+		};
+
 	public static final Attribute<Item, java.awt.Color> COLOR =
 		new Attribute<Item, java.awt.Color>() {
 			@Override
@@ -15,17 +23,29 @@ public final class ItemAttribute {
 			}
 		};
 
-	public static class LinearVelocity implements Attribute<Item, Point2D> {
-		public Point2D get(Item item) {
-			return item.getLinearVelocity();
-		}
-	}
+	public static final Attribute<Item, Point2D> EXTENT =
+		new Attribute<Item, Point2D>() {
+			@Override
+			public Point2D get(Item item) {
+				return item.getExtent();
+			}
+		};
 
-	public static class Position implements Attribute<Item, Point2D> {
-		public Point2D get(Item item) {
-			return item.getPosition();
-		}
-	}
+	public static final Attribute<Item, Point2D> LINEAR_VELOCITY =
+		new Attribute<Item, Point2D>() {
+		@Override
+			public Point2D get(Item item) {
+				return item.getLinearVelocity();
+			}
+		};
+
+	public static final Attribute<Item, Point2D> POSITION =
+		new Attribute<Item, Point2D>() {
+			@Override
+			public Point2D get(Item item) {
+				return item.getPosition();
+			}
+		};
 
 	/**
 	 * Don't instantiate me.

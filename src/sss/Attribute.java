@@ -1,7 +1,7 @@
 package sss;
 
-public interface Attribute<Item, Value> {
+public interface Attribute<Entity, Value> {
 
-	Value get(Item item);
+	Value get(Entity item);
 
 }
