@@ -50,14 +50,13 @@ public class Loader {
 		state = new State();
 	}
 
-	public Sequence load(String name) {
+	public Sequence load(String name, InputStream stream) {
 		try {
-			InputStream stream = new FileInputStream(name);
 			try {
 				if (name.endsWith(".gz")) {
 					stream = new GZIPInputStream(stream);
 				}
-				BufferedReader in = new BufferedReader(new InputStreamReader(stream));
+				BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
 				String line;
 				while ((line = in.readLine()) != null) {
 					parseLine(line);
@@ -66,6 +65,24 @@ public class Loader {
 			} finally {
 				stream.close();
 			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public Sequence loadFile(String name) {
+		try {
+			InputStream stream = new FileInputStream(name);
+			return load(name, stream);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public Sequence loadResource(String name) {
+		try {
+			InputStream stream = Loader.class.getResourceAsStream(name);
+			return load(name, stream);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

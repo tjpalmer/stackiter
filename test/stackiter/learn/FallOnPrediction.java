@@ -6,9 +6,8 @@ public class FallOnPrediction {
 
 	@Test
 	public void fallOn() {
-		Sequence sequence = new Loader().load(
-			"C:/Users/Tom/AppData/Local/Temp/stackiter/" +
-			"stackiter-20101104-215911-501.log"
+		Sequence sequence = new Loader().loadResource(
+			"stackiter-20101104-215911-501_drop-from-25.log.gz"
 		);
 	}
 
