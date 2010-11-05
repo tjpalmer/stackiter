@@ -12,6 +12,8 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
+import stackiter.learn.*;
+
 @SuppressWarnings("serial")
 public class Stackiter extends JComponent implements ActionListener, Closeable, MouseListener, MouseMotionListener {
 
@@ -85,6 +87,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 			//world.addAgent(new ClearerAgent(30));
 			//world.addAgent(new DropperAgent());
+			world.addAgent(new WorldLearnerAgent());
 
 			double groundDepth = -2 * world.getGround().getExtent().getY();
 			double groundWidth = 40; // 2 * world.getGround().getExtent().getX(); <-- Visual glitch here needs resolved.

@@ -104,6 +104,11 @@ public class Block implements Item {
 		addFixConstraints(other);
 	}
 
+	/**
+	 * The clone represents the state of the block (including supposed
+	 * "liveness"), but it is not added to the world. That would have to be done
+	 * manually after the fact.
+	 */
 	@Override
 	public Block clone() {
 		Block copied = new Block();

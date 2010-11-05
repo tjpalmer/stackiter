@@ -247,7 +247,7 @@ public class Matrix implements Cloneable {
    @return     m, the number of rows.
 	 */
 
-	public int getRowDimension () {
+	public int getM () {
 		return m;
 	}
 
@@ -255,7 +255,7 @@ public class Matrix implements Cloneable {
    @return     n, the number of columns.
 	 */
 
-	public int getColumnDimension () {
+	public int getN () {
 		return n;
 	}
 

@@ -169,6 +169,7 @@ public class World {
 	 */
 	public Iterable<Item> getItems() {
 		// TODO Improve this to avoid copying and nonsense?
+		// TODO Or should I guarantee copies to avoid modification???
 		List<Item> items = new ArrayList<Item>();
 		for (Block block: tray.getItems()) {
 			Block copied = block.clone();

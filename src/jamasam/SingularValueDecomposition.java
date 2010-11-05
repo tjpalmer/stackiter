@@ -51,8 +51,8 @@ public class SingularValueDecomposition {
       // Derived from LINPACK code.
       // Initialize.
       double[][] A = Arg.getArrayCopy();
-      m = Arg.getRowDimension();
-      n = Arg.getColumnDimension();
+      m = Arg.getM();
+      n = Arg.getN();
 
       /* Apparently the failing cases are only a proper subset of (m<n),
 	 so let's not throw error.  Correct fix to come later?

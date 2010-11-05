@@ -860,7 +860,7 @@ public class EigenvalueDecomposition {
 
    public EigenvalueDecomposition (Matrix Arg) {
       double[][] A = Arg.getArray();
-      n = Arg.getColumnDimension();
+      n = Arg.getN();
       V = new double[n][n];
       d = new double[n];
       e = new double[n];

@@ -45,9 +45,9 @@ public class CholeskyDecomposition {
 
      // Initialize.
       double[][] A = Arg.getArray();
-      n = Arg.getRowDimension();
+      n = Arg.getM();
       L = new double[n][n];
-      isspd = (Arg.getColumnDimension() == n);
+      isspd = (Arg.getN() == n);
       // Main loop.
       for (int j = 0; j < n; j++) {
          double[] Lrowj = L[j];
@@ -161,7 +161,7 @@ public class CholeskyDecomposition {
    */
 
    public Matrix solve (Matrix B) {
-      if (B.getRowDimension() != n) {
+      if (B.getM() != n) {
          throw new IllegalArgumentException("Matrix row dimensions must agree.");
       }
       if (!isspd) {
@@ -170,7 +170,7 @@ public class CholeskyDecomposition {
 
       // Copy right hand side.
       double[][] X = B.getArrayCopy();
-      int nx = B.getColumnDimension();
+      int nx = B.getN();
 
 	      // Solve L*Y = B;
 	      for (int k = 0; k < n; k++) {

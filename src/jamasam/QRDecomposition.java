@@ -47,8 +47,8 @@ public class QRDecomposition {
    public QRDecomposition (Matrix A) {
       // Initialize.
       QR = A.getArrayCopy();
-      m = A.getRowDimension();
-      n = A.getColumnDimension();
+      m = A.getM();
+      n = A.getN();
       Rdiag = new double[n];
 
       // Main loop.
@@ -177,7 +177,7 @@ public class QRDecomposition {
    */
 
    public Matrix solve (Matrix B) {
-      if (B.getRowDimension() != m) {
+      if (B.getM() != m) {
          throw new IllegalArgumentException("Matrix row dimensions must agree.");
       }
       if (!this.isFullRank()) {
@@ -185,7 +185,7 @@ public class QRDecomposition {
       }
 
       // Copy right hand side
-      int nx = B.getColumnDimension();
+      int nx = B.getN();
       double[][] X = B.getArrayCopy();
 
       // Compute Y = transpose(Q)*B

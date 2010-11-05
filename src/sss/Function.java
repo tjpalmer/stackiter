@@ -12,10 +12,10 @@ public interface Function<Result, Arg> {
 	 */
 	public static final class Distance {
 		public Matrix call(Matrix x, Matrix y) {
-			Matrix dist = new Matrix(1, x.getColumnDimension());
-			for (int j = 0; j < x.getColumnDimension(); j++) {
+			Matrix dist = new Matrix(1, x.getN());
+			for (int j = 0; j < x.getN(); j++) {
 				double total = 0;
-				for (int i = 0; i < x.getRowDimension(); i++) {
+				for (int i = 0; i < x.getM(); i++) {
 					double diff = x.get(i, j) - y.get(i, j);
 					total += diff * diff;
 				}

@@ -50,8 +50,8 @@ public class LUDecomposition {
    // Use a "left-looking", dot-product, Crout/Doolittle algorithm.
 
       LU = A.getArrayCopy();
-      m = A.getRowDimension();
-      n = A.getColumnDimension();
+      m = A.getM();
+      n = A.getN();
       piv = new int[m];
       for (int i = 0; i < m; i++) {
          piv[i] = i;
@@ -275,7 +275,7 @@ public class LUDecomposition {
    */
 
    public Matrix solve (Matrix B) {
-      if (B.getRowDimension() != m) {
+      if (B.getM() != m) {
          throw new IllegalArgumentException("Matrix row dimensions must agree.");
       }
       if (!this.isNonsingular()) {
@@ -283,7 +283,7 @@ public class LUDecomposition {
       }
 
       // Copy right hand side with pivoting
-      int nx = B.getColumnDimension();
+      int nx = B.getN();
       Matrix Xmat = B.getMatrix(piv,0,nx-1);
       double[][] X = Xmat.getArray();
 

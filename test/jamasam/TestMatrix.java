@@ -160,12 +160,12 @@ public class TestMatrix {
 **/
 
       B = new Matrix(avals);
-      if (B.getRowDimension() != rows) {
+      if (B.getM() != rows) {
          errorCount = try_failure(errorCount,"getRowDimension... ","");
       } else {
          try_success("getRowDimension... ","");
       }
-      if (B.getColumnDimension() != cols) {
+      if (B.getN() != cols) {
          errorCount = try_failure(errorCount,"getColumnDimension... ","");
       } else {
          try_success("getColumnDimension... ","");
@@ -202,11 +202,11 @@ public class TestMatrix {
          errorCount = try_failure(errorCount,"getRowPackedCopy... ","data not successfully (deep) copied by rows");
       }
       try {
-         tmp = B.get(B.getRowDimension(),B.getColumnDimension()-1);
+         tmp = B.get(B.getM(),B.getN()-1);
          errorCount = try_failure(errorCount,"get(int,int)... ","OutOfBoundsException expected but not thrown");
       } catch ( java.lang.ArrayIndexOutOfBoundsException e ) {
          try {
-            tmp = B.get(B.getRowDimension()-1,B.getColumnDimension());
+            tmp = B.get(B.getM()-1,B.getN());
             errorCount = try_failure(errorCount,"get(int,int)... ","OutOfBoundsException expected but not thrown");
          } catch ( java.lang.ArrayIndexOutOfBoundsException e1 ) {
             try_success("get(int,int)... OutofBoundsException... ","");
@@ -215,8 +215,8 @@ public class TestMatrix {
          errorCount = try_failure(errorCount,"get(int,int)... ","OutOfBoundsException expected but not thrown");
       }
       try {
-         if (B.get(B.getRowDimension()-1,B.getColumnDimension()-1) !=
-             avals[B.getRowDimension()-1][B.getColumnDimension()-1] ) {
+         if (B.get(B.getM()-1,B.getN()-1) !=
+             avals[B.getM()-1][B.getN()-1] ) {
             errorCount = try_failure(errorCount,"get(int,int)... ","Matrix entry (i,j) not successfully retreived");
          } else {
             try_success("get(int,int)... ","");
@@ -226,11 +226,11 @@ public class TestMatrix {
       }
       SUB = new Matrix(subavals);
       try {
-         M = B.getMatrix(ib,ie+B.getRowDimension()+1,jb,je);
+         M = B.getMatrix(ib,ie+B.getM()+1,jb,je);
          errorCount = try_failure(errorCount,"getMatrix(int,int,int,int)... ","ArrayIndexOutOfBoundsException expected but not thrown");
       } catch ( java.lang.ArrayIndexOutOfBoundsException e ) {
          try {
-            M = B.getMatrix(ib,ie,jb,je+B.getColumnDimension()+1);
+            M = B.getMatrix(ib,ie,jb,je+B.getN()+1);
             errorCount = try_failure(errorCount,"getMatrix(int,int,int,int)... ","ArrayIndexOutOfBoundsException expected but not thrown");
          } catch ( java.lang.ArrayIndexOutOfBoundsException e1 ) {
             try_success("getMatrix(int,int,int,int)... ArrayIndexOutOfBoundsException... ","");
@@ -255,7 +255,7 @@ public class TestMatrix {
          errorCount = try_failure(errorCount,"getMatrix(int,int,int[])... ","ArrayIndexOutOfBoundsException expected but not thrown");
       } catch ( java.lang.ArrayIndexOutOfBoundsException e ) {
          try {
-            M = B.getMatrix(ib,ie+B.getRowDimension()+1,columnindexset);
+            M = B.getMatrix(ib,ie+B.getM()+1,columnindexset);
             errorCount = try_failure(errorCount,"getMatrix(int,int,int[])... ","ArrayIndexOutOfBoundsException expected but not thrown");
          } catch ( java.lang.ArrayIndexOutOfBoundsException e1 ) {
             try_success("getMatrix(int,int,int[])... ArrayIndexOutOfBoundsException... ","");
@@ -279,7 +279,7 @@ public class TestMatrix {
          errorCount = try_failure(errorCount,"getMatrix(int[],int,int)... ","ArrayIndexOutOfBoundsException expected but not thrown");
       } catch ( java.lang.ArrayIndexOutOfBoundsException e ) {
          try {
-            M = B.getMatrix(rowindexset,jb,je+B.getColumnDimension()+1);
+            M = B.getMatrix(rowindexset,jb,je+B.getN()+1);
             errorCount = try_failure(errorCount,"getMatrix(int[],int,int)... ","ArrayIndexOutOfBoundsException expected but not thrown");
          } catch ( java.lang.ArrayIndexOutOfBoundsException e1 ) {
             try_success("getMatrix(int[],int,int)... ArrayIndexOutOfBoundsException... ","");
@@ -328,11 +328,11 @@ public class TestMatrix {
 **/
 
       try {
-         B.set(B.getRowDimension(),B.getColumnDimension()-1,0.);
+         B.set(B.getM(),B.getN()-1,0.);
          errorCount = try_failure(errorCount,"set(int,int,double)... ","OutOfBoundsException expected but not thrown");
       } catch ( java.lang.ArrayIndexOutOfBoundsException e ) {
          try {
-            B.set(B.getRowDimension()-1,B.getColumnDimension(),0.);
+            B.set(B.getM()-1,B.getN(),0.);
             errorCount = try_failure(errorCount,"set(int,int,double)... ","OutOfBoundsException expected but not thrown");
          } catch ( java.lang.ArrayIndexOutOfBoundsException e1 ) {
             try_success("set(int,int,double)... OutofBoundsException... ","");
@@ -354,11 +354,11 @@ public class TestMatrix {
       }
       M = new Matrix(2,3,0.);
       try {
-         B.setMatrix(ib,ie+B.getRowDimension()+1,jb,je,M);
+         B.setMatrix(ib,ie+B.getM()+1,jb,je,M);
          errorCount = try_failure(errorCount,"setMatrix(int,int,int,int,Matrix)... ","ArrayIndexOutOfBoundsException expected but not thrown");
       } catch ( java.lang.ArrayIndexOutOfBoundsException e ) {
          try {
-            B.setMatrix(ib,ie,jb,je+B.getColumnDimension()+1,M);
+            B.setMatrix(ib,ie,jb,je+B.getN()+1,M);
             errorCount = try_failure(errorCount,"setMatrix(int,int,int,int,Matrix)... ","ArrayIndexOutOfBoundsException expected but not thrown");
          } catch ( java.lang.ArrayIndexOutOfBoundsException e1 ) {
             try_success("setMatrix(int,int,int,int,Matrix)... ArrayIndexOutOfBoundsException... ","");
@@ -379,7 +379,7 @@ public class TestMatrix {
          errorCount = try_failure(errorCount,"setMatrix(int,int,int,int,Matrix)... ","Unexpected ArrayIndexOutOfBoundsException");
       }
       try {
-         B.setMatrix(ib,ie+B.getRowDimension()+1,columnindexset,M);
+         B.setMatrix(ib,ie+B.getM()+1,columnindexset,M);
          errorCount = try_failure(errorCount,"setMatrix(int,int,int[],Matrix)... ","ArrayIndexOutOfBoundsException expected but not thrown");
       } catch ( java.lang.ArrayIndexOutOfBoundsException e ) {
          try {
@@ -404,7 +404,7 @@ public class TestMatrix {
          errorCount = try_failure(errorCount,"setMatrix(int,int,int[],Matrix)... ","Unexpected ArrayIndexOutOfBoundsException");
       }
       try {
-         B.setMatrix(rowindexset,jb,je+B.getColumnDimension()+1,M);
+         B.setMatrix(rowindexset,jb,je+B.getN()+1,M);
          errorCount = try_failure(errorCount,"setMatrix(int[],int,int,Matrix)... ","ArrayIndexOutOfBoundsException expected but not thrown");
       } catch ( java.lang.ArrayIndexOutOfBoundsException e ) {
          try {
@@ -470,7 +470,7 @@ public class TestMatrix {
 
       print("\nTesting array-like methods...\n");
       S = new Matrix(columnwise,nonconformld);
-      R = Matrix.random(A.getRowDimension(),A.getColumnDimension());
+      R = Matrix.random(A.getM(),A.getN());
       A = R;
       try {
         S = A.minus(S);
@@ -485,7 +485,7 @@ public class TestMatrix {
       }
       A = R.copy();
       A.minusEquals(R);
-      Z = new Matrix(A.getRowDimension(),A.getColumnDimension());
+      Z = new Matrix(A.getM(),A.getN());
       try {
         A.minusEquals(S);
         errorCount = try_failure(errorCount,"minusEquals conformance check... ","nonconformance not raised");
@@ -499,7 +499,7 @@ public class TestMatrix {
       }
 
       A = R.copy();
-      B = Matrix.random(A.getRowDimension(),A.getColumnDimension());
+      B = Matrix.random(A.getM(),A.getN());
       C = A.minus(B);
       try {
         S = A.plus(S);
@@ -535,7 +535,7 @@ public class TestMatrix {
         errorCount = try_failure(errorCount,"uminus... ","(-A + A != zeros)");
       }
       A = R.copy();
-      O = new Matrix(A.getRowDimension(),A.getColumnDimension(),1.0);
+      O = new Matrix(A.getM(),A.getN(),1.0);
       C = A.arrayLeftDivide(R);
       try {
         S = A.arrayLeftDivide(S);
@@ -590,7 +590,7 @@ public class TestMatrix {
         errorCount = try_failure(errorCount,"arrayRightDivideEquals... ","(M./M != ones)");
       }
       A = R.copy();
-      B = Matrix.random(A.getRowDimension(),A.getColumnDimension());
+      B = Matrix.random(A.getM(),A.getN());
       try {
         S = A.arrayTimes(S);
         errorCount = try_failure(errorCount,"arrayTimes conformance check... ","nonconformance not raised");
@@ -661,7 +661,7 @@ public class TestMatrix {
          }
       }
 
-      R = Matrix.random(A.getRowDimension(),A.getColumnDimension());
+      R = Matrix.random(A.getM(),A.getN());
       String tmpname = "TMPMATRIX.serial";
       try {
          ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(tmpname));
@@ -739,7 +739,7 @@ public class TestMatrix {
          errorCount = try_failure(errorCount,"trace()...","incorrect trace calculation");
       }
       try {
-         check(A.getMatrix(0,A.getRowDimension()-1,0,A.getRowDimension()-1).det(),0.);
+         check(A.getMatrix(0,A.getM()-1,0,A.getM()-1).det(),0.);
          try_success("det()...","");
       } catch ( java.lang.RuntimeException e ) {
          errorCount = try_failure(errorCount,"det()...","incorrect determinant calculation");
@@ -776,7 +776,7 @@ public class TestMatrix {
       }
       DEF = new Matrix(rankdef);
       try {
-         check(DEF.rank(),Math.min(DEF.getRowDimension(),DEF.getColumnDimension())-1);
+         check(DEF.rank(),Math.min(DEF.getM(),DEF.getN())-1);
          try_success("rank()...","");
       } catch ( java.lang.RuntimeException e ) {
          errorCount = try_failure(errorCount,"rank()...","incorrect rank calculation");
@@ -785,12 +785,12 @@ public class TestMatrix {
       SVD = B.svd();
       double [] singularvalues = SVD.getSingularValues();
       try {
-         check(B.cond(),singularvalues[0]/singularvalues[Math.min(B.getRowDimension(),B.getColumnDimension())-1]);
+         check(B.cond(),singularvalues[0]/singularvalues[Math.min(B.getM(),B.getN())-1]);
          try_success("cond()...","");
       } catch ( java.lang.RuntimeException e ) {
          errorCount = try_failure(errorCount,"cond()...","incorrect condition number calculation");
       }
-      int n = A.getColumnDimension();
+      int n = A.getN();
       A = A.getMatrix(0,n-1,0,n-1);
       A.set(0,0,0.);
       LUDecomposition LU = A.lu();
@@ -807,9 +807,9 @@ public class TestMatrix {
       } catch ( java.lang.RuntimeException e ) {
          errorCount = try_failure(errorCount,"inverse()...","incorrect inverse calculation");
       }
-      O = new Matrix(SUB.getRowDimension(),1,1.0);
+      O = new Matrix(SUB.getM(),1,1.0);
       SOL = new Matrix(sqSolution);
-      SQ = SUB.getMatrix(0,SUB.getRowDimension()-1,0,SUB.getRowDimension()-1);
+      SQ = SUB.getMatrix(0,SUB.getM()-1,0,SUB.getM()-1);
       try {
          check(SQ.solve(SOL),O);
          try_success("solve()...","");
