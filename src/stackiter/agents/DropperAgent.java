@@ -53,6 +53,11 @@ public class DropperAgent extends BasicAgent {
 	 */
 	private Point2D targetPosition = point();
 
+	/**
+	 * Parameterize this, and even allow for distribution of choices.
+	 */
+	private double targetY = 20;
+
 	private Tool tool;
 
 	@Override
@@ -109,7 +114,7 @@ public class DropperAgent extends BasicAgent {
 					// We've already grabbed something, we think.
 					// Raise (or lower) the block to the drop altitude.
 					// If high enough, this won't usually get in the way of other blocks.
-					targetPosition.setLocation(tool.getPosition().getX(), 25);
+					targetPosition.setLocation(tool.getPosition().getX(), targetY);
 					tool.setPosition(targetPosition);
 					mode = Mode.GRASPED;
 				}

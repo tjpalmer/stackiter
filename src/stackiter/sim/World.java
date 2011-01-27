@@ -183,7 +183,7 @@ public class World {
 	}
 
 	/**
-	 * The amount of simulation time that has passed.
+	 * The amount of simulation time that has passed in seconds.
 	 */
 	public double getSimTime() {
 		return getStepTime() * steps;

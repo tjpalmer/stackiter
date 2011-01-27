@@ -64,7 +64,7 @@ public class Block implements Item {
 		// Some default values.
 		shapeDef.setAsBox(1, 1);
 		shapeDef.density = 1;
-		shapeDef.restitution = 0.25f;
+		shapeDef.restitution = 0.05f;
 		shapeDef.friction = 0.5f;
 	}
 

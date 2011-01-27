@@ -11,14 +11,15 @@ public class Batch {
 
 	public static void main(String[] args) {
 		World world = new World();
-		world.setLogger(new FilterLogger(new TextLogger()));
+		FilterLogger logger = new FilterLogger(new TextLogger());
+		world.setLogger(logger);
 		world.addAgent(new ClearerAgent(30));
 		world.addAgent(new DropperAgent());
 		long steps = 0;
 		long stepsPerSecond = 100;
 		long stepsPerMinute = 60 * stepsPerSecond;
 		long stepsPerHour = 60 * stepsPerMinute;
-		while (true) {
+		while (world.getSimTime() < stepsPerHour / stepsPerSecond) {
 			world.update();
 			// Simple status.
 			steps++;
@@ -29,6 +30,7 @@ public class Batch {
 				System.out.printf(" Hours: %d\n", steps/stepsPerHour);
 			}
 		}
+		logger.close();
 	}
 
 }
