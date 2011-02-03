@@ -54,9 +54,14 @@ public class DropperAgent extends BasicAgent {
 	private Point2D targetPosition = point();
 
 	/**
-	 * Parameterize this, and even allow for distribution of choices.
+	 * TODO Parameterize this.
 	 */
-	private double targetY = 20;
+	private double targetYMax = 25;
+
+	/**
+	 * TODO Parameterize this.
+	 */
+	private double targetYMin = 15;
 
 	private Tool tool;
 
@@ -114,6 +119,7 @@ public class DropperAgent extends BasicAgent {
 					// We've already grabbed something, we think.
 					// Raise (or lower) the block to the drop altitude.
 					// If high enough, this won't usually get in the way of other blocks.
+					double targetY = random.nextDouble() * (targetYMax - targetYMin) + targetYMin;
 					targetPosition.setLocation(tool.getPosition().getX(), targetY);
 					tool.setPosition(targetPosition);
 					mode = Mode.GRASPED;
@@ -126,7 +132,7 @@ public class DropperAgent extends BasicAgent {
 					Block ground = getWorld().getGround();
 					Rectangle2D bounds = translated(ground.getBounds(), ground.getPosition());
 					double targetX = random.nextDouble()*bounds.getWidth() + bounds.getMinX();
-					targetPosition.setLocation(targetX, tool.getPosition().getY());
+					targetPosition.setLocation(targetX, targetPosition.getY());
 					tool.setPosition(targetPosition);
 					mode = Mode.RAISED;
 				} else {
