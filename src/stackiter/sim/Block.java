@@ -64,7 +64,7 @@ public class Block implements Item {
 		// Some default values.
 		shapeDef.setAsBox(1, 1);
 		shapeDef.density = 1;
-		shapeDef.restitution = 0.05f;
+		shapeDef.restitution = 0.025f;
 		shapeDef.friction = 0.5f;
 	}
 
@@ -76,7 +76,7 @@ public class Block implements Item {
 		jointDef.frequencyHz = 2;
 		jointDef.target.set((float)point.getX(), (float)point.getY());
 		// Constant force, but 5 is _near_ the top range of our masses.
-		jointDef.maxForce = (float)(forceScale * 5); // * body.getMass());
+		jointDef.maxForce = (float)(forceScale * 25); // * body.getMass());
 		return (MouseJoint)body.getWorld().createJoint(jointDef);
 	}
 

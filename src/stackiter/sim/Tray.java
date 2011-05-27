@@ -30,7 +30,7 @@ public class Tray {
 
 	private Logger logger;
 
-	private double maxBlockExtent = 2.5;
+	private double maxBlockExtent = 5;
 
 	private double pad = 0.2;
 
@@ -57,13 +57,14 @@ public class Tray {
 					block = randomBlock();
 					blocks.add(block);
 				}
-				Point2D extent = block.getExtent();
-				block.setPosition(position.getX() + extent.getX() + pad, position.getY() + extent.getY() + pad);
+				block.setPosition(0, 0);
+				Rectangle2D bounds = applied(block.getTransform(), block.getBounds());
+				block.setPosition(position.getX() + bounds.getMaxX() + pad, position.getY() + bounds.getMaxY() + pad);
 				// Log the block.
 				// TODO Log reference frame for tray blocks!!!
 				logger.logItem(block);
 				// Move up the line.
-				position.setLocation(position.getX(), position.getY() + 2*extent.getY() + pad);
+				position.setLocation(position.getX(), position.getY() + bounds.getHeight() + pad);
 			}
 		}});
 		// Update flusher display while we are at it.
@@ -203,7 +204,8 @@ public class Tray {
 		block.setColor(randomColor());
 		// TODO Consider Gaussian mixture model on sizes.
 		// TODO Extract min and max sizes for less hardcoding on decorations and flusher.
-		block.setExtent(2 * random.nextDouble() + 0.5, 2 * random.nextDouble() + 0.5);
+		block.setExtent(4.5 * random.nextDouble() + 0.5, 4.5 * random.nextDouble() + 0.5);
+		block.setRotation(2 * random.nextDouble() - 1);
 		return block;
 	}
 
