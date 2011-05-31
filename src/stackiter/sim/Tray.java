@@ -204,7 +204,9 @@ public class Tray {
 		block.setColor(randomColor());
 		// TODO Consider Gaussian mixture model on sizes.
 		// TODO Extract min and max sizes for less hardcoding on decorations and flusher.
-		block.setExtent(4.5 * random.nextDouble() + 0.5, 4.5 * random.nextDouble() + 0.5);
+		// For now, keep the block size constant, so only orientation matters.
+		//block.setExtent(4.5 * random.nextDouble() + 0.5, 4.5 * random.nextDouble() + 0.5);
+		block.setExtent(5, 2.5);
 		block.setRotation(2 * random.nextDouble() - 1);
 		return block;
 	}

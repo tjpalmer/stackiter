@@ -309,7 +309,7 @@ public class World {
 		// TODO Figure out a better organization for logger vs. tray.
 		// TODO Maybe tray logger setting could log its current state immediately despite prior setup?
 		double minX = ground.getPosition().getX() - ground.getExtent().getX();
-		tray.setAnchor(point(minX, 0));
+		tray.setAnchor(point(minX - 12.5, 0));
 		tray.setHeight(30);
 	}
 

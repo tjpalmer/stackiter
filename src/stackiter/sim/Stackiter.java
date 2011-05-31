@@ -92,8 +92,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 			double groundDepth = -2 * world.getGround().getExtent().getY();
 			double groundWidth = 40; // 2 * world.getGround().getExtent().getX(); <-- Visual glitch here needs resolved.
-			viewBounds = new Rectangle2D.Double(-20, groundDepth, groundWidth, 101);
-			viewRect = new Rectangle2D.Double(-20, groundDepth, groundWidth, 30);
+			viewBounds = new Rectangle2D.Double(-32.5, groundDepth, groundWidth + 25, 101);
+			viewRect = new Rectangle2D.Double(-32.5, groundDepth, groundWidth + 25, 30);
 			addComponentListener(new ComponentAdapter() {
 				@Override
 				public void componentResized(ComponentEvent event) {
