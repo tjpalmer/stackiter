@@ -79,6 +79,9 @@ public class World {
 	public World() {
 		blocks = new ArrayList<Block>();
 		world = new org.jbox2d.dynamics.World(new AABB(new Vec2(-100,-100), new Vec2(100,150)), new Vec2(0, -10), true);
+		tray.setRotateBlocks(false);
+		tray.setMaxBlockExtent(point(1,1));
+		tray.setMinBlockExtent(point(1,1));
 		addGround();
 		// Add the clearer after the ground so it paints later and so on.
 		addClearer();

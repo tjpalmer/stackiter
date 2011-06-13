@@ -30,11 +30,15 @@ public class Tray {
 
 	private Logger logger;
 
-	private double maxBlockExtent = 5;
+	private Point2D minBlockExtent = point(0.5, 0.5);
+
+	private Point2D maxBlockExtent = point(5, 5);
 
 	private double pad = 0.2;
 
 	private Random random;
+
+	private boolean rotateBlocks;
 
 	public Tray() {
 		blocks = new ArrayList<Block>();
@@ -108,8 +112,16 @@ public class Tray {
 		return blocks;
 	}
 
+	public Point2D getMaxBlockExtent() {
+		return maxBlockExtent;
+	}
+
+	public Point2D getMinBlockExtent() {
+		return minBlockExtent;
+	}
+
 	public double getWidth() {
-		return 2 * (maxBlockExtent + pad);
+		return 2 * ((rotateBlocks ? norm(maxBlockExtent) : maxBlockExtent.getX()) + pad);
 	}
 
 	public Block graspedBlock(Point2D point) {
@@ -145,6 +157,10 @@ public class Tray {
 
 	public boolean isFixedToDisplay() {
 		return fixedToDisplay;
+	}
+
+	public boolean isRotateBlocks() {
+		return rotateBlocks;
 	}
 
 	public void paint(Graphics2D graphics) {
@@ -205,9 +221,14 @@ public class Tray {
 		// TODO Consider Gaussian mixture model on sizes.
 		// TODO Extract min and max sizes for less hardcoding on decorations and flusher.
 		// For now, keep the block size constant, so only orientation matters.
-		//block.setExtent(4.5 * random.nextDouble() + 0.5, 4.5 * random.nextDouble() + 0.5);
-		block.setExtent(5, 2.5);
-		block.setRotation(2 * random.nextDouble() - 1);
+		Point2D spread = subtracted(maxBlockExtent, minBlockExtent);
+		block.setExtent(
+			spread.getX() * random.nextDouble() + minBlockExtent.getX(),
+			spread.getY() * random.nextDouble() + minBlockExtent.getY()
+		);
+		if (rotateBlocks) {
+			block.setRotation(2 * random.nextDouble() - 1);
+		}
 		return block;
 	}
 
@@ -234,6 +255,18 @@ public class Tray {
 
 	public void setLogger(Logger logger) {
 		this.logger = logger;
+	}
+
+	public void setMaxBlockExtent(Point2D maxBlockExtent) {
+		this.maxBlockExtent = maxBlockExtent;
+	}
+
+	public void setMinBlockExtent(Point2D minBlockExtent) {
+		this.minBlockExtent = minBlockExtent;
+	}
+
+	public void setRotateBlocks(boolean rotateBlocks) {
+		this.rotateBlocks = rotateBlocks;
 	}
 
 }
