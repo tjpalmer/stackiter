@@ -26,12 +26,9 @@ public class ClearerAgent extends BasicAgent {
 	public void act() {
 		// This assumes the clearer doesn't move.
 		if (clearerPosition == null) {
-			for (Item item: getWorld().getItems()) {
-				if (item instanceof Clearer) {
-					clearerPosition = item.getPosition();
-				}
-			}
-			if (clearerPosition != null) {
+			Clearer clearer = getWorld().getClearer();
+			if (clearer != null) {
+				clearerPosition = clearer.getPosition();
 				tool.setPosition(clearerPosition);
 			}
 		}

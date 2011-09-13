@@ -79,9 +79,6 @@ public class World {
 	public World() {
 		blocks = new ArrayList<Block>();
 		world = new org.jbox2d.dynamics.World(new AABB(new Vec2(-100,-100), new Vec2(100,150)), new Vec2(0, -10), true);
-		tray.setRotateBlocks(false);
-		tray.setMaxBlockExtent(point(1,1));
-		tray.setMinBlockExtent(point(1,1));
 		addGround();
 		// Add the clearer after the ground so it paints later and so on.
 		addClearer();
@@ -93,6 +90,12 @@ public class World {
 	public void addAgent(Agent agent) {
 		agents.add(agent);
 		agent.setWorld(this);
+	}
+
+	public void addBlock(Block block) {
+		blocks.add(block);
+		block.addTo(this);
+		addItem(block);
 	}
 
 	private void addClearer() {
@@ -121,7 +124,7 @@ public class World {
 
 	/**
 	 * Agents affect world state by means of tools. That is, actions are
-	 * expressed here. Generally, each agent should have a tool.
+	 * expressed here. Often, an agent has one tool.
 	 */
 	public Tool addTool() {
 		Tool tool = new Tool();
@@ -153,6 +156,15 @@ public class World {
 	public Iterable<Block> getBlocks() {
 		// TODO Wrap for immutability?
 		return blocks;
+	}
+
+	public Clearer getClearer() {
+		for (Item item: getItems()) {
+			if (item instanceof Clearer) {
+				return (Clearer)item;
+			}
+		}
+		return null;
 	}
 
 	public org.jbox2d.dynamics.World getDynamicsWorld() {
@@ -209,7 +221,7 @@ public class World {
 		// TODO Generify widget concept?
 		if (clearer.contains(tool.getPosition())) {
 			for (Block block: blocks) {
-				// Calling this in a block look is super inefficient n^2.
+				// Calling this in a block loop is super inefficient n^2.
 				handleRemoval(block);
 			}
 			blocks.clear();
@@ -220,9 +232,7 @@ public class World {
 		ToolInfo toolInfo = tools.get(tool);
 		Block graspedBlock = tray.graspedBlock(tool.getPosition());
 		if (graspedBlock != null) {
-			blocks.add(graspedBlock);
-			graspedBlock.addTo(this);
-			addItem(graspedBlock);
+			addBlock(graspedBlock);
 		}
 		if (!tray.isActionConsumed()) {
 			for (Block block: blocks) {

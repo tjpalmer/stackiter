@@ -12,7 +12,7 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
-import stackiter.agents.*;
+import stackiter.tasks.*;
 
 @SuppressWarnings("serial")
 public class Stackiter extends JComponent implements ActionListener, Closeable, MouseListener, MouseMotionListener {
@@ -77,18 +77,27 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 			robot = new Robot();
 
+			// Basic world, logger, and mouse tool.
 			logger = new TextLogger();
 			//logger = new FilterLogger(logger);
 			world = new World();
-			world.setLogger(logger);
 			tray = world.getTray();
 			mouseTool = world.addTool();
-			// Log the tool to get it a lower ID.
+			// Log the mouse tool to get it a lower ID.
 			logger.logTool(mouseTool);
 
-			world.addAgent(new ClearerAgent(30));
-			world.addAgent(new DropperAgent());
-			//world.addAgent(new WorldLearnerAgent());
+			// Custom scenarios. Change in place for now. Could parameterize.
+			Scenario[] scenarios = {
+				new Scenario.Alternate(),
+				//new Scenario.Babble(),
+				//new Scenario.SmallSquares(),
+			};
+			for (Scenario scenario: scenarios) {
+				scenario.buildWorld(world);
+			}
+
+			// Let world log now.
+			world.setLogger(logger);
 
 			double groundDepth = -2 * world.getGround().getExtent().getY();
 			double groundWidth = 40; // 2 * world.getGround().getExtent().getX(); <-- Visual glitch here needs resolved.

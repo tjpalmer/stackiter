@@ -120,6 +120,10 @@ public class Tray {
 		return minBlockExtent;
 	}
 
+	public Random getRandom() {
+		return random;
+	}
+
 	public double getWidth() {
 		return 2 * ((rotateBlocks ? norm(maxBlockExtent) : maxBlockExtent.getX()) + pad);
 	}
@@ -232,7 +236,7 @@ public class Tray {
 		return block;
 	}
 
-	private Color randomColor() {
+	public Color randomColor() {
 		// TODO Consider Gaussian mixture model on saturations and brightnesses. Hue should likely be uniform, though, I think.
 		return Color.getHSBColor(random.nextFloat(), random.nextFloat(), random.nextFloat());
 	}
