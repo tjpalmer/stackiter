@@ -17,6 +17,20 @@ import stackiter.tasks.*;
 @SuppressWarnings("serial")
 public class Stackiter extends JComponent implements ActionListener, Closeable, MouseListener, MouseMotionListener {
 
+	/**
+	 * Custom scenarios. Change in place for now. Could parameterize.
+	 */
+	public static void initScenarios(World world) {
+		Scenario[] scenarios = {
+			//new Scenario.Alternate(),
+			new Scenario.Babble(),
+			//new Scenario.SmallSquares(),
+		};
+		for (Scenario scenario: scenarios) {
+			scenario.buildWorld(world);
+		}
+	}
+
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Stackiter");
 		frame.setLayout(new BorderLayout());
@@ -85,18 +99,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			mouseTool = world.addTool();
 			// Log the mouse tool to get it a lower ID.
 			logger.logTool(mouseTool);
-
-			// Custom scenarios. Change in place for now. Could parameterize.
-			Scenario[] scenarios = {
-				new Scenario.Alternate(),
-				//new Scenario.Babble(),
-				//new Scenario.SmallSquares(),
-			};
-			for (Scenario scenario: scenarios) {
-				scenario.buildWorld(world);
-			}
-
-			// Let world log now.
+			// Init scene and start logging.
+			initScenarios(world);
 			world.setLogger(logger);
 
 			double groundDepth = -2 * world.getGround().getExtent().getY();

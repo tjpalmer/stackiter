@@ -1,7 +1,5 @@
 package stackiter.sim;
 
-import stackiter.agents.*;
-
 /**
  * For headless batch jobs.
  *
@@ -13,8 +11,7 @@ public class Batch {
 		World world = new World();
 		FilterLogger logger = new FilterLogger(new TextLogger());
 		world.setLogger(logger);
-		world.addAgent(new ClearerAgent(30));
-		world.addAgent(new DropperAgent());
+		Stackiter.initScenarios(world);
 		long steps = 0;
 		long stepsPerSecond = 100;
 		long stepsPerMinute = 60 * stepsPerSecond;
