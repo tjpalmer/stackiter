@@ -22,8 +22,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	 */
 	public static void initScenarios(World world) {
 		Scenario[] scenarios = {
-			//new Scenario.Alternate(),
-			new Scenario.Babble(),
+			new Scenario.Alternate(),
+			//new Scenario.Babble(),
 			//new Scenario.SmallSquares(),
 		};
 		for (Scenario scenario: scenarios) {
@@ -93,7 +93,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 
 			// Basic world, logger, and mouse tool.
 			logger = new TextLogger();
-			//logger = new FilterLogger(logger);
+			logger = new FilterLogger(logger);
 			world = new World();
 			tray = world.getTray();
 			mouseTool = world.addTool();

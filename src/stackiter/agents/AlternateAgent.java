@@ -80,11 +80,14 @@ public class AlternateAgent extends BasicAgent {
 				}
 				break;
 			case WAIT:
-				// Clear the world.
-				block = null;
-				tool.setPosition(getWorld().getClearer().getPosition());
-				tool.setMode(ToolMode.GRASP);
-				mode = Mode.CLEAR;
+				waitCount++;
+				if (waitCount >= 5) {
+					// Done waiting. Clear the world.
+					block = null;
+					tool.setPosition(getWorld().getClearer().getPosition());
+					tool.setMode(ToolMode.GRASP);
+					mode = Mode.CLEAR;
+				}
 				break;
 			default:
 				throw new RuntimeException("Unsupported mode: " + mode);

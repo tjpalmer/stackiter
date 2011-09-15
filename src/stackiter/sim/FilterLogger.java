@@ -41,6 +41,11 @@ public class FilterLogger extends AtomicLogger {
 	public static double LINEAR_ACCELERATION_EPSILON = 35;
 
 	/**
+	 * What counts as "zero" for important time steps.
+	 */
+	public static double LINEAR_VELOCITY_EPSILON = 1e-2;
+
+	/**
 	 * How long a noisy event should be off before we notice it again.
 	 */
 	public static double NOISY_EVENT_DURATION = 0.5;
@@ -170,6 +175,11 @@ public class FilterLogger extends AtomicLogger {
 				crossedZero(item.getLinearAcceleration(), old.getLinearAcceleration(), LINEAR_ACCELERATION_EPSILON)
 			) {
 				trackNoisyEvent(item.getSoul());
+			}
+			// I was missing some interesting states without logging at velocity changes.
+			// TODO Does this overdo it?
+			if (crossedZero(item.getLinearVelocity(), old.getLinearVelocity(), LINEAR_VELOCITY_EPSILON)) {
+				requestLog();
 			}
 		}
 		// Now update the item, in any case.
