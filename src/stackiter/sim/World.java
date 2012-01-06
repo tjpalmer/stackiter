@@ -74,6 +74,8 @@ public class World {
 
 	private Tray tray = new Tray();
 
+	private double trayHeight = 30.0;
+
 	private org.jbox2d.dynamics.World world;
 
 	public World() {
@@ -323,7 +325,18 @@ public class World {
 		// TODO Maybe tray logger setting could log its current state immediately despite prior setup?
 		double minX = ground.getPosition().getX() - ground.getExtent().getX();
 		tray.setAnchor(point(minX - 12.5, 0));
-		tray.setHeight(30);
+		tray.setHeight(trayHeight);
+		if (trayHeight == 0) {
+			tray.fill();
+		}
+	}
+
+	/**
+	 * The tray height is configured after scenario init, so store the desired
+	 * height here for later.
+	 */
+	public void setTrayHeight(double trayHeight) {
+		this.trayHeight = trayHeight;
 	}
 
 	public void update() {

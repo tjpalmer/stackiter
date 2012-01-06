@@ -10,8 +10,8 @@ public class Batch {
 	public static void main(String[] args) {
 		World world = new World();
 		FilterLogger logger = new FilterLogger(new TextLogger());
-		world.setLogger(logger);
 		Stackiter.initScenarios(world);
+		world.setLogger(logger);
 		long steps = 0;
 		long stepsPerSecond = 100;
 		long stepsPerMinute = 60 * stepsPerSecond;

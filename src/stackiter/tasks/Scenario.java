@@ -18,6 +18,7 @@ public interface Scenario {
 		@Override
 		public void buildWorld(World world) {
 			world.addAgent(new AlternateAgent());
+			world.setTrayHeight(0);
 		}
 	}
 

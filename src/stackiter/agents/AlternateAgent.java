@@ -40,7 +40,11 @@ public class AlternateAgent extends BasicAgent {
 
 	private Block block;
 
+	private Block dropped;
+
 	private double goalX;
+
+	private double goalY;
 
 	private Mode mode;
 
@@ -52,24 +56,41 @@ public class AlternateAgent extends BasicAgent {
 	public void act() {
 		// I only use a tool here because my later parsing code might expect it.
 		if (mode == Mode.CONJURE) {
-			goalX = randomX();
+			double lengthMin = 1.5;
+			double lengthRange = 4.0;
+			double droppedLength =
+				lengthMin + lengthRange * getRandom().nextDouble();
+			conjureDropped(point(droppedLength, 1));
+			// Place the goal at a Gaussian sampled point above the center of
+			// the dropped block.
+			double lengthMid = lengthMin + 0.5 * lengthRange;
+			goalX =
+				dropped.getPosition().getX() +
+				lengthMid * getRandom().nextGaussian();
+			// The y needs to be above the top of the dropped block, so to keep
+			// it simple, use a uniform distribution, for kicks with the same
+			// bounds as
+			double droppedMaxY =
+				dropped.transformedShape().getBounds2D().getMaxY();
+			goalY =
+				droppedMaxY + lengthMin +
+				lengthRange * getRandom().nextDouble();
 		}
-		tool.setPosition(point(goalX, 15));
+		tool.setPosition(point(goalX, goalY));
 		switch (mode) {
 			case CLEAR:
 				tool.setMode(ToolMode.INACTIVE);
 				mode = Mode.CONJURE;
 				break;
 			case CONJURE:
-				conjureDropped(point(5, 1));
 				conjureGrasped(point(1, 1));
 				mode = Mode.DROP;
 				break;
 			case DROP:
 				tool.setMode(ToolMode.INACTIVE);
 				if (
-					block.getPosition().getY() + block.getExtent().getY() <
-					tool.getPosition().getY()
+					block.getPosition().getY() + 0.1 * block.getExtent().getY()
+					< tool.getPosition().getY()
 				) {
 					// It is below the tool. Let's see if it has stopped.
 					if (norm(block.getLinearVelocity()) < 1e-2) {
@@ -97,18 +118,16 @@ public class AlternateAgent extends BasicAgent {
 	private void conjureDropped(Point2D extent) {
 		// Use the tray's random, in case that's been configured.
 		// TODO Better random management.
-		Random random = getWorld().getTray().getRandom();
-		// Block.
-		Block block = new Block();
-		block.setColor(getWorld().getTray().randomColor());
-		block.setExtent(extent);
+		dropped = new Block();
+		dropped.setColor(getWorld().getTray().randomColor());
+		dropped.setExtent(extent);
 		// Angle.
-		boolean upright = random.nextDouble() < 0.5;
-		block.setAngle(upright ? 0 : 0.5);
+		boolean upright = getRandom().nextDouble() < 0.5;
+		dropped.setAngle(upright ? 0 : 0.5);
 		// Position with base at ground.
-		block.setPosition(randomX(), upright ? extent.getY() : extent.getX());
+		dropped.setPosition(randomX(), upright ? extent.getY() : extent.getX());
 		// Add it.
-		getWorld().addBlock(block);
+		getWorld().addBlock(dropped);
 	}
 
 	private void conjureGrasped(Point2D extent) {
@@ -123,6 +142,10 @@ public class AlternateAgent extends BasicAgent {
 		tool.setMode(ToolMode.GRASP);
 	}
 
+	private Random getRandom() {
+		return getWorld().getTray().getRandom();
+	}
+
 	@Override
 	protected void init() {
 		// Tool.
@@ -135,9 +158,13 @@ public class AlternateAgent extends BasicAgent {
 
 	private double randomX() {
 		// Keep center of mass over ground.
-		Random random = getWorld().getTray().getRandom();
-		return 0.95 * (2.0 * random.nextDouble() - 1.0) *
+		return 0.95 * (2.0 * getRandom().nextDouble() - 1.0) *
 			getWorld().getGround().getExtent().getX();
+	}
+
+	private double randomY() {
+		// Keep center of mass over ground.
+		return 12.5 + 10 * getRandom().nextDouble();
 	}
 
 }

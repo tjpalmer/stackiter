@@ -45,7 +45,7 @@ public class Tray {
 		random = new Random();
 	}
 
-	private void fill() {
+	public void fill() {
 		logger.atomic(new Runnable() { @Override public void run() {
 			// Log itself to make sure we're up to date.
 			logger.logTray(Tray.this);
@@ -94,7 +94,7 @@ public class Tray {
 		}
 	}
 
-	private void flush() {
+	public void flush() {
 		logger.atomic(new Runnable() { @Override public void run() {
 			for (Block block: blocks) {
 				logger.logRemoval(block);
