@@ -1,13 +1,8 @@
 package stackiter.agents;
 
-import static stackiter.sim.Util.added;
 import static stackiter.sim.Util.norm;
-import static stackiter.sim.Util.point;
-import static stackiter.sim.Util.randInRange;
 
 import java.awt.Color;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -43,8 +38,6 @@ public class BalanceScaleAgent extends BasicAgent {
 	private Block beam;
 
 	private Mode mode = Mode.BUILD;
-
-	private List<Block> supports = new ArrayList<Block>();
 
 	private List<Block> weights = new ArrayList<Block>();
 
@@ -104,10 +97,6 @@ public class BalanceScaleAgent extends BasicAgent {
 		case WAIT_FOR_START:
 			if (waitCount >= 20) {
 				// Call that good enough.
-				for (Block support: supports) {
-					getWorld().removeBlock(support);
-				}
-				supports.clear();
 				mode = Mode.WAIT_FOR_SPILL;
 				waitCount = 0;
 			}
@@ -116,9 +105,9 @@ public class BalanceScaleAgent extends BasicAgent {
 	}
 
 	private void buildBalanceBeam() {
-		// Central post.
+		// Post.
 		Block post = buildPost(0.0);
-
+		// Beam.
 		beam = new Block();
 		beam.setColor(Color.GRAY);
 		beam.setExtent(10.0, 0.25);
@@ -126,12 +115,6 @@ public class BalanceScaleAgent extends BasicAgent {
 			0.0, beam.getExtent().getY() + 2.0 * post.getExtent().getY()
 		);
 		getWorld().addBlock(beam);
-
-		// Temporary supports.
-		double supportOffset =
-			beam.getExtent().getX() - post.getExtent().getX();
-		supports.add(buildPost(supportOffset));
-		supports.add(buildPost(-supportOffset));
 	}
 
 	private Block buildPost(double x) {
@@ -139,45 +122,6 @@ public class BalanceScaleAgent extends BasicAgent {
 		post.setColor(Color.DARK_GRAY);
 		post.setExtent(1.0, POST_EXTENT_Y);
 		post.setPosition(x, post.getExtent().getY());
-		getWorld().addBlock(post);
-		return post;
-	}
-
-	private Block conjureBeam(Block post) {
-		Block beam = new Block();
-		beam.setColor(getWorld().getTray().randomColor());
-		beam.setExtent(
-			randInRange(getRandom(), 3.0, 8.0),
-			randInRange(getRandom(), 0.5, 1.5)
-		);
-		Rectangle2D postBounds = post.getBounds();
-		beam.setPosition(
-			added(
-				point(
-					// Put the beam's center of mass anywhere over the top of
-					// the post.
-					randInRange(
-						getRandom(), postBounds.getMinX(), postBounds.getMaxX()
-					),
-					postBounds.getMaxY() + beam.getExtent().getY()
-				),
-				post.getPosition()
-			)
-		);
-		getWorld().addBlock(beam);
-		return beam;
-	}
-
-	private Block conjurePost(Point2D extent) {
-		Block post;
-		// Use the tray's random, in case that's been configured.
-		// TODO Better random management.
-		post = new Block();
-		post.setColor(getWorld().getTray().randomColor());
-		post.setExtent(extent);
-		// Position with base at ground.
-		post.setPosition(randomX(), extent.getY());
-		// Add it.
 		getWorld().addBlock(post);
 		return post;
 	}
