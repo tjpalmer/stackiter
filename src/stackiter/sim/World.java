@@ -60,6 +60,8 @@ public class World {
 
 	private List<Block> blocks;
 
+	private int clearCount;
+
 	private Clearer clearer;
 
 	private Block ground;
@@ -141,6 +143,7 @@ public class World {
 		}
 		blocks.clear();
 		logger.logClear();
+		clearCount++;
 	}
 
 	/**
@@ -167,6 +170,10 @@ public class World {
 	public Iterable<Block> getBlocks() {
 		// TODO Wrap for immutability?
 		return blocks;
+	}
+
+	public int getClearCount() {
+		return clearCount;
 	}
 
 	public Clearer getClearer() {

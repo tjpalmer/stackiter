@@ -1,17 +1,16 @@
 package stackiter.agents;
 
-import static stackiter.sim.Util.norm;
+import static java.lang.Math.*;
+import static stackiter.sim.Util.*;
 
-import java.awt.Color;
-import java.util.ArrayList;
+import java.awt.*;
+import java.util.*;
 import java.util.List;
-import java.util.Random;
 
-import stackiter.sim.BasicAgent;
-import stackiter.sim.Block;
+import stackiter.sim.*;
 
 /**
- * Build "Balance Scale Problem" instances. Reference Siegler.
+ * Build "Balance Scale Problem" instances (Siegler, 1976).
  */
 public class BalanceScaleAgent extends BasicAgent {
 
@@ -60,22 +59,26 @@ public class BalanceScaleAgent extends BasicAgent {
 		case SPILL:
 			boolean allDone = true;
 			// Put in a maximum wait time, just in case, but make it big.
-			if (waitCount < 5000) {
-				// We haven't waited too long, so check the weights.
+			if (waitCount < 500) {
+				// We haven't waited too long, so we might keep going.
+				// First see if the beam has tipped. If so, we're done. Early
+				// exit shrinks log sizes and also avoids cases where some
+				// blocks slide off then the balance shifts.
 				// TODO Reconsider against homonyms?
-				for (Block weight: weights) {
-					if (weight.getPosition().getY() < POST_EXTENT_Y * 2.0) {
-						// Who cares if it's moving. It's below the beam.
-						continue;
-					}
-					if (norm(weight.getLinearVelocity()) >= 1e-2) {
-						allDone = false;
-						break;
+				if (abs(beam.getAngle()) < 0.05) {
+					// Beam isn't tipped, so check if weights are stable.
+					for (Block weight: weights) {
+						if (norm(weight.getLinearVelocity()) >= 1e-2) {
+							// Nope, so we need to keep watching for a spill.
+							allDone = false;
+							break;
+						}
 					}
 				}
 			}
 			if (allDone) {
-				// All blocks stopped. Wait a few.
+				// We have a determined outcome. Wait a few, and be done.
+				// TODO Is the waiting to make sure we get the new state logged?
 				mode = Mode.WAIT_FOR_DONE;
 				waitCount = 0;
 			}
