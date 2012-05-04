@@ -35,6 +35,17 @@ public interface Scenario {
 	}
 
 	/**
+	 * Constructs cantilever setups for testing more varied relationships.
+	 */
+	class BalanceScale implements Scenario {
+		@Override
+		public void buildWorld(World world) {
+			world.addAgent(new BalanceScaleAgent());
+			world.setTrayHeight(0);
+		}
+	}
+
+	/**
 	 * Adds nothing extra.
 	 */
 	class Empty implements Scenario {

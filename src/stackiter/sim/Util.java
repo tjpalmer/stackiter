@@ -2,6 +2,7 @@ package stackiter.sim;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.util.Random;
 
 public class Util {
 
@@ -148,6 +149,10 @@ public class Util {
 
 	public static int signApprox(double x, double epsilon) {
 		return (int)(Math.abs(x) < epsilon ? 0 : Math.signum(x));
+	}
+	
+	public static double randInRange(Random random, double min, double max) {
+		return random.nextDouble() * (max - min) + min;
 	}
 
 	public static Rectangle2D rectangle() {

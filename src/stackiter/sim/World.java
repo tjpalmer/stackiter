@@ -134,6 +134,15 @@ public class World {
 		return tool;
 	}
 
+	public void clearBlocks() {
+		for (Block block: blocks) {
+			// Calling this in a block loop is super inefficient n^2.
+			handleRemoval(block);
+		}
+		blocks.clear();
+		logger.logClear();
+	}
+
 	/**
 	 * If the tool has a block grasped, it shouldn't be able to move past the
 	 * block. Alternatively, if we let it slip some, it should drop the block if
@@ -222,12 +231,7 @@ public class World {
 		// Check for clearing the screen.
 		// TODO Generify widget concept?
 		if (clearer.contains(tool.getPosition())) {
-			for (Block block: blocks) {
-				// Calling this in a block loop is super inefficient n^2.
-				handleRemoval(block);
-			}
-			blocks.clear();
-			logger.logClear();
+			clearBlocks();
 			return;
 		}
 		// Try reserve blocks.
@@ -311,6 +315,14 @@ public class World {
 		for (Tool tool: tools.keySet()) {
 			tool.paint(graphics);
 		}
+	}
+
+	/**
+	 * Properly removes a block from the world.
+	 */
+	public void removeBlock(Block block) {
+		handleRemoval(block);
+		blocks.remove(block);
 	}
 
 	public void setLogger(Logger logger) {

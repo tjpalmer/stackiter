@@ -22,8 +22,9 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	 */
 	public static void initScenarios(World world) {
 		Scenario[] scenarios = {
-			new Scenario.Alternate(),
+			//new Scenario.Alternate(),
 			//new Scenario.Babble(),
+			new Scenario.BalanceScale(),
 			//new Scenario.SmallSquares(),
 		};
 		for (Scenario scenario: scenarios) {
@@ -145,7 +146,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 					// Handle scroll first, but based on last time's position.
 					// You get crazy jumpy effects otherwise.
 					// Also, without mouseOver check, I got upward scrolling when over title bar.
-					handleScroll(mouseTool.getPosition());
+					//handleScroll(mouseTool.getPosition());
 				}
 
 				// Recalculate each time for cases of scrolling.
