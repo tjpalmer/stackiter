@@ -9,7 +9,8 @@ public class Batch {
 
 	public static void main(String[] args) {
 		World world = new World();
-		Logger logger = new FilterLogger(new TextLogger());
+		Logger logger = new EpisodicLogger(new TextLogger());
+		//Logger logger = new FilterLogger(new TextLogger());
 		//Logger logger = new TextLogger();
 		Stackiter.initScenarios(world);
 		world.setLogger(logger);
