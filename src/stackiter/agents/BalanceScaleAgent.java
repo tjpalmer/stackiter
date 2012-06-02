@@ -16,7 +16,7 @@ public class BalanceScaleAgent extends BasicAgent {
 
 	private static final double POST_EXTENT_Y = 5.0;
 
-	private static final int WEIGHT_COUNT = 5;
+	private static final int WEIGHT_COUNT_MAX = 4;
 
 	private static enum Mode {
 
@@ -49,6 +49,8 @@ public class BalanceScaleAgent extends BasicAgent {
 		case BUILD:
 			buildBalanceBeam();
 			placeWeights();
+			// All set up all at once.
+			getWorld().episodeStarted();
 			mode = Mode.WAIT_FOR_START;
 			waitCount = 0;
 			break;
@@ -91,6 +93,7 @@ public class BalanceScaleAgent extends BasicAgent {
 			}
 			break;
 		case WAIT_FOR_SPILL:
+			// TODO Combine wait for spill with wait for start?
 			if (waitCount >= 20) {
 				// Call that good enough.
 				mode = Mode.SPILL;
@@ -98,6 +101,7 @@ public class BalanceScaleAgent extends BasicAgent {
 			}
 			break;
 		case WAIT_FOR_START:
+			// TODO Combine wait for spill with wait for start?
 			if (waitCount >= 20) {
 				// Call that good enough.
 				mode = Mode.WAIT_FOR_SPILL;
@@ -131,12 +135,18 @@ public class BalanceScaleAgent extends BasicAgent {
 
 	private void placeWeights() {
 		weights.clear();
-		int weightCount = getRandom().nextInt(WEIGHT_COUNT);
+		int weightCount =
+			// Expanded.
+			WEIGHT_COUNT_MAX + getRandom().nextInt(WEIGHT_COUNT_MAX / 2) + 1;
+			// Standard.
+			//getRandom().nextInt(WEIGHT_COUNT_MAX + 1);
 		for (int w = 0; w < weightCount; w++) {
 			Block weight = new Block();
 			weight.setColor(getWorld().getTray().randomColor());
 			// All weights are same size, shape, and mass.
 			weight.setExtent(2.0, 2.0);
+			double extentX = weight.getExtent().getX();
+			double extentY = weight.getExtent().getY();
 			// Pick random x over beam, and place y above it.
 			double x = randomX();
 			double y = beam.getExtent().getY() +
@@ -148,17 +158,24 @@ public class BalanceScaleAgent extends BasicAgent {
 				double otherExtentX = other.getExtent().getX();
 				if (
 					// Right edge past left and left past right.
-					x + weight.getExtent().getX() >= otherX - otherExtentX &&
-					x - weight.getExtent().getX() <= otherX + otherExtentX
+					x + extentX >= otherX - otherExtentX &&
+					x - extentX <= otherX + otherExtentX
 				) {
-					// Some noise to avoid exact alignment.
+					// Align to the bottom one.
 					if (!xAligned) {
-						// Align to the bottom one.
-						x = otherX + 0.2 * getRandom().nextGaussian();
+						double alignExtent = 0.95 * otherExtentX;
+						do {
+							// Some noise to avoid exact alignment.
+							x = otherX + 0.2 * getRandom().nextGaussian();
+						} while (
+							// Retain the center above the bottom block.
+							x < otherX - alignExtent || x > otherX + alignExtent
+						);
 						xAligned = true;
 					}
 					// But stack past the top.
-					y += 2.0 * other.getExtent().getY();
+					y = other.getPosition().getY() + other.getExtent().getY() +
+						extentY;
 				}
 			}
 			weight.setPosition(x, y);

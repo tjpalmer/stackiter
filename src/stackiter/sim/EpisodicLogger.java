@@ -16,6 +16,8 @@ public class EpisodicLogger extends AtomicLogger {
 
 		boolean hasAdds;
 
+		boolean episodeStart;
+
 		@Override
 		public State clone() {
 			return (State)super.clone();
@@ -24,7 +26,9 @@ public class EpisodicLogger extends AtomicLogger {
 		@Override
 		public State cloneNew(long steps, double simTime) {
 			State result = (State)super.cloneNew(steps, simTime);
+			// These transitory events are in relation to a particular state.
 			result.hasAdds = false;
+			result.episodeStart = false;
 			return result;
 		}
 
@@ -37,6 +41,8 @@ public class EpisodicLogger extends AtomicLogger {
 	private State oldState;
 
 	private State state;
+
+	private boolean doWaitForEpisodeStart;
 
 	public EpisodicLogger(Logger logger) {
 		this.logger = logger;
@@ -88,6 +94,11 @@ public class EpisodicLogger extends AtomicLogger {
 	}
 
 	@Override
+	public void logEpisodeStart() {
+		state.episodeStart = true;
+	}
+
+	@Override
 	public void logGrasp(Tool tool, Block item, Point2D pointRelItem) {
 		// Ignore for now.
 	}
@@ -120,7 +131,11 @@ public class EpisodicLogger extends AtomicLogger {
 				// TODO Do we need to wait for blocks to be added and moving?
 				doLog(state);
 			}
-			if (oldState != null && !state.hasAdds && oldState.hasAdds) {
+			if (oldState != null && (
+				oldState.episodeStart ||
+				// TODO Remove the following heuristic and base always on episodes?
+				(!doWaitForEpisodeStart && !state.hasAdds && oldState.hasAdds)
+			)) {
 				doLog(oldState);
 			}
 		}
@@ -147,6 +162,11 @@ public class EpisodicLogger extends AtomicLogger {
 	@Override
 	public void logView(Rectangle2D view) {
 		// Ignore for now.
+	}
+
+	@Override
+	public void waitForEpisodeStart() {
+		this.doWaitForEpisodeStart = true;
 	}
 
 }

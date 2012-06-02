@@ -64,6 +64,12 @@ public class World {
 
 	private Clearer clearer;
 
+	/**
+	 * Whether the current state is the start of an episode, where that's
+	 * applicable.
+	 */
+	private boolean episodeStarted;
+
 	private Block ground;
 
 	private List<ItemInfo> items = new ArrayList<ItemInfo>();
@@ -165,6 +171,10 @@ public class World {
 		Point2D graspedPoint = graspedItem.getGraspPosition();
 		Point2D toolPoint = applied(graspedItem.getTransform(), graspedPoint);
 		tool.setPosition(toolPoint);
+	}
+
+	public void episodeStarted() {
+		this.episodeStarted = true;
 	}
 
 	public Iterable<Block> getBlocks() {
@@ -438,6 +448,13 @@ public class World {
 			logger.logItem(ground);
 			for (Block block: blocks) {
 				logger.logItem(block);
+			}
+
+			// Say it was a new episode start, if indicated.
+			if (episodeStarted) {
+				logger.logEpisodeStart();
+				// Done said that now.
+				episodeStarted = false;
 			}
 
 			// Tell the agents what's up now, in case they care before next update.

@@ -35,12 +35,23 @@ public interface Scenario {
 	}
 
 	/**
-	 * Constructs cantilever setups for testing more varied relationships.
+	 * Constructs automated balance scale scenes.
 	 */
 	class BalanceScale implements Scenario {
 		@Override
 		public void buildWorld(World world) {
 			world.addAgent(new BalanceScaleAgent());
+			world.setTrayHeight(0);
+		}
+	}
+
+	/**
+	 * Constructs scale scenes for drop(X, Y).
+	 */
+	class DropOn implements Scenario {
+		@Override
+		public void buildWorld(World world) {
+			world.addAgent(new DropOnAgent());
 			world.setTrayHeight(0);
 		}
 	}
