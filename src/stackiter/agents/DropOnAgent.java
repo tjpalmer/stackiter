@@ -92,7 +92,9 @@ public class DropOnAgent extends BasicAgent {
 		// Block.
 		dropped = new Block();
 		dropped.setColor(getWorld().getTray().randomColor());
-		dropped.setExtent(point(1, 1));
+		dropped.setExtent(point(1.0, 1.0));
+		//dropped.setExtent(point(randomDroppedLength(), 1.0));
+		//dropped.setExtent(point(randomSupportLength(), 1.0));
 		dropped.setAngle(0.5 * getRandom().nextGaussian());
 		dropped.setPosition(dropX, dropY);
 		// Add it.
@@ -100,8 +102,7 @@ public class DropOnAgent extends BasicAgent {
 	}
 
 	private void conjureSupport() {
-		double droppedLength = randomSupportLength();
-		conjureSupport(point(droppedLength, 1));
+		conjureSupport(point(randomSupportLength(), 1.0));
 		// Figure out how many extras we want.
 		droppedsToGo =
 				getRandom().nextInt(MAX_DROPPEDS - MIN_DROPPEDS + 1) +
@@ -135,6 +136,11 @@ public class DropOnAgent extends BasicAgent {
 		return speed < 1e-3;
 	}
 
+	private double randomDroppedLength() {
+		return 1.0 + 0.5 * SUPPORT_LENGTH_RANGE * getRandom().nextDouble();
+		//return randomSupportLength();
+	}
+
 	private double randomSupportLength() {
 		return
 			SUPPORT_LENGTH_MIN +
@@ -143,7 +149,7 @@ public class DropOnAgent extends BasicAgent {
 
 	private double randomX() {
 		// Keep center of mass over ground.
-		return 0.95 * (2.0 * getRandom().nextDouble() - 1.0) *
+		return 0.5 * (2.0 * getRandom().nextDouble() - 1.0) *
 			getWorld().getGround().getExtent().getX();
 	}
 

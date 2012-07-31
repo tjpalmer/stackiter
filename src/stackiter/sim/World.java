@@ -90,8 +90,6 @@ public class World {
 		blocks = new ArrayList<Block>();
 		world = new org.jbox2d.dynamics.World(new AABB(new Vec2(-100,-100), new Vec2(100,150)), new Vec2(0, -10), true);
 		addGround();
-		// Add the clearer after the ground so it paints later and so on.
-		addClearer();
 		//Stock stock = new Stock();
 		//stock.addTo(this);
 		//items.add(stock);
@@ -122,8 +120,8 @@ public class World {
 		// TODO What's the right way to coordinate display size vs. platform size?
 		ground.setExtent(40/2, 1.5); // 40 == viewRect.getWidth()
 		ground.setPosition(0, -1.5);
-		ground.addTo(this);
-		addItem(ground);
+		// Actually add the ground later, so other folks have a chance to modify
+		// it first.
 	}
 
 	private void addItem(Item item) {
@@ -343,6 +341,13 @@ public class World {
 	}
 
 	public void setLogger(Logger logger) {
+		// Make sure the ground and clearer get added first.
+		// TODO It seems really horrid to tie this init to the logger.
+		ground.addTo(this);
+		addItem(ground);
+		// Add the clearer after the ground so it paints later and so on.
+		addClearer();
+
 		this.logger = logger;
 		tray.setLogger(logger);
 		// Log the ground right away because I like a low number for it.

@@ -52,6 +52,7 @@ public interface Scenario {
 		@Override
 		public void buildWorld(World world) {
 			world.addAgent(new DropOnAgent());
+			world.getGround().setExtent(35, 1.5);
 			world.setTrayHeight(0);
 		}
 	}
