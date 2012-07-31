@@ -16,7 +16,7 @@ public class BalanceScaleAgent extends BasicAgent {
 
 	private static final double POST_EXTENT_Y = 5.0;
 
-	private static final int WEIGHT_COUNT = 21;
+	private static final int WEIGHT_COUNT_MAX = 21;
 
 	private static enum Mode {
 
@@ -54,6 +54,8 @@ public class BalanceScaleAgent extends BasicAgent {
 		case BUILD:
 			buildBalanceBeam();
 			placeWeights();
+			// All set up all at once.
+			getWorld().episodeStarted();
 			mode = Mode.WAIT_FOR_START;
 			waitCount = 0;
 			break;
@@ -96,6 +98,7 @@ public class BalanceScaleAgent extends BasicAgent {
 			}
 			break;
 		case WAIT_FOR_SPILL:
+			// TODO Combine wait for spill with wait for start?
 			if (waitCount >= 20) {
 				// Call that good enough.
 				mode = Mode.SPILL;
@@ -103,6 +106,7 @@ public class BalanceScaleAgent extends BasicAgent {
 			}
 			break;
 		case WAIT_FOR_START:
+			// TODO Combine wait for spill with wait for start?
 			if (waitCount >= 20) {
 				// Call that good enough.
 				mode = Mode.WAIT_FOR_SPILL;
@@ -156,8 +160,13 @@ public class BalanceScaleAgent extends BasicAgent {
 
 	private void placeWeights() {
 		weights.clear();
-		//int weightCount = getRandom().nextInt(WEIGHT_COUNT);
-		int weightCount = WEIGHT_COUNT;
+		int weightCount =
+			// Expanded.
+			//WEIGHT_COUNT_MAX + getRandom().nextInt(WEIGHT_COUNT_MAX / 2) + 1;
+			// Standard.
+			//getRandom().nextInt(WEIGHT_COUNT_MAX + 1);
+      // Exact.
+      WEIGHT_COUNT_MAX;
 		List<Stack> stacks = new ArrayList<Stack>();
 		for (int w = 0; w < weightCount; w++) {
 			Block weight = new Block();

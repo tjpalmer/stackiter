@@ -29,4 +29,14 @@ public abstract class AtomicLogger implements Logger {
 		return txDepth;
 	}
 
+	@Override
+	public void logEpisodeStart() {
+		// For convenience for subclasses, do nothing here.
+	}
+
+	@Override
+	public void waitForEpisodeStart() {
+		// For convenience for subclasses, do nothing here.
+	}
+
 }

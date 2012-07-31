@@ -31,6 +31,11 @@ public interface Logger extends Closeable {
 	 */
 	void logClear();
 
+	/**
+	 * An episode is now constructed and ready to start.
+	 */
+	void logEpisodeStart();
+
 	void logGrasp(final Tool tool, final Block item, final Point2D pointRelItem);
 
 	void logItem(final Item item);
@@ -57,5 +62,14 @@ public interface Logger extends Closeable {
 	void logTray(Tray tray);
 
 	void logView(final Rectangle2D view);
+
+	/**
+	 * Tell the logger that episodes (for loggers that care) don't start until
+	 * logEpisodeStart has occurred. By default, episode start is heuristically
+	 * judged for some point after clear.
+	 *
+	 * TODO Change to a setter instead of a permanent switch?
+	 */
+	void waitForEpisodeStart();
 
 }

@@ -25,6 +25,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			//new Scenario.Alternate(),
 			//new Scenario.Babble(),
 			new Scenario.BalanceScale(),
+			//new Scenario.DropOn(),
 			//new Scenario.SmallSquares(),
 		};
 		for (Scenario scenario: scenarios) {
