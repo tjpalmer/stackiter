@@ -16,7 +16,7 @@ public class BalanceScaleAgent extends BasicAgent {
 
 	private static final double POST_EXTENT_Y = 5.0;
 
-	private static final int WEIGHT_COUNT = 5;
+	private static final int WEIGHT_COUNT = 21;
 
 	private static enum Mode {
 
@@ -32,6 +32,11 @@ public class BalanceScaleAgent extends BasicAgent {
 
 		WAIT_FOR_START,
 
+	}
+
+	private static class Stack {
+		Block base;
+		double height;
 	}
 
 	private Block beam;
@@ -129,40 +134,84 @@ public class BalanceScaleAgent extends BasicAgent {
 		return post;
 	}
 
+	private boolean overlap(Block a, Block b) {
+		double aX = a.getPosition().getX();
+		double aExtentX = a.getExtent().getX();
+		double bX = b.getPosition().getX();
+		double bExtentX = b.getExtent().getX();
+		// Right edge past left and left past right.
+		return aX + aExtentX >= bX - bExtentX && aX - aExtentX <= bX + bExtentX;
+	}
+
+	/**
+	 * See if the center of `a` overlaps `b` horizontally.
+	 */
+	private boolean overlapCenterA(Block a, Block b) {
+		double aX = a.getPosition().getX();
+		double bX = b.getPosition().getX();
+		double bExtentX = b.getExtent().getX();
+		// Center between left and right.
+		return aX >= bX - bExtentX && aX <= bX + bExtentX;
+	}
+
 	private void placeWeights() {
 		weights.clear();
-		int weightCount = getRandom().nextInt(WEIGHT_COUNT);
+		//int weightCount = getRandom().nextInt(WEIGHT_COUNT);
+		int weightCount = WEIGHT_COUNT;
+		List<Stack> stacks = new ArrayList<Stack>();
 		for (int w = 0; w < weightCount; w++) {
 			Block weight = new Block();
 			weight.setColor(getWorld().getTray().randomColor());
 			// All weights are same size, shape, and mass.
 			weight.setExtent(2.0, 2.0);
 			// Pick random x over beam, and place y above it.
-			double x = randomX();
-			double y = beam.getExtent().getY() +
-				beam.getPosition().getY() + weight.getExtent().getY();
-			// If x overlaps another weight, put it exactly over it.
-			boolean xAligned = false;
-			for (Block other: weights) {
-				double otherX = other.getPosition().getX();
-				double otherExtentX = other.getExtent().getX();
-				if (
-					// Right edge past left and left past right.
-					x + weight.getExtent().getX() >= otherX - otherExtentX &&
-					x - weight.getExtent().getX() <= otherX + otherExtentX
-				) {
+			weight.setPosition(
+				randomX(),
+				beam.getExtent().getY() + beam.getPosition().getY() +
+					weight.getExtent().getY()
+			);
+			// If x overlaps another stack, put it on top.
+			boolean anyOverlap = false;
+			Stack chosenStack = null;
+			for (Stack stack: stacks) {
+				if (overlap(weight, stack.base)) {
+					anyOverlap = true;
 					// Some noise to avoid exact alignment.
-					if (!xAligned) {
-						// Align to the bottom one.
-						x = otherX + 0.2 * getRandom().nextGaussian();
-						xAligned = true;
-					}
+					do {
+						weight.setPosition(
+							stack.base.getPosition().getX() +
+								0.2 * getRandom().nextGaussian(),
+							weight.getPosition().getY()
+						);
+					} while (!overlapCenterA(weight, stack.base));
 					// But stack past the top.
-					y += 2.0 * other.getExtent().getY();
+					weight.setPosition(
+						weight.getPosition().getX(),
+						stack.height + weight.getExtent().getY()
+					);
+					chosenStack = stack;
+					stack.height += 2.0 * weight.getExtent().getY();
+					// Might could still overlap another stack later, but don't
+					// worry too much.
+					break;
 				}
 			}
-			weight.setPosition(x, y);
+			if (chosenStack == null) {
+				// It's a new stack.
+				chosenStack = new Stack();
+				chosenStack.base = weight;
+				stacks.add(chosenStack);
+			}
+			// Update stack height for the new block.
+			chosenStack.height =
+				weight.getPosition().getY() + weight.getExtent().getY();
+			// And track our weights.
 			weights.add(weight);
+		}
+		// Shuffle then add weights to the world, so ids don't relate to
+		// position at all. Probably doesn't matter, but eh.
+		Collections.shuffle(weights);
+		for (Block weight: weights) {
 			getWorld().addBlock(weight);
 		}
 	}
