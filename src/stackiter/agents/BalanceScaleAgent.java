@@ -16,7 +16,7 @@ public class BalanceScaleAgent extends BasicAgent {
 
 	private static final double POST_EXTENT_Y = 5.0;
 
-	private static final int WEIGHT_COUNT_MAX = 21;
+	private static final int WEIGHT_COUNT_MAX = 5;
 
 	private static enum Mode {
 

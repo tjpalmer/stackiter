@@ -2,7 +2,8 @@ package stackiter.sim;
 
 import java.awt.*;
 import java.awt.geom.*;
-import java.util.Random;
+import java.util.*;
+import java.util.List;
 
 public class Util {
 
@@ -66,6 +67,17 @@ public class Util {
 		return point(bounds.getCenterX(), bounds.getCenterY());
 	}
 
+	@SuppressWarnings("hiding")
+	public static <Item> boolean contains(Iterable<Item> items, Item item) {
+		for (Item other: items) {
+			// TODO Support nulls?
+			if (item.equals(other)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Remember to dispose all graphics objects!!!
 	 * @param graphics
@@ -127,6 +139,15 @@ public class Util {
 		return transform;
 	}
 
+	@SuppressWarnings("hiding")
+	public static <Item> List<Item> list(Iterable<Item> items) {
+		ArrayList<Item> list = new ArrayList<Item>();
+		for (Item item: items) {
+			list.add(item);
+		}
+		return list;
+	}
+
 	public static double norm(Point2D point) {
 		return point.distance(0, 0);
 	}
@@ -150,7 +171,7 @@ public class Util {
 	public static int signApprox(double x, double epsilon) {
 		return (int)(Math.abs(x) < epsilon ? 0 : Math.signum(x));
 	}
-	
+
 	public static double randInRange(Random random, double min, double max) {
 		return random.nextDouble() * (max - min) + min;
 	}

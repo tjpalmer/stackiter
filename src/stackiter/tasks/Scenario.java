@@ -46,6 +46,16 @@ public interface Scenario {
 	}
 
 	/**
+	 * Provides a builder that likes to build towers.
+	 */
+	class Builder implements Scenario {
+		@Override
+		public void buildWorld(World world) {
+			world.addAgent(new BuilderAgent());
+		}
+	}
+
+	/**
 	 * Constructs scale scenes for drop(X, Y).
 	 */
 	class DropOn implements Scenario {
