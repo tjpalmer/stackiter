@@ -27,9 +27,9 @@ public class DropOnAgent extends BasicAgent {
 
 	private static final double SUPPORT_LENGTH_RANGE = 4.0;
 
-	private static final int MAX_DROPPEDS = 4;
+	private static final int MAX_DROPPEDS = 21;
 
-	private static final int MIN_DROPPEDS = 1;
+	private static final int MIN_DROPPEDS = 21;
 
 	private Block dropped;
 
@@ -88,11 +88,11 @@ public class DropOnAgent extends BasicAgent {
 		double supportMaxY = support.transformedShape().getBounds2D().getMaxY();
 		double dropY =
 				supportMaxY + randomSupportLength() + 2 * SUPPORT_LENGTH_RANGE;
-		// TODO Random size?
 		// Block.
 		dropped = new Block();
 		dropped.setColor(getWorld().getTray().randomColor());
 		dropped.setExtent(point(1.0, 1.0));
+		// TODO Random size?
 		//dropped.setExtent(point(randomDroppedLength(), 1.0));
 		//dropped.setExtent(point(randomSupportLength(), 1.0));
 		dropped.setAngle(0.5 * getRandom().nextGaussian());

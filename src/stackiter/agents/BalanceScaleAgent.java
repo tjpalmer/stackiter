@@ -165,8 +165,8 @@ public class BalanceScaleAgent extends BasicAgent {
 			//WEIGHT_COUNT_MAX + getRandom().nextInt(WEIGHT_COUNT_MAX / 2) + 1;
 			// Standard.
 			//getRandom().nextInt(WEIGHT_COUNT_MAX + 1);
-      // Exact.
-      WEIGHT_COUNT_MAX;
+			// Exact.
+			WEIGHT_COUNT_MAX;
 		List<Stack> stacks = new ArrayList<Stack>();
 		for (int w = 0; w < weightCount; w++) {
 			Block weight = new Block();
