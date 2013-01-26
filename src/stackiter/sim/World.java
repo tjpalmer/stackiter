@@ -223,6 +223,14 @@ public class World {
 		return items;
 	}
 
+	public List<Soul> getItemSouls() {
+		List<Soul> itemSouls = new ArrayList<Soul>();
+		for (Item item: getItems()) {
+			itemSouls.add(item.getSoul());
+		}
+		return itemSouls;
+	}
+
 	/**
 	 * The amount of simulation time that has passed in seconds.
 	 */

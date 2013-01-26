@@ -1,6 +1,7 @@
 package stackiter.agents;
 
 import static stackiter.sim.Util.*;
+import static stackiter.agents.ActionAgents.*;
 
 import java.awt.*;
 import java.util.*;
@@ -35,39 +36,49 @@ public class BuilderAgent extends BasicAgent {
 	@Override
 	public void act() {
 		// Pick a new cargo item, if we don't already have one.
-		if (cargo == null || !getItemSouls().contains(cargo.getSoul())) {
+		List<Soul> itemSouls = getWorld().getItemSouls();
+		if (cargo == null || !itemSouls.contains(cargo.getSoul())) {
 			chooseCargo();
-			action = new ActionAgents.Grasp(getWorld(), tool, cargo);
+			action = new Grasp(getWorld(), tool, cargo);
 		}
-		if (action.done()) {
-			if (action instanceof ActionAgents.Grasp) {
-				//
+		if (action != null) {
+			if (action.done()) {
+				if (action instanceof Grasp) {
+					action = new Carry(getWorld(), tool, point(0, 20));
+				} else if (action instanceof Carry) {
+					action = new Drop(getWorld(), tool);
+				} else if (action instanceof Drop) {
+					// Start over.
+					action = null;
+					cargo = null;
+				}
 			}
 		}
-		action.act();
+		if (action != null) {
+			action.act();
+		}
 	}
 
 	private void chooseCargo() {
 		// Choose new cargo.
 		// Find all tray items to consider choosing.
-		List<Item> trayItems = new ArrayList<Item>();
+		List<Item> items = new ArrayList<Item>();
 		Tray tray = getWorld().getTray();
 		// Logic duped from World.getItems().
 		for (Block block: tray.getItems()) {
 			Block copied = block.clone();
 			copied.setPosition(added(copied.getPosition(), tray.getAnchor()));
-			trayItems.add(copied);
+			items.add(copied);
+		}
+		// Also consider live items.
+		Item ground = getWorld().getGround();
+		for (Item item: getWorld().getItems()) {
+			if (item.isAlive() && ground.getSoul() != item.getSoul()) {
+				items.add(item);
+			}
 		}
 		// Randomly pick one for now.
-		cargo = trayItems.get(getRandom().nextInt(trayItems.size()));
-	}
-
-	private List<Soul> getItemSouls() {
-		List<Soul> itemSouls = new ArrayList<Soul>();
-		for (Item item: getWorld().getItems()) {
-			itemSouls.add(item.getSoul());
-		}
-		return itemSouls;
+		cargo = items.get(getRandom().nextInt(items.size()));
 	}
 
 	private Random getRandom() {
