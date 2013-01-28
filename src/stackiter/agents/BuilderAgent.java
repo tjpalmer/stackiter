@@ -28,6 +28,8 @@ public class BuilderAgent extends BasicAgent {
 
 	/**
 	 * The destination or landing pad for the current cargo.
+	 *
+	 * TODO Choose and use.
 	 */
 	private Item pad;
 
@@ -39,7 +41,9 @@ public class BuilderAgent extends BasicAgent {
 		List<Soul> itemSouls = getWorld().getItemSouls();
 		if (cargo == null || !itemSouls.contains(cargo.getSoul())) {
 			chooseCargo();
-			action = new Grasp(getWorld(), tool, cargo);
+			if (cargo != null) {
+				action = new Grasp(getWorld(), tool, cargo);
+			}
 		}
 		if (action != null) {
 			if (action.done()) {
@@ -60,7 +64,24 @@ public class BuilderAgent extends BasicAgent {
 	}
 
 	private void chooseCargo() {
-		// Choose new cargo.
+		// Randomly pick one for now.
+		List<Item> items = listGraspableItems();
+		if (!items.isEmpty()) {
+			cargo = items.get(getRandom().nextInt(items.size()));
+		}
+	}
+
+	private Random getRandom() {
+		return getWorld().getTray().getRandom();
+	}
+
+	@Override
+	protected void init() {
+		tool = getWorld().addTool();
+		tool.setColor(Color.ORANGE);
+	}
+
+	private List<Item> listGraspableItems() {
 		// Find all tray items to consider choosing.
 		List<Item> items = new ArrayList<Item>();
 		Tray tray = getWorld().getTray();
@@ -77,18 +98,7 @@ public class BuilderAgent extends BasicAgent {
 				items.add(item);
 			}
 		}
-		// Randomly pick one for now.
-		cargo = items.get(getRandom().nextInt(items.size()));
-	}
-
-	private Random getRandom() {
-		return getWorld().getTray().getRandom();
-	}
-
-	@Override
-	protected void init() {
-		tool = getWorld().addTool();
-		tool.setColor(Color.ORANGE);
+		return items;
 	}
 
 }

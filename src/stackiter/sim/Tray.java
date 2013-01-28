@@ -219,7 +219,7 @@ public class Tray {
 		paintDie(die2, 6, graphics);
 	}
 
-	private Block randomBlock() {
+	public Block randomBlock() {
 		Block block = new Block();
 		block.setColor(randomColor());
 		// TODO Consider Gaussian mixture model on sizes.

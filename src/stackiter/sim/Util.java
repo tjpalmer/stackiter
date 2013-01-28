@@ -148,6 +148,26 @@ public class Util {
 		return list;
 	}
 
+	/**
+	 * Repeated draws a random Gaussian value until it is within the given
+	 * limits, inclusive.
+	 */
+	public static double nextGaussianConstrained(
+		Random random, double mean, double deviation, double min, double max
+	) {
+		if (mean < min || max < mean) {
+			throw new RuntimeException(String.format(
+				"Impossible constraints: %g outside [%g, %g]", mean, min, max
+			));
+		}
+		while (true) {
+			double x = random.nextGaussian() * deviation + mean;
+			if (min <= x && x <= max) {
+				return x;
+			}
+		}
+	}
+
 	public static double norm(Point2D point) {
 		return point.distance(0, 0);
 	}

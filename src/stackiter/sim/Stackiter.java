@@ -22,11 +22,15 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	 */
 	public static void initScenarios(World world) {
 		Scenario[] scenarios = {
+			// First, so the others can respond.
+			new Scenario.WideTable(),
+			// Others.
 			//new Scenario.Alternate(),
 			//new Scenario.Babble(),
 			//new Scenario.BalanceScale(),
 			new Scenario.Builder(),
 			//new Scenario.DropOn(),
+			new Scenario.Predeployed(),
 			//new Scenario.SmallSquares(),
 		};
 		for (Scenario scenario: scenarios) {

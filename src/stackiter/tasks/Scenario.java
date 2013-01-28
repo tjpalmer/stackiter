@@ -1,6 +1,9 @@
 package stackiter.tasks;
 
 import static stackiter.sim.Util.*;
+
+import java.util.*;
+
 import stackiter.agents.*;
 import stackiter.sim.*;
 
@@ -78,6 +81,28 @@ public interface Scenario {
 	}
 
 	/**
+	 * Drop a bunch of blocks all over.
+	 * TODO Parameterize quantity or other aspects?
+	 */
+	public class Predeployed implements Scenario {
+		@Override
+		public void buildWorld(World world) {
+			int blockCount = 10;
+			Random random = world.getTray().getRandom();
+			// Max sure we can keep the blocks above the ground.
+			// TODO Could also do this on individual block size.
+			double maxRadius = norm(world.getTray().getMaxBlockExtent());
+			for (int i = 0; i < blockCount; i++) {
+				Block block = world.getTray().randomBlock();
+				double x = randInRange(random, -30, 30);
+				double y = randInRange(random, maxRadius, 40);
+				block.setPosition(x, y);
+				world.addBlock(block);
+			}
+		}
+	}
+
+	/**
 	 * Constrains blocks to be small squares.
 	 */
 	class SmallSquares implements Scenario {
@@ -86,6 +111,17 @@ public interface Scenario {
 			Tray tray = world.getTray();
 			tray.setMaxBlockExtent(point(1,1));
 			tray.setMinBlockExtent(point(1,1));
+		}
+	}
+
+	/**
+	 * Wide table (ground) to present anything easily falling off.
+	 */
+	public class WideTable implements Scenario {
+		@Override
+		public void buildWorld(World world) {
+			world.getGround().setExtent(100, 1.5);
+			world.setTrayHeight(0);
 		}
 	}
 
