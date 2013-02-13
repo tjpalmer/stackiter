@@ -54,7 +54,10 @@ public interface Scenario {
 	class Builder implements Scenario {
 		@Override
 		public void buildWorld(World world) {
-			world.addAgent(new BuilderAgent());
+			//world.addAgent(new BuilderAgent());
+			world.addAgent(new OptionAgent.Bridge(
+				new BuilderOptionAgent(world.getTray().getRandom())
+			));
 		}
 	}
 

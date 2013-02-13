@@ -16,6 +16,11 @@ public class WorldState implements Cloneable {
 
 	/**
 	 * LinkedHashMap preserves add order.
+	 *
+	 * TODO While it's nice to have automatic ids as objects (souls), they don't
+	 * TODO exactly serialize well.
+	 * TODO Having had a unique id generator to begin with might have been
+	 * TODO nicer.
 	 */
 	public Map<Soul, Item> items = new LinkedHashMap<Soul, Item>();
 
@@ -23,9 +28,13 @@ public class WorldState implements Cloneable {
 
 	public long steps;
 
+	/**
+	 * Customized to deep-clone the items (but not the souls).
+	 */
 	public WorldState clone() {
 		try {
 			WorldState result = (WorldState)super.clone();
+			// Deep clone the items.
 			result.items = new LinkedHashMap<Soul, Item>(items.size());
 			for (Item item: items.values()) {
 				result.items.put(item.getSoul(), item.clone());
@@ -45,6 +54,32 @@ public class WorldState implements Cloneable {
 		result.simTime = simTime;
 		result.cleared = false;
 		return result;
+	}
+
+	/**
+	 * Fills in details from the given world.
+	 * Leaves out the clearer or other widgets for now.
+	 * Also leaves out the ground/table for now.
+	 * TODO Reconsider omissions.
+	 *
+	 * For now, leaves cleared unspecified, as that's not clearly indicated by
+	 * world objects.
+	 */
+	public void fillFrom(World world) {
+		// Copy over items.
+		// TODO Provide some mechanism for appending??
+		items.clear();
+		// Blocks don't include the clearer nor the ground/table.
+		Iterable<Block> worldItems = world.getBlocks();
+		items = new LinkedHashMap<Soul, Item>();
+		for (Item item: worldItems) {
+			items.put(item.getSoul(), item.clone());
+		}
+
+		// Time fields.
+		simTime = world.getSimTime();
+		// TODO Just expose step count directly????
+		steps = Math.round(world.getSimTime() / world.getStepTime());
 	}
 
 }

@@ -12,10 +12,6 @@ import stackiter.sim.*;
 
 public class BuilderAgent extends BasicAgent {
 
-	public static enum State {
-
-	}
-
 	/**
 	 * The current subaction.
 	 */
