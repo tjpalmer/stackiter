@@ -11,6 +11,8 @@ import stackiter.sim.*;
 
 /**
  * A set of perhaps convenient options.
+ * An Options instance works as a factory for the various option types.
+ * By default, all options have a 500 step (5 sim second) timeout.
  */
 public class Options {
 
@@ -20,7 +22,14 @@ public class Options {
 	 * Carry(x) carries an item to a goal position and waits for it to slow down
 	 * enough.
 	 */
-	public static class Carry implements Option {
+	private static class Carry implements Option {
+
+		/**
+		 * Sanity limit.
+		 * <p>
+		 * TODO Tie to actual world limits?
+		 */
+		private static final int MAX_HEIGHT = 200;
 
 		public Point2D goal;
 
@@ -43,6 +52,12 @@ public class Options {
 
 		@Override
 		public boolean done(State state) {
+			// Check sanity.
+			if (goal.getY() > MAX_HEIGHT) {
+				// Not sane. Live items get stuck outside bounds.
+				return true;
+			}
+			// Check our cargo.
 			Item graspedItem = state.graspedItem;
 			if (graspedItem == null) {
 				// Failure case, but that's all we can do.
@@ -68,19 +83,15 @@ public class Options {
 	 * Drop releases the grasped item and waits for the item to hit a surface
 	 * below (identified for now by a reduction in speed).
 	 */
-	public static class Drop implements Option {
+	private static class Drop implements Option {
 
 		public Item item;
-
-		public double lastSpeed;
 
 		public Drop(State state) {
 			// TODO Note that for easier relational learning, the thing to be
 			// TODO dropped should be an argument.
 			// TODO Some DropOn action should also have the support as an arg.
 			this.item = state.graspedItem;
-			// Explicitly set to 0 to make that clear.
-			lastSpeed = 0.0;
 		}
 
 		@Override
@@ -104,16 +115,18 @@ public class Options {
 				// TODO right soul?
 				return false;
 			}
-			Item liveItem = state.items.get(item.getSoul());
-			if (liveItem == null) {
-				// It must have died.
-				return true;
+			// Wait for everything to stop moving.
+			for (Item item: state.items.values()) {
+				if (norm(item.getLinearVelocity()) >= EPSILON) {
+					return false;
+				}
+				// TODO Different epsilon for angular?
+				if (Math.abs(item.getAngularVelocity()) >= EPSILON) {
+					return false;
+				}
 			}
-			// We've let go. See if it's slowing down.
-			double speed = norm(liveItem.getLinearVelocity());
-			boolean slowing = speed < lastSpeed;
-			lastSpeed = speed;
-			return slowing;
+			// Everything's at rest (enough).
+			return true;
 		}
 
 	}
@@ -122,7 +135,7 @@ public class Options {
 	 * Grasp(x) attempts to grasp item x at its center, first releasing any
 	 * currently held item.
 	 */
-	public static class Grasp implements Option {
+	private static class Grasp implements Option {
 
 		public Soul item;
 
@@ -165,6 +178,54 @@ public class Options {
 
 	}
 
-	private Options() {}
+	/**
+	 * Consistently though hackishly avoid infinite loops.
+	 */
+	private static class TimeoutOption implements Option {
+
+		private static final int MAX_WAIT = 500;
+
+		private Option option;
+
+		private int stepCount;
+
+		public TimeoutOption(Option option) {
+			this.option = option;
+		}
+
+		@Override
+		public Action act(State state) {
+			stepCount++;
+			return option.act(state);
+		}
+
+		@Override
+		public boolean done(State state) {
+			if (stepCount > MAX_WAIT) {
+				return true;
+			}
+			return option.done(state);
+		}
+
+	}
+
+	public Option carry(Point2D goal) {
+		return prepare(new Carry(goal));
+	}
+
+	public Option drop(State state) {
+		return prepare(new Drop(state));
+	}
+
+	public Option grasp(Soul item) {
+		return prepare(new Grasp(item));
+	}
+
+	/**
+	 * Wraps and/or otherwise sets up the given option.
+	 */
+	public Option prepare(Option option) {
+		return new TimeoutOption(option);
+	}
 
 }

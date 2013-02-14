@@ -111,9 +111,16 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			world.setLogger(logger);
 
 			double groundDepth = -2 * world.getGround().getExtent().getY();
-			double groundWidth = 40; // 2 * world.getGround().getExtent().getX(); <-- Visual glitch here needs resolved.
-			viewBounds = new Rectangle2D.Double(-32.5, groundDepth, groundWidth + 25, 101);
-			viewRect = new Rectangle2D.Double(-32.5, groundDepth, groundWidth + 25, 30);
+			double groundExtentX = world.getGround().getExtent().getX(); // <-- Visual glitch here needs resolved.
+			double viewExtraX = 12.5;
+			double viewExtentX = 20 + viewExtraX; // Presumed good viewing size.
+			double viewBoundsExtentX = groundExtentX + viewExtraX;
+			viewBounds = new Rectangle2D.Double(
+				-viewBoundsExtentX, groundDepth, 2 * viewBoundsExtentX, 101
+			);
+			viewRect = new Rectangle2D.Double(
+				-viewExtentX, groundDepth, 2 * viewExtentX, 30
+			);
 			addComponentListener(new ComponentAdapter() {
 				@Override
 				public void componentResized(ComponentEvent event) {
@@ -152,7 +159,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 					// Handle scroll first, but based on last time's position.
 					// You get crazy jumpy effects otherwise.
 					// Also, without mouseOver check, I got upward scrolling when over title bar.
-					//handleScroll(mouseTool.getPosition());
+					handleScroll(mouseTool.getPosition());
 				}
 
 				// Recalculate each time for cases of scrolling.

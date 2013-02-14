@@ -88,7 +88,11 @@ public class World {
 
 	public World() {
 		blocks = new ArrayList<Block>();
-		world = new org.jbox2d.dynamics.World(new AABB(new Vec2(-100,-100), new Vec2(100,150)), new Vec2(0, -10), true);
+		world = new org.jbox2d.dynamics.World(
+			new AABB(new Vec2(-200,-100), new Vec2(200,400)),
+			new Vec2(0, -10),
+			true
+		);
 		addGround();
 		//Stock stock = new Stock();
 		//stock.addTo(this);
