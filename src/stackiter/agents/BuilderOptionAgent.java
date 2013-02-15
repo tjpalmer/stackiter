@@ -1,5 +1,6 @@
 package stackiter.agents;
 
+import static java.lang.Math.*;
 import static stackiter.sim.Util.*;
 
 import java.awt.geom.*;
@@ -17,11 +18,13 @@ import stackiter.sim.*;
  */
 public class BuilderOptionAgent implements OptionAgent {
 
+	private static final double DROP_HEIGHT = 30.0;
+
 	/**
 	 * To keep the building near the center of the table, sometimes just carry
 	 * things there instead of over other blocks.
 	 */
-	private static final double CHANCE_OF_CENTER = 0.5;
+	private static final double CHANCE_OF_GOAL_POINT = 0.25;
 
 	/**
 	 * The focused item to be delivered.
@@ -29,14 +32,21 @@ public class BuilderOptionAgent implements OptionAgent {
 	private Soul cargo;
 
 	/**
+	 * Where the cargo should be delivered.
+	 * At most, only one of goalItem or goalPoint should be non-null.
+	 */
+	private Soul goalItem;
+
+	/**
+	 * The point from which the cargo should be dropped.
+	 * At most, only one of goalItem or goalPoint should be non-null.
+	 */
+	private Point2D goalPoint;
+
+	/**
 	 * Our options factory.
 	 */
 	private Options options;
-
-	/**
-	 * Where the cargo should be delivered.
-	 */
-	private Soul pad;
 
 	/**
 	 * Used for anything random here.
@@ -62,17 +72,20 @@ public class BuilderOptionAgent implements OptionAgent {
 			} else {
 				// Okay. We have the item grasped.
 				// Pretend we need to carry it. We might need to.
-				Point2D goal = point(0, 30);
-				if (pad != null) {
+				Point2D offset = point(0.0, DROP_HEIGHT);
+				Point2D goal = goalPoint == null ? offset : goalPoint;
+				if (goalItem != null) {
 					// We have a destination, so target it.
 					// TODO Could see if anything's above it and go above those,
 					// TODO but eh.
-					Item padItem = state.items.get(pad);
+					Item padItem = state.items.get(goalItem);
 					if (padItem == null) {
-						// Lost the pad.
-						pad = null;
+						// Lost the landing pad.
+						goalItem = null;
 					} else {
-						goal = added(state.items.get(pad).getPosition(), goal);
+						Point2D goalPosition =
+							state.items.get(goalItem).getPosition();
+						goal = added(goalPosition, offset);
 					}
 				}
 				option = options.carry(goal);
@@ -92,18 +105,69 @@ public class BuilderOptionAgent implements OptionAgent {
 		return option;
 	}
 
+	private static double[] buildCdf(List<Item> items) {
+		// Make the ones near the center the most likely choices, so's to
+		// concentrate the action.
+		Gaussian distribution = new Gaussian(0.0, 20.0);
+		double[] weights = new double[items.size()];
+		for (int i = 0; i < items.size(); i++) {
+			Item item = items.get(i);
+			weights[i] = distribution.density(item.getPosition().getX());
+		}
+		// Get the sum.
+		double sum = 0.0;
+		for (double weight: weights) {
+			sum += weight;
+		}
+		// Accumulate, starting from the second.
+		for (int w = 1; w < weights.length; w++) {
+			weights[w] += weights[w - 1];
+		}
+		// And build the CDF.
+		for (int w = 0; w < weights.length; w++) {
+			weights[w] /= sum;
+		}
+		return weights;
+	}
+
 	private void chooseCargo(State state) {
 		// Reset the plan.
-		cargo = pad = null;
+		cargo = goalItem = null;
 		// Pick randomly for now.
 		// TODO Care about what's on what?
 		List<Item> items = list(state.items.values());
 		if (!items.isEmpty()) {
 			cargo = items.remove(random.nextInt(items.size())).getSoul();
 			// Now pick a landing pad from those remaining.
-			if (random.nextDouble() > CHANCE_OF_CENTER && !items.isEmpty()) {
-				// TODO Could remove it from the list for consistency.
-				pad = items.get(random.nextInt(items.size())).getSoul();
+			if (random.nextDouble() < CHANCE_OF_GOAL_POINT || items.isEmpty()) {
+				while (true) {
+					// Most weight will be between -20 and 20 here.
+					double goalX = 10.0 * random.nextGaussian();
+					// Rejection sampling, to keep things sane.
+					// TODO Info on table size for wrap around?
+					// TODO Or allow just a but beyond items?
+					if (abs(goalX) < 40.0) {
+						goalPoint = point(goalX, DROP_HEIGHT);
+						break;
+					}
+				}
+			} else {
+				double[] itemCdf = buildCdf(items);
+				double choice = random.nextDouble();
+				// Go up from the bottom, finding the first chunk covering our
+				// random value.
+				// The last value is always 1, so we'll get something by the
+				// end.
+				// TODO Extract all this weighted sampling logic.
+				for (int i = 0; i < itemCdf.length; i++) {
+					if (choice < itemCdf[i]) {
+						// Found it.
+						// TODO Could remove it from the list for consistency
+						// TODO with how we remove the cargo after selection.
+						goalItem = items.get(i).getSoul();
+						break;
+					}
+				}
 			}
 		}
 	}
