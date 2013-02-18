@@ -3,7 +3,6 @@ package stackiter.agents;
 import static stackiter.sim.Util.*;
 
 import java.awt.geom.*;
-import java.util.*;
 
 import stackiter.agents.OptionAgent.Action;
 import stackiter.agents.OptionAgent.Option;
@@ -20,19 +19,6 @@ public class Options {
 	public static final double EPSILON = 1e-2;
 
 	/**
-	 * Used for noisy actions.
-	 * For now, the issue is that the simulator takes commands exactly, and we
-	 * observe exactly.
-	 * As a human, exact observation isn't so easy, and we can't really move
-	 * the mouse to any old exact point, but exactly modeling human limits here
-	 * is hard.
-	 * Therefore, let the options choose slightly wrong things.
-	 * TODO Any noisiness at sim layer instead?
-	 * TODO Use angle, distance commands from agents?
-	 */
-	private Random random;
-
-	/**
 	 * Carry(x) carries an item to a goal position and waits for it to slow down
 	 * enough.
 	 */
@@ -47,14 +33,8 @@ public class Options {
 
 		public Point2D goal;
 
-		/**
-		 * Used for noisy actions.
-		 */
-		private Random random;
-
-		public Carry(Point2D goal, Random random) {
+		public Carry(Point2D goal) {
 			this.goal = goal;
-			this.random = random;
 		}
 
 		@Override
@@ -157,19 +137,13 @@ public class Options {
 	 */
 	private static class Grasp implements Option {
 
-		private Soul item;
-
-		/**
-		 * Used for noisy actions.
-		 */
-		private Random random;
+		public Soul item;
 
 		/**
 		 * Nothing null.
 		 */
-		public Grasp(Soul item, Random random) {
+		public Grasp(Soul item) {
 			this.item = item;
-			this.random = random;
 		}
 
 		@Override
@@ -180,23 +154,9 @@ public class Options {
 			if (!done(state)) {
 				// Go to the right place.
 				Item liveItem = state.items.get(item);
+				// And grasp or ungrasp as appropriate.
 				if (liveItem != null) {
-					Point2D graspPoint;
-					double deviation = 0.5;
-					while (true) {
-						graspPoint = added(
-							liveItem.getPosition(),
-							point(
-								deviation * random.nextGaussian(),
-								deviation * random.nextGaussian()
-							)
-						);
-						if (liveItem.contains(graspPoint)) {
-							break;
-						}
-					}
-					action.tool.position.setLocation(graspPoint);
-					// And grasp or ungrasp as appropriate.
+					action.tool.position.setLocation(liveItem.getPosition());
 					// If we aren't grasping, we need to grasp.
 					// If we are grasping (but not done), we must be grasping
 					// the wrong thing.
@@ -249,12 +209,8 @@ public class Options {
 
 	}
 
-	public Options(Random random) {
-		this.random = random;
-	}
-
 	public Option carry(Point2D goal) {
-		return prepare(new Carry(goal, random));
+		return prepare(new Carry(goal));
 	}
 
 	public Option drop(State state) {
@@ -262,7 +218,7 @@ public class Options {
 	}
 
 	public Option grasp(Soul item) {
-		return prepare(new Grasp(item, random));
+		return prepare(new Grasp(item));
 	}
 
 	/**

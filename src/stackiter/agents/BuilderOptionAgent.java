@@ -18,6 +18,7 @@ import stackiter.sim.*;
  */
 public class BuilderOptionAgent implements OptionAgent {
 
+	private static final double DROP_HEIGHT = 30.0;
 
 	/**
 	 * To keep the building near the center of the table, sometimes just carry
@@ -32,13 +33,13 @@ public class BuilderOptionAgent implements OptionAgent {
 
 	/**
 	 * Where the cargo should be delivered.
-	 * If null, the goal is just an absolute coordinate.
+	 * At most, only one of goalItem or goalPoint should be non-null.
 	 */
 	private Soul goalItem;
 
 	/**
 	 * The point from which the cargo should be dropped.
-	 * This is relative if goalItem is non-null.
+	 * At most, only one of goalItem or goalPoint should be non-null.
 	 */
 	private Point2D goalPoint;
 
@@ -53,7 +54,7 @@ public class BuilderOptionAgent implements OptionAgent {
 	private Random random;
 
 	public BuilderOptionAgent(Random random) {
-		options = new Options(random);
+		options = new Options();
 		this.random = random;
 	}
 
@@ -71,20 +72,20 @@ public class BuilderOptionAgent implements OptionAgent {
 			} else {
 				// Okay. We have the item grasped.
 				// Pretend we need to carry it. We might need to.
-				Point2D goal = goalPoint;
+				Point2D offset = point(0.0, DROP_HEIGHT);
+				Point2D goal = goalPoint == null ? offset : goalPoint;
 				if (goalItem != null) {
 					// We have a destination, so target it.
 					// TODO Could see if anything's above it and go above those,
 					// TODO but eh.
-					Item liveGoalItem = state.items.get(goalItem);
-					if (liveGoalItem == null) {
+					Item padItem = state.items.get(goalItem);
+					if (padItem == null) {
 						// Lost the landing pad.
 						goalItem = null;
 					} else {
 						Point2D goalPosition =
 							state.items.get(goalItem).getPosition();
-						// Use our chosen goal point as an offset.
-						goal = added(goalPosition, goalPoint);
+						goal = added(goalPosition, offset);
 					}
 				}
 				option = options.carry(goal);
@@ -101,7 +102,6 @@ public class BuilderOptionAgent implements OptionAgent {
 			}
 		}
 		// Some option is selected by this point.
-		System.out.println(option);
 		return option;
 	}
 
@@ -138,9 +138,8 @@ public class BuilderOptionAgent implements OptionAgent {
 		List<Item> items = list(state.items.values());
 		if (!items.isEmpty()) {
 			cargo = items.remove(random.nextInt(items.size())).getSoul();
-			// Now pick a destination.
+			// Now pick a landing pad from those remaining.
 			if (random.nextDouble() < CHANCE_OF_GOAL_POINT || items.isEmpty()) {
-				// Pick a global goal point.
 				while (true) {
 					// Most weight will be between -20 and 20 here.
 					double goalX = 10.0 * random.nextGaussian();
@@ -148,12 +147,11 @@ public class BuilderOptionAgent implements OptionAgent {
 					// TODO Info on table size for wrap around?
 					// TODO Or allow just a but beyond items?
 					if (abs(goalX) < 40.0) {
-						goalPoint = point(goalX, dropHeight());
+						goalPoint = point(goalX, DROP_HEIGHT);
 						break;
 					}
 				}
 			} else {
-				// Pick from available items.
 				double[] itemCdf = buildCdf(items);
 				double choice = random.nextDouble();
 				// Go up from the bottom, finding the first chunk covering our
@@ -167,24 +165,11 @@ public class BuilderOptionAgent implements OptionAgent {
 						// TODO Could remove it from the list for consistency
 						// TODO with how we remove the cargo after selection.
 						goalItem = items.get(i).getSoul();
-						// Goal point is now relative here.
-						// Always aim for the center.
-						// Let noise apply elsewhere.
-						goalPoint = point(0.0, dropHeight());
 						break;
 					}
 				}
 			}
 		}
-	}
-
-	/**
-	 * Some variety in target drop height should be healthy.
-	 */
-	private double dropHeight() {
-		// Too high is wasteful, and too low risks collisions with the goal.
-		// TODO Better tracking of what's a safe minimum.
-		return randInRange(random, 10, 40);
 	}
 
 }
