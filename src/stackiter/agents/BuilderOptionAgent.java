@@ -65,12 +65,10 @@ public class BuilderOptionAgent implements OptionAgent {
 			chooseCargo(state);
 			option = options.grasp(cargo);
 		} else if (state.graspedItem != null) {
-			if (state.graspedItem.getSoul() != cargo) {
-				// Whoa nelly! How did that happen?
-				option = options.drop(state);
-			} else {
-				// Okay. We have the item grasped.
-				// Pretend we need to carry it. We might need to.
+			// Okay. We have the item grasped.
+			// TODO Defer choosing a goal until now?
+			if (goalPoint != null) {
+				// We also have somewhere to take it.
 				Point2D goal = goalPoint;
 				if (goalItem != null) {
 					// We have a destination, so target it.
@@ -88,21 +86,17 @@ public class BuilderOptionAgent implements OptionAgent {
 					}
 				}
 				option = options.carry(goal);
-				// See if we are already there.
-				// We could do our own math, but delegating to Carry allows its
-				// own logic to be used consistently.
-				System.out.println(goal);
-				if (option.done(state)) {
-					// Well, that's done, actually, so drop it.
-					option = options.drop(state);
-					// Next time we get asked (when drop is done), we'll be
-					// ready for a new round.
-					cargo = null;
-				}
+				// Just pretend we'll get there.
+				goalPoint = null;
+			} else {
+				// Presume we're at our goal.
+				option = options.drop(state);
+				// Next time we get asked (when drop is done), we'll be
+				// ready for a new round.
+				cargo = null;
 			}
 		}
 		// Some option is selected by this point.
-		System.out.println(option + " vs. " + state.tool.position);
 		return option;
 	}
 

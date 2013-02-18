@@ -27,6 +27,13 @@ public class Options {
 	 * the mouse to any old exact point, but exactly modeling human limits here
 	 * is hard.
 	 * Therefore, let the options choose slightly wrong things.
+	 *
+	 * On the other hand, any interpretation from data will think that the agent
+	 * meant to target to particular location.
+	 * This will result in wrong modeling.
+	 * Okay anyway?
+	 * TODO Record option info for more correctness?
+	 *
 	 * TODO Any noisiness at sim layer instead?
 	 * TODO Use angle, distance commands from agents?
 	 */
@@ -42,19 +49,18 @@ public class Options {
 		 * Sanity limit.
 		 * <p>
 		 * TODO Tie to actual world limits?
+		 * TODO X limits?
 		 */
 		private static final int MAX_HEIGHT = 200;
 
 		public Point2D goal;
 
-		/**
-		 * Used for noisy actions.
-		 */
-		private Random random;
-
 		public Carry(Point2D goal, Random random) {
-			this.goal = goal;
-			this.random = random;
+			// Deviation of 1 might do.
+			Point2D offset =
+				point(random.nextGaussian(), random.nextGaussian());
+			// Record our messed-up goal so we know when we've reached it.
+			this.goal = added(goal, offset);
 		}
 
 		@Override
@@ -70,7 +76,6 @@ public class Options {
 					state.tool.position, state.graspedItem.getPosition()
 				);
 				Point2D toolGoal = added(goal, graspOffset);
-				//System.out.println("Offset: " + graspOffset + ", goal: " + goal + ", tool goal: " + toolGoal);
 				action.tool.position.setLocation(toolGoal);
 			}
 			return action;
