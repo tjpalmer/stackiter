@@ -3,6 +3,7 @@ package stackiter.agents;
 import static stackiter.sim.Util.*;
 
 import java.awt.geom.*;
+import java.util.*;
 
 import stackiter.agents.OptionAgent.Action;
 import stackiter.agents.OptionAgent.Option;
@@ -19,6 +20,19 @@ public class Options {
 	public static final double EPSILON = 1e-2;
 
 	/**
+	 * Used for noisy actions.
+	 * For now, the issue is that the simulator takes commands exactly, and we
+	 * observe exactly.
+	 * As a human, exact observation isn't so easy, and we can't really move
+	 * the mouse to any old exact point, but exactly modeling human limits here
+	 * is hard.
+	 * Therefore, let the options choose slightly wrong things.
+	 * TODO Any noisiness at sim layer instead?
+	 * TODO Use angle, distance commands from agents?
+	 */
+	private Random random;
+
+	/**
 	 * Carry(x) carries an item to a goal position and waits for it to slow down
 	 * enough.
 	 */
@@ -33,8 +47,14 @@ public class Options {
 
 		public Point2D goal;
 
-		public Carry(Point2D goal) {
+		/**
+		 * Used for noisy actions.
+		 */
+		private Random random;
+
+		public Carry(Point2D goal, Random random) {
 			this.goal = goal;
+			this.random = random;
 		}
 
 		@Override
@@ -45,7 +65,13 @@ public class Options {
 			if (!done(state)) {
 				// Stay grasping, and move toward specified goal.
 				action.tool.active = true;
-				action.tool.position.setLocation(goal);
+				// We want the item at the destination, not the tool.
+				Point2D graspOffset = subtracted(
+					state.tool.position, state.graspedItem.getPosition()
+				);
+				Point2D toolGoal = added(goal, graspOffset);
+				//System.out.println("Offset: " + graspOffset + ", goal: " + goal + ", tool goal: " + toolGoal);
+				action.tool.position.setLocation(toolGoal);
 			}
 			return action;
 		}
@@ -75,6 +101,11 @@ public class Options {
 			}
 			// Not there yet.
 			return false;
+		}
+
+		@Override
+		public String toString() {
+			return "Carry(" + goal + ")";
 		}
 
 	}
@@ -129,6 +160,11 @@ public class Options {
 			return true;
 		}
 
+		@Override
+		public String toString() {
+			return "Drop";
+		}
+
 	}
 
 	/**
@@ -137,13 +173,19 @@ public class Options {
 	 */
 	private static class Grasp implements Option {
 
-		public Soul item;
+		private Soul item;
+
+		/**
+		 * Used for noisy actions.
+		 */
+		private Random random;
 
 		/**
 		 * Nothing null.
 		 */
-		public Grasp(Soul item) {
+		public Grasp(Soul item, Random random) {
 			this.item = item;
+			this.random = random;
 		}
 
 		@Override
@@ -154,9 +196,23 @@ public class Options {
 			if (!done(state)) {
 				// Go to the right place.
 				Item liveItem = state.items.get(item);
-				// And grasp or ungrasp as appropriate.
 				if (liveItem != null) {
-					action.tool.position.setLocation(liveItem.getPosition());
+					Point2D graspPoint;
+					double deviation = 0.5;
+					while (true) {
+						graspPoint = added(
+							liveItem.getPosition(),
+							point(
+								deviation * random.nextGaussian(),
+								deviation * random.nextGaussian()
+							)
+						);
+						if (liveItem.contains(graspPoint)) {
+							break;
+						}
+					}
+					action.tool.position.setLocation(graspPoint);
+					// And grasp or ungrasp as appropriate.
 					// If we aren't grasping, we need to grasp.
 					// If we are grasping (but not done), we must be grasping
 					// the wrong thing.
@@ -174,6 +230,11 @@ public class Options {
 		public boolean done(State state) {
 			Item graspedItem = state.graspedItem;
 			return graspedItem != null && graspedItem.getSoul() == item;
+		}
+
+		@Override
+		public String toString() {
+			return "Grasp(" + item + ")";
 		}
 
 	}
@@ -207,10 +268,19 @@ public class Options {
 			return option.done(state);
 		}
 
+		@Override
+		public String toString() {
+			return "Timeout(" + option + ")";
+		}
+
+	}
+
+	public Options(Random random) {
+		this.random = random;
 	}
 
 	public Option carry(Point2D goal) {
-		return prepare(new Carry(goal));
+		return prepare(new Carry(goal, random));
 	}
 
 	public Option drop(State state) {
@@ -218,7 +288,7 @@ public class Options {
 	}
 
 	public Option grasp(Soul item) {
-		return prepare(new Grasp(item));
+		return prepare(new Grasp(item, random));
 	}
 
 	/**
