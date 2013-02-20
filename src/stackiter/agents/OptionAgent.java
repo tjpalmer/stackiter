@@ -25,6 +25,13 @@ public interface OptionAgent {
 	static class Action {
 
 		/**
+		 * Set to true to clear the world.
+		 *
+		 * In some cases, this can indicate the end of an episode.
+		 */
+		public boolean clear;
+
+		/**
 		 * The prescribed tool state.
 		 */
 		public ToolState tool = new ToolState();
@@ -89,6 +96,9 @@ public interface OptionAgent {
 				Action action = option.act(state);
 				if (action != null) {
 					action.tool.fillTo(tool);
+					if (action.clear) {
+						getWorld().clearBlocks();
+					}
 				}
 			}
 		}

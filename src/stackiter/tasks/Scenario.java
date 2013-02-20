@@ -106,6 +106,17 @@ public interface Scenario {
 	}
 
 	/**
+	 * Always drop new blocks when the world is empty.
+	 * TODO Parameterize quantity or other aspects?
+	 */
+	public class Refill implements Scenario {
+		@Override
+		public void buildWorld(World world) {
+			world.addAgent(new RefillAgent(3));
+		}
+	}
+
+	/**
 	 * Constrains blocks to be small squares.
 	 */
 	class SmallSquares implements Scenario {

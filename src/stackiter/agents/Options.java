@@ -116,6 +116,91 @@ public class Options {
 	}
 
 	/**
+	 * Just clear out the world.
+	 */
+	public class Clear implements Option {
+
+		private boolean done;
+
+		@Override
+		public Action act(State state) {
+			Action action = new Action(state.tool);
+			if (!done) {
+				action.clear = true;
+				// Just believe that clearing worked, in case someone else adds
+				// new blocks.
+				// So long as no one calls act without applying the action, this
+				// should be fine.
+				done = true;
+			}
+			return action;
+		}
+
+		@Override
+		public boolean done(State state) {
+			return done;
+		}
+
+	}
+
+	/**
+	 * Waits a random amount of time before being done.
+	 */
+	public class Delay implements Option {
+
+		/**
+		 * Most delays between 0.6 and 1.4 seconds.
+		 */
+		private static final double DELAY_DEVIATION = 20.0;
+
+		/**
+		 * Wait about one second on average.
+		 */
+		private static final double DELAY_MEAN = 100.0;
+
+		/**
+		 * Ensure at least half a second.
+		 */
+		private static final double DELAY_MIN = 50.0;
+
+		/**
+		 * The first time we act.
+		 */
+		private double beginTime;
+
+		/**
+		 * The time to wait for.
+		 */
+		private double delayDuration;
+
+		public Delay(Random random) {
+			beginTime = Double.POSITIVE_INFINITY;
+			// Loop to force at least some wait.
+			// This probably pushes the mean up some, but oh well.
+			do {
+				delayDuration =
+					DELAY_DEVIATION * random.nextGaussian() + DELAY_MEAN;
+			} while (delayDuration < DELAY_MIN);
+		}
+
+		@Override
+		public Action act(State state) {
+			if (Double.isInfinite(beginTime)) {
+				// Track the start.
+				beginTime = state.simTime;
+			}
+			// Nothing to do.
+			return null;
+		}
+
+		@Override
+		public boolean done(State state) {
+			return state.simTime >= beginTime + delayDuration;
+		}
+
+	}
+
+	/**
 	 * Drop releases the grasped item and waits for the item to hit a surface
 	 * below (identified for now by a reduction in speed).
 	 */
@@ -286,6 +371,15 @@ public class Options {
 
 	public Option carry(Point2D goal) {
 		return prepare(new Carry(goal, random));
+	}
+
+	public Option clear() {
+		// Timeout's not needed here, but eh.
+		return prepare(new Clear());
+	}
+
+	public Option delay() {
+		return prepare(new Delay(random));
 	}
 
 	public Option drop(State state) {

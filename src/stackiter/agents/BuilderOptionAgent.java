@@ -62,8 +62,15 @@ public class BuilderOptionAgent implements OptionAgent {
 		Option option = null;
 		// First, see if we have a plan.
 		if (cargo == null || !state.items.containsKey(cargo)) {
-			chooseCargo(state);
-			option = options.grasp(cargo);
+			// Also see if we think we're done yet.
+			if (random.nextDouble() < 0.1) {
+				// Chance 0.1 yields about 9 drops on average, since we have a
+				// chance of skipping even the first time.
+				option = options.clear();
+			} else {
+				chooseCargo(state);
+				option = options.grasp(cargo);
+			}
 		} else if (state.graspedItem != null) {
 			// Okay. We have the item grasped.
 			// TODO Defer choosing a goal until now?
