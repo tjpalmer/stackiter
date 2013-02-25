@@ -235,6 +235,10 @@ public class World {
 		return itemSouls;
 	}
 
+	public Logger getLogger() {
+		return logger;
+	}
+
 	/**
 	 * The amount of simulation time that has passed in seconds.
 	 */
@@ -386,9 +390,7 @@ public class World {
 	}
 
 	public void update() {
-		logger.atomic(new Runnable() {
-
-		@Override public void run() {
+		logger.atomic(new Runnable() { @Override public void run() {
 
 			// Let agents choose actions.
 			for (Agent agent: agents) {

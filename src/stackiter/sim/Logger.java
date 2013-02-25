@@ -40,6 +40,11 @@ public interface Logger extends Closeable {
 
 	void logItem(final Item item);
 
+	/**
+	 * Log abstract information dependent on the context.
+	 */
+	void logMeta(Meta meta);
+
 	void logRelease(final Tool tool, final Block item);
 
 	void logRemoval(final Item item);

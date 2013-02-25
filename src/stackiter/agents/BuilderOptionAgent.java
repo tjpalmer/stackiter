@@ -62,12 +62,16 @@ public class BuilderOptionAgent implements OptionAgent {
 		Option option = null;
 		// First, see if we have a plan.
 		if (cargo == null || !state.items.containsKey(cargo)) {
-			// Also see if we think we're done yet.
-			if (random.nextDouble() < 0.1) {
+			if (state.items.isEmpty()) {
+				// Nothing to play with.
+				option = options.delay();
+			} else if (random.nextDouble() < 0.1) {
+				// Option to say we're done.
 				// Chance 0.1 yields about 9 drops on average, since we have a
 				// chance of skipping even the first time.
 				option = options.clear();
 			} else {
+				// Go for a block.
 				chooseCargo(state);
 				option = options.grasp(cargo);
 			}
@@ -92,7 +96,7 @@ public class BuilderOptionAgent implements OptionAgent {
 						goal = added(goalPosition, goalPoint);
 					}
 				}
-				option = options.carry(goal);
+				option = options.carry(state.graspedItem, goal);
 				// Just pretend we'll get there.
 				goalPoint = null;
 			} else {

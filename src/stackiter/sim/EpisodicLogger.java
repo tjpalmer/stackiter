@@ -1,6 +1,7 @@
 package stackiter.sim;
 
 import java.awt.geom.*;
+import java.util.*;
 
 
 /**
@@ -14,9 +15,11 @@ public class EpisodicLogger extends AtomicLogger {
 
 	private static class State extends WorldState {
 
+		boolean episodeStart;
+
 		boolean hasAdds;
 
-		boolean episodeStart;
+		List<Meta> metas = new ArrayList<Meta>();
 
 		@Override
 		public State clone() {
@@ -27,8 +30,11 @@ public class EpisodicLogger extends AtomicLogger {
 		public State cloneNew(long steps, double simTime) {
 			State result = (State)super.cloneNew(steps, simTime);
 			// These transitory events are in relation to a particular state.
-			result.hasAdds = false;
+			// TODO It would be easier just to make a new object and copy only
+			// TODO the items.
 			result.episodeStart = false;
+			result.hasAdds = false;
+			result.metas = new ArrayList<Meta>();
 			return result;
 		}
 
@@ -70,6 +76,10 @@ public class EpisodicLogger extends AtomicLogger {
 		}
 		for (Item item: state.items.values()) {
 			logger.logItem(item);
+		}
+		// Metas all need to go out.
+		for (Meta meta: state.metas) {
+			logger.logMeta(meta);
 		}
 		// Remember exactly what we logged for more reliability.
 		loggedState = state.clone();
@@ -113,6 +123,11 @@ public class EpisodicLogger extends AtomicLogger {
 	}
 
 	@Override
+	public void logMeta(Meta meta) {
+		state.metas.add(meta);
+	}
+
+	@Override
 	public void logRelease(Tool tool, Block item) {
 		// Ignore for now.
 	}
@@ -133,7 +148,12 @@ public class EpisodicLogger extends AtomicLogger {
 			}
 			if (oldState != null && (
 				oldState.episodeStart ||
+				// Assume metas matter for now.
+				// I need that for options.
+				// TODO Track flush priority on metas?
+				!oldState.metas.isEmpty() ||
 				// TODO Remove the following heuristic and base always on episodes?
+				// TODO Well, and metas need flushed, too.
 				(!doWaitForEpisodeStart && !state.hasAdds && oldState.hasAdds)
 			)) {
 				doLog(oldState);
@@ -141,6 +161,8 @@ public class EpisodicLogger extends AtomicLogger {
 		}
 		oldState = state;
 		// And in with the new.
+		// TODO Apparently we don't believe state is ever null, despite the
+		// TODO earlier check.
 		state = state.cloneNew(steps, seconds);
 	}
 

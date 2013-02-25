@@ -1,5 +1,6 @@
 package stackiter.sim;
 
+import static java.lang.String.*;
 import static stackiter.sim.Util.*;
 
 import java.awt.geom.*;
@@ -242,6 +243,41 @@ public class TextLogger extends AtomicLogger implements Logger {
 				info.item.setAngularVelocity(angularVelocity);
 				log("rotvel %d %.3f", info.id, angularVelocity);
 			}
+		}});
+	}
+
+	@Override
+	public void logMeta(final Meta meta) {
+		atomic(new Runnable() { @Override public void run() {
+			// Need a loop to build args text because the quantity is variable.
+			StringBuilder args = new StringBuilder();
+			for (Object arg: meta.args) {
+				if (arg instanceof Point2D) {
+					// Wrapping in parens is clearer, but unwrapped looks more
+					// like other log lines.
+					// TODO Okay to leave implied that this is a single arg?
+					Point2D point = (Point2D)arg;
+					args.append(format(
+						" %.3f %.3f", point.getX(), point.getY()
+					));
+				} else if (arg instanceof Soul) {
+					ItemInfo item = items.get(arg);
+					if (item == null) {
+						throw new RuntimeException(
+							arg + " not in " + items.keySet()
+						);
+					}
+					args.append(" " + item.id);
+				} else if (arg == null) {
+					args.append(" null");
+				} else {
+					throw new RuntimeException(
+						"Only points and item souls for now, not " +
+							arg.getClass()
+					);
+				}
+			}
+			log("meta %s%s", meta.name, args);
 		}});
 	}
 

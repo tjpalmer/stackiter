@@ -57,9 +57,13 @@ public class Loader {
 					stream = new GZIPInputStream(stream);
 				}
 				BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
-				String line;
-				while ((line = in.readLine()) != null) {
-					parseLine(line);
+				try {
+					String line;
+					while ((line = in.readLine()) != null) {
+						parseLine(line);
+					}
+				} finally {
+					in.close();
 				}
 				return sequence;
 			} finally {

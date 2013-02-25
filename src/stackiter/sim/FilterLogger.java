@@ -186,6 +186,14 @@ public class FilterLogger extends AtomicLogger {
 		items.put(item.getSoul(), item.clone());
 	}
 
+	/**
+	 * Warning: Ignored for now!
+	 */
+	@Override
+	public void logMeta(Meta meta) {
+		// TODO Auto-generated method stub
+	}
+
 	@Override
 	public void logRelease(Tool tool, Block item) {
 		if (grasps.containsKey(tool.getSoul())) {

@@ -55,12 +55,18 @@ public class Options {
 
 		public Point2D goal;
 
-		public Carry(Point2D goal, Random random) {
+		/**
+		 * Tracked so far just for meta logging.
+		 */
+		public Soul item;
+
+		public Carry(Item item, Point2D goal, Random random) {
 			// Deviation of 1 might do.
 			Point2D offset =
 				point(random.nextGaussian(), random.nextGaussian());
 			// Record our messed-up goal so we know when we've reached it.
 			this.goal = added(goal, offset);
+			this.item = item.getSoul();
 		}
 
 		@Override
@@ -109,6 +115,11 @@ public class Options {
 		}
 
 		@Override
+		public Meta meta() {
+			return new Meta("carry", item, goal);
+		}
+
+		@Override
 		public String toString() {
 			return "Carry(" + goal + ")";
 		}
@@ -139,6 +150,11 @@ public class Options {
 		@Override
 		public boolean done(State state) {
 			return done;
+		}
+
+		@Override
+		public Meta meta() {
+			return new Meta("clear");
 		}
 
 	}
@@ -198,6 +214,11 @@ public class Options {
 			return state.simTime >= beginTime + delayDuration;
 		}
 
+		@Override
+		public Meta meta() {
+			return new Meta("delay");
+		}
+
 	}
 
 	/**
@@ -251,6 +272,11 @@ public class Options {
 		}
 
 		@Override
+		public Meta meta() {
+			return new Meta("drop", item.getSoul());
+		}
+
+		@Override
 		public String toString() {
 			return "Drop";
 		}
@@ -274,6 +300,9 @@ public class Options {
 		 * Nothing null.
 		 */
 		public Grasp(Soul item, Random random) {
+			if (item == null) {
+				throw new RuntimeException("Null item.");
+			}
 			this.item = item;
 			this.random = random;
 		}
@@ -314,6 +343,11 @@ public class Options {
 				}
 			}
 			return action;
+		}
+
+		@Override
+		public Meta meta() {
+			return new Meta("grasp", item);
 		}
 
 		@Override
@@ -359,6 +393,15 @@ public class Options {
 		}
 
 		@Override
+		public Meta meta() {
+			// Annotation not worth it at present, since I only use timeouts.
+			//Meta meta = option.meta();
+			//meta.name += "-timeout";
+			// Just use underlying meta.
+			return option.meta();
+		}
+
+		@Override
 		public String toString() {
 			return "Timeout(" + option + ")";
 		}
@@ -369,8 +412,8 @@ public class Options {
 		this.random = random;
 	}
 
-	public Option carry(Point2D goal) {
-		return prepare(new Carry(goal, random));
+	public Option carry(Item item, Point2D goal) {
+		return prepare(new Carry(item, goal, random));
 	}
 
 	public Option clear() {

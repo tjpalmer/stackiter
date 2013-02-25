@@ -22,12 +22,12 @@ public class BuilderAgent extends BasicAgent {
 	 */
 	private Item cargo;
 
-	/**
-	 * The destination or landing pad for the current cargo.
-	 *
-	 * TODO Choose and use.
-	 */
-	private Item pad;
+	//	/**
+	//	 * The destination or landing pad for the current cargo.
+	//	 *
+	//	 * TODO Choose and use.
+	//	 */
+	//	private Item pad;
 
 	private Tool tool;
 

@@ -88,6 +88,8 @@ public interface OptionAgent {
 				// point.
 				// Options do the rest.
 				option = agent.act(state);
+				// And log our choice for purer action data.
+				getWorld().getLogger().logMeta(option.meta());
 			}
 			// Presume we allow at least one action.
 			// If the option thinks it's already done, let it tell us that next
@@ -127,6 +129,14 @@ public interface OptionAgent {
 		 * Determines if the option is complete.
 		 */
 		public boolean done(State state);
+
+		/**
+		 * Loggable meta-description of this option.
+		 * The object must be new and there is modifiable, at least at the name
+		 * and args list level.
+		 * Whether args themselves are modifiable is undefined.
+		 */
+		public Meta meta();
 
 	}
 

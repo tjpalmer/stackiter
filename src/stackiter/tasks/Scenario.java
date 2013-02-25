@@ -112,7 +112,7 @@ public interface Scenario {
 	public class Refill implements Scenario {
 		@Override
 		public void buildWorld(World world) {
-			world.addAgent(new RefillAgent(3));
+			world.addAgent(new RefillAgent(5));
 		}
 	}
 
