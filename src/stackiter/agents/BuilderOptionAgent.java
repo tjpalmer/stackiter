@@ -18,7 +18,6 @@ import stackiter.sim.*;
  */
 public class BuilderOptionAgent implements OptionAgent {
 
-
 	/**
 	 * To keep the building near the center of the table, sometimes just carry
 	 * things there instead of over other blocks.
@@ -62,6 +61,8 @@ public class BuilderOptionAgent implements OptionAgent {
 		Option option = null;
 		// First, see if we have a plan.
 		if (cargo == null || !state.items.containsKey(cargo)) {
+			// Nullify cargo in case it was merely missing.
+			cargo = null;
 			if (state.items.isEmpty()) {
 				// Nothing to play with.
 				option = options.delay();
@@ -73,11 +74,10 @@ public class BuilderOptionAgent implements OptionAgent {
 			} else {
 				// Go for a block.
 				chooseCargo(state);
-				option = options.grasp(cargo);
 			}
-		} else if (state.graspedItem != null) {
-			// Okay. We have the item grasped.
-			// TODO Defer choosing a goal until now?
+		}
+		if (cargo != null) {
+			// Okay. We have an item to go for.
 			if (goalPoint != null) {
 				// We also have somewhere to take it.
 				Point2D goal = goalPoint;
@@ -96,7 +96,7 @@ public class BuilderOptionAgent implements OptionAgent {
 						goal = added(goalPosition, goalPoint);
 					}
 				}
-				option = options.carry(state.graspedItem, goal);
+				option = options.carry(cargo, goal);
 				// Just pretend we'll get there.
 				goalPoint = null;
 			} else {

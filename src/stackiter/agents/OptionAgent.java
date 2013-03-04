@@ -118,7 +118,7 @@ public interface OptionAgent {
 	/**
 	 * An option that makes low-level decisions.
 	 */
-	static interface Option {
+	static interface Option extends Meta.Provider {
 
 		/**
 		 * Chooses an action (for a tool) based on world state.
@@ -129,14 +129,6 @@ public interface OptionAgent {
 		 * Determines if the option is complete.
 		 */
 		public boolean done(State state);
-
-		/**
-		 * Loggable meta-description of this option.
-		 * The object must be new and there is modifiable, at least at the name
-		 * and args list level.
-		 * Whether args themselves are modifiable is undefined.
-		 */
-		public Meta meta();
 
 	}
 

@@ -9,6 +9,7 @@ import stackiter.agents.OptionAgent.Action;
 import stackiter.agents.OptionAgent.Option;
 import stackiter.agents.OptionAgent.State;
 import stackiter.sim.*;
+import stackiter.sim.Meta.Provider;
 
 /**
  * A set of perhaps convenient options.
@@ -60,13 +61,13 @@ public class Options {
 		 */
 		public Soul item;
 
-		public Carry(Item item, Point2D goal, Random random) {
+		public Carry(Soul item, Point2D goal, Random random) {
 			// Deviation of 1 might do.
 			Point2D offset =
 				point(random.nextGaussian(), random.nextGaussian());
 			// Record our messed-up goal so we know when we've reached it.
 			this.goal = added(goal, offset);
-			this.item = item.getSoul();
+			this.item = item;
 		}
 
 		@Override
@@ -155,6 +156,59 @@ public class Options {
 		@Override
 		public Meta meta() {
 			return new Meta("clear");
+		}
+
+	}
+
+	/**
+	 * Allows sequenced options as also suggested by Precup et al. (1998).
+	 */
+	public class Composed implements Option {
+
+		private int current;
+
+		private Option[] options;
+
+		private Provider metaProvider;
+
+		public Composed(Meta.Provider metaProvider, Option... options) {
+			this.options = options;
+			this.metaProvider = metaProvider;
+			// Start at the first option. Be explicit.
+			current = 0;
+		}
+
+		@Override
+		public Action act(State state) {
+			Option option;
+			while (true) {
+				if (done(state)) {
+					// Already got through everything.
+					return null;
+				}
+				// Still have more options to look at.
+				option = options[current];
+				if (!option.done(state)) {
+					// Current one has work to do.
+					break;
+				}
+				// That one's done. Move on.
+				current++;
+			}
+			// Found an unfinished option. Use it.
+			Action action = option.act(state);
+			return action;
+		}
+
+		@Override
+		public boolean done(State state) {
+			return current >= options.length;
+		}
+
+		@Override
+		public Meta meta() {
+			// TODO Generate default if provide is null.
+			return metaProvider.meta();
 		}
 
 	}
@@ -365,6 +419,12 @@ public class Options {
 
 	/**
 	 * Consistently though hackishly avoid infinite loops.
+	 *
+	 * Note that Precup et al. (1998) assume outer options don't interrupt the
+	 * options to which they delegate.
+	 * I need this interruption support here, though, and there might be other
+	 * cases it also comes in handy.
+	 * TODO Are there theoretical consequences?
 	 */
 	private static class TimeoutOption implements Option {
 
@@ -412,8 +472,15 @@ public class Options {
 		this.random = random;
 	}
 
-	public Option carry(Item item, Point2D goal) {
-		return prepare(new Carry(item, goal, random));
+	public Option carry(Soul item, Point2D goal) {
+		// To simplify sequencing, make carry also grasp.
+		Grasp grasp = new Grasp(item, random);
+		Carry carry = new Carry(item, goal, random);
+		// The first carry is the meta-provider.
+		// That is, we're presuming this version just looks like a carry, even
+		// though it is more than a Carry.
+		Composed composed = new Composed(carry, grasp, carry);
+		return prepare(composed);
 	}
 
 	public Option clear() {
