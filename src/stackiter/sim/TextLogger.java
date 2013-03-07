@@ -69,21 +69,45 @@ public class TextLogger extends AtomicLogger implements Logger {
 	private Formatter writer;
 
 	public TextLogger() {
+		this("");
+	}
+
+	public TextLogger(String logDir) {
+		this(logDir, true);
+	}
+
+	public TextLogger(String logDir, boolean doCompress) {
 		try {
 			// Log start time.
 			startTime = System.currentTimeMillis();
 			time = startTime;
 			// Log file.
-			File dir = new File(System.getProperty("java.io.tmpdir"), "stackiter");
+			if (logDir == null || logDir.isEmpty()) {
+				logDir =
+					System.getProperty("java.io.tmpdir") + File.separator +
+						"stackiter";
+			}
+			File dir = new File(logDir);
 			dir.mkdirs();
 			SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd-HHmmss-SSS");
-			String logName = String.format("stackiter-%s.log.gz", format.format(new Date(startTime)));
+			String logName = String.format(
+				"stackiter-%s.log", format.format(new Date(startTime))
+			);
+			if (doCompress) {
+				logName += ".gz";
+			}
 			File logFile = new File(dir, logName);
 			// TODO What's the right way to expose the log file name?
 			System.out.println(logFile);
 			OutputStream out = new FileOutputStream(logFile);
 			try {
-				writer = new Formatter(new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(out), "UTF-8"), 1<<16));
+				if (doCompress) {
+					out = new GZIPOutputStream(out);
+				}
+				writer = new Formatter(new BufferedWriter(
+					// I think I made the buffer large in hopes for speed.
+					new OutputStreamWriter(out, "UTF-8"), 1 << 16
+				));
 			} catch (Exception e) {
 				out.close();
 				throw e;
