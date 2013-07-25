@@ -61,6 +61,8 @@ public class Options {
 		 */
 		public Soul item;
 
+		public Point2D originalGoal;
+
 		public Carry(Soul item, Point2D goal, Random random) {
 			// Deviation of 1 might do.
 			Point2D offset =
@@ -68,6 +70,7 @@ public class Options {
 			// Record our messed-up goal so we know when we've reached it.
 			this.goal = added(goal, offset);
 			this.item = item;
+			this.originalGoal = goal;
 		}
 
 		@Override
@@ -117,7 +120,8 @@ public class Options {
 
 		@Override
 		public Meta meta() {
-			return new Meta("carry", item, goal);
+			// Report our intent, not the lame after-noise.
+			return new Meta("carry", item, originalGoal);
 		}
 
 		@Override

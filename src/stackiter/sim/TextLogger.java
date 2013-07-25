@@ -1,5 +1,6 @@
 package stackiter.sim;
 
+import static java.util.Map.*;
 import static java.lang.String.*;
 import static stackiter.sim.Util.*;
 
@@ -221,6 +222,30 @@ public class TextLogger extends AtomicLogger {
 			log("color %d %.3f %.3f %.3f %.3f", info.id, color[0], color[1], color[2], color[3]);
 		}
 		return info;
+	}
+
+	/**
+	 * Returns the soul of the object corresponding the given id.
+	 *
+	 * If the id isn't found or if there's no corresponding soul, returns null.
+	 */
+	public Soul getSoul(int id) {
+		// TODO Maintain a map?
+		// Items.
+		for (Entry<Soul, ItemInfo> entry: items.entrySet()) {
+			if (entry.getValue().id == id) {
+				return entry.getKey();
+			}
+		}
+		// Tools.
+		for (Entry<Soul, ToolInfo> entry: tools.entrySet()) {
+			if (entry.getValue().id == id) {
+				return entry.getKey();
+			}
+		}
+		// Nothing.
+		// TODO Can we provide souls for anything else?
+		return null;
 	}
 
 	private void log(String message, Object... args) {
