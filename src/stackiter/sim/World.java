@@ -76,6 +76,8 @@ public class World {
 
 	private Logger logger;
 
+	private boolean quitRequested;
+
 	private long steps;
 
 	private Map<Tool, ToolInfo> tools = new HashMap<Tool, ToolInfo>();
@@ -335,6 +337,10 @@ public class World {
 		}
 	}
 
+	public boolean isQuitRequested() {
+		return quitRequested;
+	}
+
 	public void paint(Graphics2D graphics) {
 		// Live items.
 		for (ItemInfo info: items) {
@@ -354,6 +360,10 @@ public class World {
 	public void removeBlock(Block block) {
 		handleRemoval(block);
 		blocks.remove(block);
+	}
+
+	public void requestQuit() {
+		quitRequested = true;
 	}
 
 	public void setLogger(Logger logger) {

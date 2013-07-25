@@ -20,6 +20,12 @@ public interface Logger extends Closeable {
 	void flush();
 
 	/**
+	 * Returns the wrapped logger, if any.
+	 * If this is the innermost, returns null.
+	 */
+	Logger getKid();
+	
+	/**
 	 * @param size pixel width and height as integer values, despite use of Point2D.
 	 */
 	void logDisplaySize(Point2D size);

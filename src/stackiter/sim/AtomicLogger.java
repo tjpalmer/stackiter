@@ -25,6 +25,14 @@ public abstract class AtomicLogger implements Logger {
 		txDepth--;
 	}
 
+	/**
+	 * Be sure to override if there's a kid!
+	 */
+	@Override
+	public Logger getKid() {
+		return null;
+	}
+	
 	protected int getTxDepth() {
 		return txDepth;
 	}

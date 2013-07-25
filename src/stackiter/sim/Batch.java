@@ -5,6 +5,8 @@ import static java.lang.Integer.*;
 
 import java.util.*;
 
+import stackiter.tasks.*;
+
 /**
  * For headless batch jobs.
  *
@@ -41,12 +43,15 @@ public class Batch implements Runnable {
 
 	private Map<String, String> args;
 
+	private Map<String, Iterable<Scenario>> scenariosMap;
+
 	/**
 	 * All keys and values must be non-null.
 	 * Otherwise, behavior is undefined.
 	 */
 	public Batch(Map<String, String> args) {
 		this.args = args;
+		initScenarios();
 	}
 
 	private String arg(String key, String defaultValue) {
@@ -57,56 +62,81 @@ public class Batch implements Runnable {
 		return value;
 	}
 
+	private void initScenarios() {
+		scenariosMap = new LinkedHashMap<String, Iterable<Scenario>>();
+		scenariosMap.put("external", Arrays.asList(
+			new Scenario.ExternalControl(),
+			new Scenario.WideTable(),
+			new Scenario.Refill()
+		));
+	}
+
 	@Override
 	public void run() {
 		World world = new World();
-
-		// Arguments.
-		// Episode limit.
-		int episodeLimit = parseInt(arg("episode-limit", "100"));
-		// Scenario.
-		String scenario = arg("scenario", "default");
-		if (scenario.equals("default")) {
-			// Working directly from Stackiter.initScenarios allows manual
-			// verification to match kick-offs here.
-			Stackiter.initScenarios(world);
-		} else {
-			// TODO Handle other cases as needed.
-		}
 
 		// Logger.
 		//Logger logger = new FilterLogger(new TextLogger());
 		//Logger logger = new TextLogger();
 		String logDir = arg("log-dir", "");
 		boolean compressLog = parseBoolean(arg("compress-log", "true"));
-		Logger logger = new EpisodicLogger(new TextLogger(logDir, compressLog));
-		logger.waitForEpisodeStart();
-		world.setLogger(logger);
+		Logger logger =
+			new EpisodicLogger(new TextLogger(logDir, compressLog));
+		try {
+			logger.waitForEpisodeStart();
 
-		// Main loop.
-		long steps = 0;
-		long stepsPerSecond = 100;
-		long stepsPerMinute = 60 * stepsPerSecond;
-		long stepsPerHour = 60 * stepsPerMinute;
-		//while (world.getSimTime() < stepsPerHour / stepsPerSecond) {
-		while (world.getClearCount() < episodeLimit) {
-			try {
-				world.update();
-			} catch (Exception e) {
-				// TODO Remove this handler?
-				// TODO Better or worse to keep on trucking?
-				e.printStackTrace();
+			// Scenario.
+			// The arg is singular for now, to simply the interface, but we
+			// build a list from it.
+			// TODO Allow a list of some sort?
+			Iterable<Scenario> scenarios;
+			String scenarioName = arg("scenario", "default");
+			if (scenarioName.equals("default")) {
+				// Working directly from Stackiter.initScenarios allows manual
+				// verification to match kick-offs here.
+				scenarios = Stackiter.defaultScenarios();
+			} else {
+				scenarios = scenariosMap.get(scenarioName);
+				if (scenarios == null) {
+					throw new RuntimeException(
+						"Unknown scenario: " + scenarioName
+					);
+				}
 			}
-			// Simple status.
-			steps++;
-			if (steps % stepsPerMinute == 0) {
-				System.out.print(".");
+			// Get it going.
+			Scenario.handleWorldSetup(scenarios, world, logger);
+
+			// Episode limit.
+			int episodeLimit = parseInt(arg("episode-limit", "100"));
+
+			// Main loop.
+			long steps = 0;
+			long stepsPerSecond = 100;
+			long stepsPerMinute = 60 * stepsPerSecond;
+			long stepsPerHour = 60 * stepsPerMinute;
+			//while (world.getSimTime() < stepsPerHour / stepsPerSecond) {
+			while (
+				world.getClearCount() < episodeLimit && !world.isQuitRequested()
+			) {
+				try {
+					world.update();
+				} catch (Exception e) {
+					// TODO Remove this handler?
+					// TODO Better or worse to keep on trucking?
+					e.printStackTrace();
+				}
+				// Simple status.
+				steps++;
+				if (steps % stepsPerMinute == 0) {
+					System.out.print(".");
+				}
+				if (steps % stepsPerHour == 0) {
+					System.out.printf(" Hours: %d\n", steps/stepsPerHour);
+				}
 			}
-			if (steps % stepsPerHour == 0) {
-				System.out.printf(" Hours: %d\n", steps/stepsPerHour);
-			}
+		} finally {
+			logger.close();
 		}
-		logger.close();
 	}
 
 }

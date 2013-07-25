@@ -134,6 +134,11 @@ public class FilterLogger extends AtomicLogger {
 	}
 
 	@Override
+	public Logger getKid() {
+		return logger;
+	}
+
+	@Override
 	public void logClear() {
 		cleared = true;
 		// Log clears.

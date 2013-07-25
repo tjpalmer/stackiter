@@ -12,7 +12,51 @@ import java.util.zip.*;
 /**
  * Logs in text format to a temp file.
  */
-public class TextLogger extends AtomicLogger implements Logger {
+public class TextLogger extends AtomicLogger {
+
+	/**
+	 * Opens a log file for writing in the given directory, compressed if
+	 * requested.
+	 * The file name is also based on the current date and time.
+	 */
+	public static Formatter openLogFile(String logDir, boolean doCompress) {
+		try {
+			// Log file.
+			if (logDir == null || logDir.isEmpty()) {
+				logDir =
+					System.getProperty("java.io.tmpdir") + File.separator +
+						"stackiter";
+			}
+			File dir = new File(logDir);
+			dir.mkdirs();
+			SimpleDateFormat format =
+				new SimpleDateFormat("yyyyMMdd-HHmmss-SSS");
+			String logName = String.format(
+				"stackiter-%s.log", format.format(new Date())
+			);
+			if (doCompress) {
+				logName += ".gz";
+			}
+			File logFile = new File(dir, logName);
+			// TODO What's the right way to expose the log file name?
+			System.out.println(logFile);
+			OutputStream out = new FileOutputStream(logFile);
+			try {
+				if (doCompress) {
+					out = new GZIPOutputStream(out);
+				}
+				return new Formatter(new BufferedWriter(
+					// I think I made the buffer large in hopes for speed.
+					new OutputStreamWriter(out, "UTF-8"), 1 << 16
+				));
+			} catch (Exception e) {
+				out.close();
+				throw e;
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 
 	private static class ItemInfo {
 		// Id not actually held in the item.
@@ -66,7 +110,7 @@ public class TextLogger extends AtomicLogger implements Logger {
 
 	private Rectangle2D view = new Rectangle2D.Double();
 
-	private Formatter writer;
+	private List<Formatter> writers;
 
 	public TextLogger() {
 		this("");
@@ -77,46 +121,23 @@ public class TextLogger extends AtomicLogger implements Logger {
 	}
 
 	public TextLogger(String logDir, boolean doCompress) {
-		try {
-			// Log start time.
-			startTime = System.currentTimeMillis();
-			time = startTime;
-			// Log file.
-			if (logDir == null || logDir.isEmpty()) {
-				logDir =
-					System.getProperty("java.io.tmpdir") + File.separator +
-						"stackiter";
-			}
-			File dir = new File(logDir);
-			dir.mkdirs();
-			SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd-HHmmss-SSS");
-			String logName = String.format(
-				"stackiter-%s.log", format.format(new Date(startTime))
-			);
-			if (doCompress) {
-				logName += ".gz";
-			}
-			File logFile = new File(dir, logName);
-			// TODO What's the right way to expose the log file name?
-			System.out.println(logFile);
-			OutputStream out = new FileOutputStream(logFile);
-			try {
-				if (doCompress) {
-					out = new GZIPOutputStream(out);
-				}
-				writer = new Formatter(new BufferedWriter(
-					// I think I made the buffer large in hopes for speed.
-					new OutputStreamWriter(out, "UTF-8"), 1 << 16
-				));
-			} catch (Exception e) {
-				out.close();
-				throw e;
-			}
-			// Initial info.
-			logStart();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+		// Ideally we pass in the official start time, but this will do.
+		this(openLogFile(logDir, doCompress));
+	}
+
+	public TextLogger(Formatter... formatters) {
+		// Actual output.
+		writers = new ArrayList<Formatter>(Arrays.asList(formatters));
+		// Start time of our log.
+		startTime = System.currentTimeMillis();
+		time = startTime;
+		// Initial info.
+		logStart();
+	}
+
+	public void addOutput(Formatter formatter) {
+		// TODO Instead use a TeeWriter or some such inside the formatter?
+		writers.add(formatter);
 	}
 
 	@Override
@@ -131,7 +152,9 @@ public class TextLogger extends AtomicLogger implements Logger {
 	public void close() {
 		try {
 			log("quit");
-			writer.close();
+			for (Formatter writer: writers) {
+				writer.close();
+			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -142,16 +165,22 @@ public class TextLogger extends AtomicLogger implements Logger {
 		super.endStep();
 		if (doFlush) {
 			doFlush = false;
-			writer.flush();
+			flushDirect();
 		}
 	}
 
 	@Override
 	public void flush() {
 		if (getTxDepth() == 0) {
-			writer.flush();
+			flushDirect();
 		} else {
 			doFlush = true;
+		}
+	}
+
+	private void flushDirect() {
+		for (Formatter writer: writers) {
+			writer.flush();
 		}
 	}
 
@@ -196,12 +225,21 @@ public class TextLogger extends AtomicLogger implements Logger {
 
 	private void log(String message, Object... args) {
 		logTimeIfNeeded();
-		writer.format(message + "\n", args);
+		logDirect(message, args);
 	}
 
 	@Override
 	public void logClear() {
 		log("clear");
+	}
+
+	/**
+	 * Directly log out to the writer.
+	 */
+	private void logDirect(String message, Object... args) {
+		for (Formatter writer: writers) {
+			writer.format(message + "\n", args);
+		}
 	}
 
 	@Override
@@ -334,6 +372,7 @@ public class TextLogger extends AtomicLogger implements Logger {
 	private void logStart() {
 		atomic(new Runnable() { @Override public void run() {
 			// Hardcoded info about the view.
+			// TODO Don't hardcode this! Let someone else tell us.
 			log("item %d", idView);
 			log("type %d view", idView);
 		}});
@@ -346,7 +385,7 @@ public class TextLogger extends AtomicLogger implements Logger {
 			if (currentTime != time) {
 				time = currentTime;
 				double realSeconds = 1e-3 * (currentTime - startTime);
-				writer.format("time real %.3f\n", realSeconds);
+				logDirect("time real %.3f", realSeconds);
 			}
 		}
 	}

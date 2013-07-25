@@ -60,6 +60,11 @@ public class EpisodicLogger extends AtomicLogger {
 		logger.close();
 	}
 
+	@Override
+	public Logger getKid() {
+		return logger;
+	}
+
 	private void doLog(State state) {
 		// Actual logging of key info.
 		logger.logSimTime(state.steps, state.simTime);

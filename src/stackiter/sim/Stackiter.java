@@ -20,8 +20,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 	/**
 	 * Custom scenarios. Change in place for now. Could parameterize.
 	 */
-	public static void initScenarios(World world) {
-		Scenario[] scenarios = {
+	public static Iterable<Scenario> defaultScenarios() {
+		return Arrays.asList(new Scenario[] {
 			// First, so the others can respond.
 			new Scenario.WideTable(),
 			// Others.
@@ -33,10 +33,7 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			//new Scenario.Predeployed(),
 			new Scenario.Refill(),
 			//new Scenario.SmallSquares(),
-		};
-		for (Scenario scenario: scenarios) {
-			scenario.buildWorld(world);
-		}
+		});
 	}
 
 	public static void main(String[] args) {
@@ -108,8 +105,8 @@ public class Stackiter extends JComponent implements ActionListener, Closeable, 
 			// Log the mouse tool to get it a lower ID.
 			logger.logTool(mouseTool);
 			// Init scene and start logging.
-			initScenarios(world);
-			world.setLogger(logger);
+			Iterable<Scenario> scenarios = defaultScenarios();
+			Scenario.handleWorldSetup(scenarios, world, logger);
 
 			double groundDepth = -2 * world.getGround().getExtent().getY();
 			double groundExtentX = world.getGround().getExtent().getX(); // <-- Visual glitch here needs resolved.
