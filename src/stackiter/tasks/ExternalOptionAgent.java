@@ -4,6 +4,7 @@ import static java.lang.Double.*;
 import static java.lang.Integer.*;
 import static stackiter.sim.Util.*;
 
+import java.io.*;
 import java.util.*;
 
 import stackiter.agents.*;
@@ -23,12 +24,15 @@ public class ExternalOptionAgent implements OptionAgent {
 	 */
 	private Options options;
 
+	private BufferedReader reader;
+
 	private World world;
 
 	public ExternalOptionAgent(World world) {
 		this.world = world;
 		formatter = new Formatter(System.out);
 		options = new Options(world.getTray().getRandom());
+		reader = new BufferedReader(new InputStreamReader(System.in));
 	}
 
 	@Override
@@ -37,17 +41,17 @@ public class ExternalOptionAgent implements OptionAgent {
 		// measure ...
 		formatter.flush();
 
-		// TODO Support state output to external controller?
-		// TODO Change to socket or support console option?
-		String command = System.console().readLine();
-		List<String> args = Arrays.asList(command.trim().split("\\s+"));
-		// Now call the command the first token.
-		command = args.isEmpty() ? "" : args.get(0);
-
-		// Parse command.
+		// Read and parse command.
 		Option option = null;
-		// TODO Map of handlers!
 		try {
+			// TODO Support state output to external controller?
+			// TODO Change to socket or support console option?
+			String command = reader.readLine();
+			List<String> args = Arrays.asList(command.trim().split("\\s+"));
+			// Now call the command the first token.
+			command = args.isEmpty() ? "" : args.get(0);
+
+			// TODO Map of handlers!
 			if (command.equals("carry")) {
 				if (args.size() == 4) {
 					int id = parseInt(args.get(1));
@@ -89,6 +93,7 @@ public class ExternalOptionAgent implements OptionAgent {
 		}
 
 		// Good to go.
+		System.out.println(option.meta().args);
 		return option;
 	}
 

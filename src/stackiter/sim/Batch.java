@@ -65,8 +65,10 @@ public class Batch implements Runnable {
 	private void initScenarios() {
 		scenariosMap = new LinkedHashMap<String, Iterable<Scenario>>();
 		scenariosMap.put("external", Arrays.asList(
-			new Scenario.ExternalControl(),
+			// First, so the others can respond.
 			new Scenario.WideTable(),
+			// Others.
+			new Scenario.ExternalControl(),
 			new Scenario.Refill()
 		));
 	}
