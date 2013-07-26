@@ -11,35 +11,48 @@ import stackiter.agents.*;
 import stackiter.sim.*;
 
 /**
- * Allow an external controller (such as across a socket) to control an agent.
+ * Allow an external controller to control an agent through standard in and out.
  */
 public class ExternalOptionAgent implements OptionAgent {
-
-	private Formatter formatter;
-
-	private TextLogger logger;
 
 	/**
 	 * Our options factory.
 	 */
 	private Options options;
 
+	/**
+	 * For reading lines from standard in.
+	 */
 	private BufferedReader reader;
 
+	/**
+	 * Track this for now just so we can request quitting.
+	 *
+	 * TODO Instead provide quit command through option???
+	 */
 	private World world;
 
 	public ExternalOptionAgent(World world) {
 		this.world = world;
-		formatter = new Formatter(System.out);
 		options = new Options(world.getTray().getRandom());
 		reader = new BufferedReader(new InputStreamReader(System.in));
 	}
 
 	@Override
 	public Option act(State state) {
-		// Presumably the logger will flush things anyway, but just for good
-		// measure ...
-		formatter.flush();
+		// Output the full current state of the blocks.
+		// Start with blank line for visual parsing.
+		System.out.println();
+		// We purposely don't close the logger. It would close system out.
+		@SuppressWarnings("resource")
+		TextLogger logger = new TextLogger(new Formatter(System.out));
+		logger.logSimTime(state.steps, state.simTime);
+		for (Item item: state.items.values()) {
+			logger.logItem(item);
+		}
+		logger.flush();
+		// Another blank line after.
+		System.out.println();
 
 		// Read and parse command.
 		Option option = null;
@@ -92,24 +105,8 @@ public class ExternalOptionAgent implements OptionAgent {
 			option = options.delay();
 		}
 
-		// Good to go.
-		System.out.println(option.meta().args);
+		// Good to go, and don't actually close the logger.
 		return option;
-	}
-
-	public void listen(Logger logger) {
-		// Get the deepest logger, presuming it's a TextLogger.
-		while (true) {
-			Logger kid = logger.getKid();
-			if (kid == null) {
-				// Hit the bottom.
-				this.logger = (TextLogger)logger;
-				break;
-			}
-			// Keep going.
-			logger = kid;
-		}
-		this.logger.addOutput(formatter);
 	}
 
 }
