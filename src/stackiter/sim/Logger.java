@@ -24,7 +24,7 @@ public interface Logger extends Closeable {
 	 * If this is the innermost, returns null.
 	 */
 	Logger getKid();
-	
+
 	/**
 	 * @param size pixel width and height as integer values, despite use of Point2D.
 	 */
@@ -73,6 +73,11 @@ public interface Logger extends Closeable {
 	void logTray(Tray tray);
 
 	void logView(final Rectangle2D view);
+
+	/**
+	 * Push out the current state, in case things were being held at the moment.
+	 */
+	void push();
 
 	/**
 	 * Tell the logger that episodes (for loggers that care) don't start until

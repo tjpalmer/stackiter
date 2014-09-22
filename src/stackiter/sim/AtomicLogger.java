@@ -32,7 +32,7 @@ public abstract class AtomicLogger implements Logger {
 	public Logger getKid() {
 		return null;
 	}
-	
+
 	protected int getTxDepth() {
 		return txDepth;
 	}
@@ -40,6 +40,12 @@ public abstract class AtomicLogger implements Logger {
 	@Override
 	public void logEpisodeStart() {
 		// For convenience for subclasses, do nothing here.
+	}
+
+	@Override
+	public void push() {
+		// For convenience for subclasses, do nothing here.
+		// Subclasses that hold back should push here.
 	}
 
 	@Override
