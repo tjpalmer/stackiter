@@ -82,6 +82,22 @@ public class ExternalOptionAgent implements OptionAgent {
 				} else {
 					System.out.println("Usage: drop id");
 				}
+			} else if (command.equals("lift")) {
+				if (args.size() == 2) {
+					int id = parseInt(args.get(1));
+					Soul item = textLogger.getSoul(id);
+					option = options.lift(item);
+				} else {
+					System.out.println("Usage: lift id");
+				}
+			} else if (command.equals("put")) {
+				if (args.size() == 3) {
+					Soul item = textLogger.getSoul(parseInt(args.get(1)));
+					Soul target = textLogger.getSoul(parseInt(args.get(2)));
+					option = options.put(item, target);
+				} else {
+					System.out.println("Usage: put id targetId");
+				}
 			} else if (command.equals("quit")) {
 				world.requestQuit();
 			}

@@ -61,9 +61,17 @@ public class Options {
 		 */
 		public Soul item;
 
+		/**
+		 * Customize for meta.
+		 */
+		public String name;
+
 		public Point2D originalGoal;
 
 		public Carry(Soul item, Point2D goal, Random random) {
+			if (item == null) throw new RuntimeException("Null item.");
+			if (goal == null) throw new RuntimeException("Null goal.");
+			name = "carry";
 			// Deviation of 1 might do.
 			Point2D offset =
 				point(random.nextGaussian(), random.nextGaussian());
@@ -121,7 +129,7 @@ public class Options {
 		@Override
 		public Meta meta() {
 			// Report our intent, not the lame after-noise.
-			return new Meta("carry", item, originalGoal);
+			return new Meta(name, item, originalGoal);
 		}
 
 		@Override
@@ -218,6 +226,40 @@ public class Options {
 	}
 
 	/**
+	 * Without item information, this delays the goal specification until it
+	 * starts acting.
+	 */
+	public abstract static class DeferredGoalCarry extends Carry {
+
+		private boolean goalChosen;
+
+		public DeferredGoalCarry(Soul item, Random random) {
+			super(item, point(), random);
+		}
+
+		@Override
+		public Action act(State state) {
+			chooseGoalIfNeeded(state);
+			return super.act(state);
+		}
+
+		@Override
+		public boolean done(State state) {
+			chooseGoalIfNeeded(state);
+			return super.done(state);
+		}
+
+		protected abstract void chooseGoal(State state);
+
+		private void chooseGoalIfNeeded(State state) {
+			if (goalChosen) return;
+			chooseGoal(state);
+			goalChosen = true;
+		}
+
+	}
+
+	/**
 	 * Waits a random amount of time before being done.
 	 */
 	public class Delay implements Option {
@@ -285,13 +327,18 @@ public class Options {
 	 */
 	private static class Drop implements Option {
 
-		public Item item;
+		public Soul item;
 
 		public Drop(State state) {
 			// TODO Note that for easier relational learning, the thing to be
 			// TODO dropped should be an argument.
 			// TODO Some DropOn action should also have the support as an arg.
-			this.item = state.graspedItem;
+			Item item = state.graspedItem;
+			this.item = item == null ? null : item.getSoul();
+		}
+
+		public Drop(Soul item) {
+			this.item = item;
 		}
 
 		@Override
@@ -331,7 +378,7 @@ public class Options {
 
 		@Override
 		public Meta meta() {
-			return new Meta("drop", item.getSoul());
+			return new Meta("drop", item);
 		}
 
 		@Override
@@ -422,6 +469,69 @@ public class Options {
 	}
 
 	/**
+	 * A constrained carry that just lifts vertically.
+	 */
+	public static class Lift extends DeferredGoalCarry {
+
+		public Lift(Soul item, Random random) {
+			super(item, random);
+			name = "lift";
+		}
+
+		@Override
+		protected void chooseGoal(State state) {
+			// Still need to choose a lift goal.
+			// For now, just go to a rather tall height.
+			// TODO Base this on max height of items not resting on current
+			// TODO item?
+			Item item = state.items.get(this.item);
+			Point2D position = added(item.getPosition(), point(0, 30));
+			// Noise will already have been added to the existing "0" goal.
+			goal = added(goal, position);
+		}
+
+		@Override
+		public Meta meta() {
+			return new Meta(name, item);
+		}
+
+	}
+
+	/**
+	 * Move an item horizontally to place it above another.
+	 */
+	public static class PlaceX extends DeferredGoalCarry {
+
+		private Soul target;
+
+		public PlaceX(Soul item, Soul target, Random random) {
+			super(item, random);
+			if (target == null) throw new RuntimeException("Null target.");
+			this.target = target;
+			// TODO Underscores, hyphens, or camels?
+			name = "placeX";
+		}
+
+		@Override
+		protected void chooseGoal(State state) {
+			// TODO What if either is null?
+			Item item = state.items.get(this.item);
+			Item target = state.items.get(this.target);
+			goal = added(
+				// Noise will already have been added to the existing "0" goal.
+				goal,
+				point(target.getPosition().getX(), item.getPosition().getY())
+			);
+		}
+
+		@Override
+		public Meta meta() {
+			return new Meta(name, item, target);
+		}
+
+	}
+
+	/**
 	 * Consistently though hackishly avoid infinite loops.
 	 *
 	 * Note that Precup et al. (1998) assume outer options don't interrupt the
@@ -502,6 +612,29 @@ public class Options {
 
 	public Option grasp(Soul item) {
 		return prepare(new Grasp(item, random));
+	}
+
+	public Option lift(Soul item) {
+		// To simplify sequencing, make lift also grasp.
+		// See the carry method for more info on the mechanisms here.
+		Lift lift = new Lift(item, random);
+		return prepare(new Composed(lift, new Grasp(item, random), lift));
+	}
+
+	/**
+	 * Put one item on another.
+	 */
+	public Option put(Soul item, Soul target) {
+		// TODO What for meta??? Custom type????
+		PlaceX place = new PlaceX(item, target, random);
+		place.name = "put";
+		return new Composed(place,
+			prepare(new Grasp(item, random)),
+			prepare(new Lift(item, random)),
+			prepare(place),
+			// TODO Lower before dropping?
+			prepare(new Drop(item))
+		);
 	}
 
 	/**
