@@ -15,6 +15,10 @@ import stackiter.sim.*;
  */
 public class ExternalOptionAgent implements OptionAgent {
 
+	private Formatter formatter;
+
+	private Logger logger;
+
 	/**
 	 * Our options factory.
 	 */
@@ -25,11 +29,8 @@ public class ExternalOptionAgent implements OptionAgent {
 	 */
 	private BufferedReader reader;
 
-	/**
-	 * Track this for now just so we can request quitting.
-	 *
-	 * TODO Instead provide quit command through option???
-	 */
+	private TextLogger textLogger;
+
 	private World world;
 
 	public ExternalOptionAgent(World world) {
@@ -40,25 +41,36 @@ public class ExternalOptionAgent implements OptionAgent {
 
 	@Override
 	public Option act(State state) {
-		// Output the full current state of the blocks.
-		// Start with blank line for visual parsing.
-		System.out.println();
-		// We purposely don't close the logger. It would close system out.
-		@SuppressWarnings("resource")
-		TextLogger logger = new TextLogger(new Formatter(System.out));
-		logger.logSimTime(state.steps, state.simTime);
-		for (Item item: state.items.values()) {
-			logger.logItem(item);
+		// I had implemented this for explicit state output, but I never
+		// committed it, and then I implemented the push thing later, which sort
+		// of does the same thing.
+		// I'm not sure which I prefer at the moment, though, so I'm keeping
+		// this one around for now.
+		if (false) {
+			// Output the full current state of the blocks.
+			// Start with blank line for visual parsing.
+			System.out.println();
+			// We purposely don't close the logger. It would close system out.
+			@SuppressWarnings("resource")
+			TextLogger logger = new TextLogger(new Formatter(System.out));
+			logger.logSimTime(state.steps, state.simTime);
+			for (Item item: state.items.values()) {
+				logger.logItem(item);
+			}
+			logger.flush();
+			// Another blank line after.
+			System.out.println();
 		}
-		logger.flush();
-		// Another blank line after.
-		System.out.println();
+
+		// Push out state before asking for the next command.
+		logger.push();
+		// Presumably the logger will flush things anyway, but just for good
+		// measure ...
+		formatter.flush();
 
 		// Read and parse command.
 		Option option = null;
 		try {
-			// TODO Support state output to external controller?
-			// TODO Change to socket or support console option?
 			String command = reader.readLine();
 			List<String> args = Arrays.asList(command.trim().split("\\s+"));
 			// Now call the command the first token.
@@ -70,7 +82,7 @@ public class ExternalOptionAgent implements OptionAgent {
 					int id = parseInt(args.get(1));
 					double x = parseDouble(args.get(2));
 					double y = parseDouble(args.get(3));
-					Soul item = logger.getSoul(id);
+					Soul item = textLogger.getSoul(id);
 					option = options.carry(item, point(x, y));
 				} else {
 					System.out.println("Usage: carry id x y");
@@ -80,7 +92,7 @@ public class ExternalOptionAgent implements OptionAgent {
 			} else if (command.equals("drop")) {
 				if (args.size() == 2) {
 					int id = parseInt(args.get(1));
-					Soul item = logger.getSoul(id);
+					Soul item = textLogger.getSoul(id);
 					if (
 						state.graspedItem != null &&
 						state.graspedItem.getSoul() == item
@@ -92,6 +104,22 @@ public class ExternalOptionAgent implements OptionAgent {
 					}
 				} else {
 					System.out.println("Usage: drop id");
+				}
+			} else if (command.equals("lift")) {
+				if (args.size() == 2) {
+					int id = parseInt(args.get(1));
+					Soul item = textLogger.getSoul(id);
+					option = options.lift(item);
+				} else {
+					System.out.println("Usage: lift id");
+				}
+			} else if (command.equals("put")) {
+				if (args.size() == 3) {
+					Soul item = textLogger.getSoul(parseInt(args.get(1)));
+					Soul target = textLogger.getSoul(parseInt(args.get(2)));
+					option = options.put(item, target);
+				} else {
+					System.out.println("Usage: put id targetId");
 				}
 			} else if (command.equals("quit")) {
 				world.requestQuit();
@@ -106,7 +134,24 @@ public class ExternalOptionAgent implements OptionAgent {
 		}
 
 		// Good to go, and don't actually close the logger.
+		//System.out.println(option.meta().args);
 		return option;
+	}
+
+	public void listen(Logger logger) {
+		this.logger = logger;
+		// Get the deepest logger, presuming it's a TextLogger.
+		while (true) {
+			Logger kid = logger.getKid();
+			if (kid == null) {
+				// Hit the bottom.
+				this.textLogger = (TextLogger)logger;
+				break;
+			}
+			// Keep going.
+			logger = kid;
+		}
+		this.textLogger.addOutput(formatter);
 	}
 
 }

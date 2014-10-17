@@ -192,6 +192,13 @@ public class EpisodicLogger extends AtomicLogger {
 	}
 
 	@Override
+	public void push() {
+		if (oldState != null) {
+			doLog(oldState);
+		}
+	}
+
+	@Override
 	public void waitForEpisodeStart() {
 		this.doWaitForEpisodeStart = true;
 	}
