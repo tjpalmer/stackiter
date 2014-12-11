@@ -35,6 +35,7 @@ public class ExternalOptionAgent implements OptionAgent {
 
 	public ExternalOptionAgent(World world) {
 		this.world = world;
+		formatter = new Formatter(System.out);
 		options = new Options(world.getTray().getRandom());
 		reader = new BufferedReader(new InputStreamReader(System.in));
 	}

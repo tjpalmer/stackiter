@@ -88,9 +88,11 @@ public class Scenario {
 	 */
 	public static class ExternalControl extends Scenario {
 		@Override
-		public void buildWorld(World world) {
+		public void buildWorld(World world, Logger logger) {
 			ExternalOptionAgent agent = new ExternalOptionAgent(world);
 			world.addAgent(new OptionAgent.Bridge(agent));
+			// The agent needs to provide output to the external controller.
+			agent.listen(logger);
 		}
 	}
 
