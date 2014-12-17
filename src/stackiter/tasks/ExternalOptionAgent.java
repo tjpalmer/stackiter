@@ -15,6 +15,8 @@ import stackiter.sim.*;
  */
 public class ExternalOptionAgent implements OptionAgent {
 
+	private boolean first = true;
+
 	private Formatter formatter;
 
 	private Logger logger;
@@ -72,7 +74,19 @@ public class ExternalOptionAgent implements OptionAgent {
 		// Read and parse command.
 		Option option = null;
 		try {
-			String command = reader.readLine();
+			String command;
+			if (first) {
+				// Just delay the first time, so we get the world set up.
+				command = "";
+				first = false;
+			} else {
+				formatter.format("Ready:\n");
+				command = reader.readLine();
+				if (command == null) {
+					// End of stream. They're done.
+					//command = "quit";
+				}
+			}
 			List<String> args = Arrays.asList(command.trim().split("\\s+"));
 			// Now call the command the first token.
 			command = args.isEmpty() ? "" : args.get(0);
