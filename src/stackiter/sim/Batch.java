@@ -81,9 +81,10 @@ public class Batch implements Runnable {
 		//Logger logger = new FilterLogger(new TextLogger());
 		//Logger logger = new TextLogger();
 		String logDir = arg("log-dir", "");
+		String logSuffix = arg("log-suffix", "");
 		boolean compressLog = parseBoolean(arg("compress-log", "true"));
 		Logger logger =
-			new EpisodicLogger(new TextLogger(logDir, compressLog));
+			new EpisodicLogger(new TextLogger(logDir, logSuffix, compressLog));
 		try {
 			logger.waitForEpisodeStart();
 

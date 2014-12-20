@@ -144,24 +144,31 @@ public class Options {
 	 */
 	public class Clear implements Option {
 
+		private double checkTime;
+
+		private boolean cleared;
+
 		private boolean done;
 
 		@Override
 		public Action act(State state) {
 			Action action = new Action(state.tool);
-			if (!done) {
+			if (!cleared) {
 				action.clear = true;
-				// Just believe that clearing worked, in case someone else adds
-				// new blocks.
-				// So long as no one calls act without applying the action, this
-				// should be fine.
-				done = true;
+				// Give a bit of a delay before deciding that all is clear.
+				checkTime = state.simTime + 0.1;
+				cleared = true;
 			}
 			return action;
 		}
 
 		@Override
 		public boolean done(State state) {
+			if (cleared && state.simTime >= checkTime) {
+				// Something else might have added new blocks.
+				// If so, let them calm down.
+				done = atRest(state);
+			}
 			return done;
 		}
 
@@ -267,17 +274,23 @@ public class Options {
 		/**
 		 * Most delays between 0.6 and 1.4 seconds.
 		 */
-		private static final double DELAY_DEVIATION = 20.0;
+		private static final double DELAY_DEVIATION = 0.2;
 
 		/**
 		 * Wait about one second on average.
+		 *
+		 * Temporarily super big causes other timeout at 5 seconds, and we
+		 * usually prefer longer.
+		 *
+		 * TODO Choose something centering around 5 instead and remove the other
+		 * TODO timeout?
 		 */
 		private static final double DELAY_MEAN = 100.0;
 
 		/**
-		 * Ensure at least half a second.
+		 * Ensure at least half a second (which changes the average).
 		 */
-		private static final double DELAY_MIN = 50.0;
+		private static final double DELAY_MIN = 0.5;
 
 		/**
 		 * The first time we act.
@@ -363,17 +376,7 @@ public class Options {
 				return false;
 			}
 			// Wait for everything to stop moving.
-			for (Item item: state.items.values()) {
-				if (norm(item.getLinearVelocity()) >= EPSILON) {
-					return false;
-				}
-				// TODO Different epsilon for angular?
-				if (Math.abs(item.getAngularVelocity()) >= EPSILON) {
-					return false;
-				}
-			}
-			// Everything's at rest (enough).
-			return true;
+			return atRest(state);
 		}
 
 		@Override
@@ -517,6 +520,12 @@ public class Options {
 			// TODO What if either is null?
 			Item item = state.items.get(this.item);
 			Item target = state.items.get(this.target);
+			if (target == null) {
+				// Just give up and target where we already are.
+				// TODO What if item is null?
+				// TODO Seems less likely for current cases.
+				target = item;
+			}
 			goal = added(
 				// Noise will already have been added to the existing "0" goal.
 				goal,
@@ -580,6 +589,20 @@ public class Options {
 			return "Timeout(" + option + ")";
 		}
 
+	}
+
+	private static boolean atRest(State state) {
+		for (Item item: state.items.values()) {
+			if (norm(item.getLinearVelocity()) >= EPSILON) {
+				return false;
+			}
+			// TODO Different epsilon for angular?
+			if (Math.abs(item.getAngularVelocity()) >= EPSILON) {
+				return false;
+			}
+		}
+		// Everything's at rest (enough).
+		return true;
 	}
 
 	public Options(Random random) {

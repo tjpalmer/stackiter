@@ -19,8 +19,12 @@ public class TextLogger extends AtomicLogger {
 	 * Opens a log file for writing in the given directory, compressed if
 	 * requested.
 	 * The file name is also based on the current date and time.
+	 * The suffix, if present, gets a "-" prepended before it, and it goes
+	 * before the extension.
 	 */
-	public static Formatter openLogFile(String logDir, boolean doCompress) {
+	public static Formatter openLogFile(
+		String logDir, String suffix, boolean doCompress
+	) {
 		try {
 			// Log file.
 			if (logDir == null || logDir.isEmpty()) {
@@ -32,8 +36,13 @@ public class TextLogger extends AtomicLogger {
 			dir.mkdirs();
 			SimpleDateFormat format =
 				new SimpleDateFormat("yyyyMMdd-HHmmss-SSS");
+			if (suffix == null || suffix.isEmpty()) {
+				suffix = "";
+			} else {
+				suffix = "-" + suffix;
+			}
 			String logName = String.format(
-				"stackiter-%s.log", format.format(new Date())
+				"stackiter-%s%s.log", format.format(new Date()), suffix
 			);
 			if (doCompress) {
 				logName += ".gz";
@@ -121,9 +130,18 @@ public class TextLogger extends AtomicLogger {
 		this(logDir, true);
 	}
 
+	public TextLogger(String logDir, String suffix) {
+		this(logDir, suffix, true);
+	}
+
 	public TextLogger(String logDir, boolean doCompress) {
 		// Ideally we pass in the official start time, but this will do.
-		this(openLogFile(logDir, doCompress));
+		this(logDir, "", doCompress);
+	}
+
+	public TextLogger(String logDir, String suffix, boolean doCompress) {
+		// Ideally we pass in the official start time, but this will do.
+		this(openLogFile(logDir, suffix, doCompress));
 	}
 
 	public TextLogger(Formatter... formatters) {

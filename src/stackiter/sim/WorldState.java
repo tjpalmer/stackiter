@@ -24,6 +24,9 @@ public class WorldState implements Cloneable {
 	 */
 	public Map<Soul, Item> items = new LinkedHashMap<Soul, Item>();
 
+	/**
+	 * The amount of simulation time that has passed in seconds.
+	 */
 	public double simTime;
 
 	public long steps;
