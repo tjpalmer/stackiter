@@ -2,8 +2,13 @@ package stackiter.sim;
 
 import static java.lang.Boolean.*;
 import static java.lang.Integer.*;
+import static stackiter.sim.Util.*;
 
+import java.awt.*;
+import java.awt.geom.*;
 import java.util.*;
+
+import javax.swing.*;
 
 import stackiter.tasks.*;
 
@@ -43,7 +48,11 @@ public class Batch implements Runnable {
 
 	private Map<String, String> args;
 
+	private JComponent display;
+
 	private Map<String, Iterable<Scenario>> scenariosMap;
+
+	private World world;
 
 	/**
 	 * All keys and values must be non-null.
@@ -62,6 +71,35 @@ public class Batch implements Runnable {
 		return value;
 	}
 
+	@SuppressWarnings("serial")
+	private void initDisplay() {
+		JFrame frame = new JFrame("Stackiter Batch Display");
+		frame.setLayout(new BorderLayout());
+		display = new JComponent() {
+			@Override
+			protected void paintComponent(Graphics graphics) {
+				Graphics2D g = copy(graphics);
+				try {
+					AffineTransform transform = worldToDisplayTransform();
+					g.transform(transform);
+					world.paintItems(g);
+				} finally {
+					g.dispose();
+				}
+			}
+			private AffineTransform worldToDisplayTransform() {
+				AffineTransform transform = new AffineTransform();
+				transform.translate(0.5 * getWidth(), getHeight());
+				double scale = 5.0;
+				transform.scale(scale, -scale);
+				return transform;
+			}
+		};
+		frame.add(display, BorderLayout.CENTER);
+		frame.setSize(600, 400);
+		frame.setVisible(true);
+	}
+
 	private void initScenarios() {
 		scenariosMap = new LinkedHashMap<String, Iterable<Scenario>>();
 		scenariosMap.put("external", Arrays.asList(
@@ -75,7 +113,7 @@ public class Batch implements Runnable {
 
 	@Override
 	public void run() {
-		World world = new World();
+		world = new World();
 
 		// Logger.
 		//Logger logger = new FilterLogger(new TextLogger());
@@ -85,6 +123,9 @@ public class Batch implements Runnable {
 		boolean compressLog = parseBoolean(arg("compress-log", "true"));
 		Logger logger =
 			new EpisodicLogger(new TextLogger(logDir, logSuffix, compressLog));
+		// Display.
+		final boolean doDisplay = false; // TODO parse arg!
+		if (doDisplay) initDisplay();
 		try {
 			logger.waitForEpisodeStart();
 
@@ -110,7 +151,7 @@ public class Batch implements Runnable {
 			Scenario.handleWorldSetup(scenarios, world, logger);
 
 			// Episode limit.
-			int episodeLimit = parseInt(arg("episode-limit", "100"));
+			final int episodeLimit = parseInt(arg("episode-limit", "100"));
 
 			// Main loop.
 			long steps = 0;
@@ -128,13 +169,16 @@ public class Batch implements Runnable {
 					// TODO Better or worse to keep on trucking?
 					e.printStackTrace();
 				}
+				if (doDisplay) display.repaint();
 				// Simple status.
 				steps++;
 				if (steps % stepsPerMinute == 0) {
 					System.out.print(".");
 				}
 				if (steps % stepsPerHour == 0) {
-					System.out.printf(" Hours: %d\n", steps/stepsPerHour);
+					System.out.printf(
+						" Hours: %d\n", steps/stepsPerHour
+					);
 				}
 			}
 		} finally {

@@ -343,14 +343,18 @@ public class World {
 
 	public void paint(Graphics2D graphics) {
 		// Live items.
-		for (ItemInfo info: items) {
-			info.item.paint(graphics);
-		}
+		paintItems(graphics);
 		// Tray. Includes preborn blocks.
 		tray.paint(graphics);
 		// Tools. Paint these after items on purpose.
 		for (Tool tool: tools.keySet()) {
 			tool.paint(graphics);
+		}
+	}
+
+	public void paintItems(Graphics2D graphics) {
+		for (ItemInfo info: items) {
+			info.item.paint(graphics);
 		}
 	}
 
