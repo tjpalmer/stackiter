@@ -476,9 +476,19 @@ public class Options {
 	 */
 	public static class Lift extends DeferredGoalCarry {
 
+		/**
+		 * Amount to lift by.
+		 */
+		private double amount;
+
 		public Lift(Soul item, Random random) {
+			this(item, random, 30);
+		}
+
+		public Lift(Soul item, Random random, double amount) {
 			super(item, random);
 			name = "lift";
+			this.amount = amount;
 		}
 
 		@Override
@@ -488,7 +498,7 @@ public class Options {
 			// TODO Base this on max height of items not resting on current
 			// TODO item?
 			Item item = state.items.get(this.item);
-			Point2D position = added(item.getPosition(), point(0, 30));
+			Point2D position = added(item.getPosition(), point(0, amount));
 			// Noise will already have been added to the existing "0" goal.
 			goal = added(goal, position);
 		}
@@ -536,6 +546,79 @@ public class Options {
 		@Override
 		public Meta meta() {
 			return new Meta(name, item, target);
+		}
+
+	}
+
+	/**
+	 * Attempts to rotate the item by grabbing a side and lifting.
+	 */
+	public static class RotateGrasp implements Option {
+
+		private Soul item;
+
+		private Random random;
+
+		public RotateGrasp(Soul item, Random random) {
+			if (item == null) {
+				throw new RuntimeException("Null item.");
+			}
+			this.item = item;
+			this.random = random;
+		}
+
+		@Override
+		public Action act(State state) {
+			// Default to no change.
+			Action action = new Action(state.tool);
+			// If not done, do something.
+			if (!done(state)) {
+				// Go to the right place.
+				Item liveItem = state.items.get(item);
+				if (liveItem != null) {
+					Point2D graspPoint;
+					double deviation = 0.5;
+					while (true) {
+						graspPoint = added(
+							liveItem.getPosition(),
+							point(
+								deviation * random.nextGaussian(),
+								deviation * random.nextGaussian()
+							)
+						);
+						if (liveItem.contains(graspPoint)) {
+							break;
+						}
+					}
+					action.tool.position.setLocation(graspPoint);
+					// And grasp or ungrasp as appropriate.
+					// If we aren't grasping, we need to grasp.
+					// If we are grasping (but not done), we must be grasping
+					// the wrong thing.
+					// So just negate the active mode here.
+					// World update order is: (1) release, (2) move, (3) grasp.
+					// Can't do all three at once, however, since a change in
+					// tool mode (active) needs to be registered.
+					action.tool.active = !state.tool.active;
+				}
+			}
+			return action;
+		}
+
+		@Override
+		public Meta meta() {
+			return new Meta("rotate", item);
+		}
+
+		@Override
+		public boolean done(State state) {
+			Item graspedItem = state.graspedItem;
+			return graspedItem != null && graspedItem.getSoul() == item;
+		}
+
+		@Override
+		public String toString() {
+			return "Grasp(" + item + ")";
 		}
 
 	}
@@ -665,6 +748,16 @@ public class Options {
 	 */
 	public Option prepare(Option option) {
 		return new TimeoutOption(option);
+	}
+
+	public Option rotate(Soul item) {
+		RotateGrasp rotate = new RotateGrasp(item, random);
+		return new Composed(rotate,
+			prepare(rotate),
+			// TODO Do we need a specialized life that can see how far?
+			prepare(new Lift(item, random, 10)),
+			prepare(new Drop(item))
+		);
 	}
 
 }
