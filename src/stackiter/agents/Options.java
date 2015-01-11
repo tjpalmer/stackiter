@@ -491,7 +491,7 @@ public class Options {
 		/**
 		 * Amount to lift by.
 		 */
-		private double amount;
+		public double amount;
 
 		public Lift(Soul item, Random random) {
 			this(item, random, 30);
@@ -563,7 +563,7 @@ public class Options {
 	}
 
 	/**
-	 * Attempts to rotate the item by grabbing a side and lifting.
+	 * Attempts to rotate the item by grabbing a side.
 	 */
 	public static class RotateGrasp extends Grasp {
 
@@ -576,7 +576,9 @@ public class Options {
 			// Presuming rotational symmetry at 180, see if we are rotated more
 			// 0 or 90.
 			Point2D point;
-			double offsetFraction = 0.8;
+			// Tailored a lot on the fraction here to be as free but as stable
+			// as possible.
+			double offsetFraction = 0.7;
 			double offsetSize;
 			double angle = item.getAngle();
 			if (angle < 0) {
@@ -586,7 +588,7 @@ public class Options {
 			if (Math.abs(Math.abs(angle) - 0.5) < 0.25) {
 				// Rotated 90. Vertical is horizontal.
 				offsetSize = item.getExtent().getY();
-				point = point(0, offsetSize * offsetFraction);
+				point = point(0, -offsetSize * offsetFraction);
 			} else {
 				// Original orientation. Grab at right to swing it.
 				offsetSize = item.getExtent().getX();
@@ -610,6 +612,34 @@ public class Options {
 		@Override
 		public String toString() {
 			return "Rotate(" + item + ")";
+		}
+
+	}
+
+	/**
+	 * Lifts just enough for a rotate, or at least that's the idea.
+	 */
+	public static class RotateLift extends Lift {
+
+		public RotateLift(Soul item, Random random) {
+			super(item, random);
+		}
+
+		@Override
+		protected void chooseGoal(State state) {
+			Item item = state.items.get(this.item);
+			if (Math.abs(Math.abs(item.getAngle()) - 0.5) < 0.25) {
+				// Rotated 90. Vertical is horizontal, but will be vertical.
+				amount = item.getExtent().getY();
+			} else {
+				// Original orientation. The width will be vertical.
+				amount = item.getExtent().getX();
+			}
+			// Double the amount for diameter.
+			// Since we don't grab at the very edge, this should be enough.
+			amount *= 1;
+			// Now let super take it from here.
+			super.chooseGoal(state);
 		}
 
 	}
@@ -746,7 +776,7 @@ public class Options {
 		return new Composed(rotate,
 			prepare(rotate),
 			// TODO Do we need a specialized life that can see how far?
-			prepare(new Lift(item, random, 10)),
+			prepare(new RotateLift(item, random)),
 			prepare(new Drop(item))
 		);
 	}
