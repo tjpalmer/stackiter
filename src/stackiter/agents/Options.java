@@ -397,12 +397,14 @@ public class Options {
 	 */
 	private static class Grasp implements Option {
 
-		private Soul item;
+		public double deviation;
+
+		public Soul item;
 
 		/**
 		 * Used for noisy actions.
 		 */
-		private Random random;
+		public Random random;
 
 		/**
 		 * Nothing null.
@@ -413,6 +415,8 @@ public class Options {
 			}
 			this.item = item;
 			this.random = random;
+			// Manually determined default.
+			deviation = 0.5;
 		}
 
 		@Override
@@ -424,11 +428,10 @@ public class Options {
 				// Go to the right place.
 				Item liveItem = state.items.get(item);
 				if (liveItem != null) {
-					Point2D graspPoint;
-					double deviation = 0.5;
+					Point2D graspPoint = chooseGraspPoint(liveItem);
 					while (true) {
 						graspPoint = added(
-							liveItem.getPosition(),
+							graspPoint,
 							point(
 								deviation * random.nextGaussian(),
 								deviation * random.nextGaussian()
@@ -453,15 +456,24 @@ public class Options {
 			return action;
 		}
 
-		@Override
-		public Meta meta() {
-			return new Meta("grasp", item);
+		/**
+		 * Override to customize grasp mean.
+		 * Gaussian noise based on deviation will be added.
+		 * This method might also choose to modify the deviation, by the way.
+		 */
+		public Point2D chooseGraspPoint(Item item) {
+			return item.getPosition();
 		}
 
 		@Override
 		public boolean done(State state) {
 			Item graspedItem = state.graspedItem;
 			return graspedItem != null && graspedItem.getSoul() == item;
+		}
+
+		@Override
+		public Meta meta() {
+			return new Meta("grasp", item);
 		}
 
 		@Override
@@ -553,56 +565,22 @@ public class Options {
 	/**
 	 * Attempts to rotate the item by grabbing a side and lifting.
 	 */
-	public static class RotateGrasp implements Option {
-
-		private Soul item;
-
-		private Random random;
+	public static class RotateGrasp extends Grasp {
 
 		public RotateGrasp(Soul item, Random random) {
-			if (item == null) {
-				throw new RuntimeException("Null item.");
-			}
-			this.item = item;
-			this.random = random;
+			super(item, random);
 		}
 
 		@Override
-		public Action act(State state) {
-			// Default to no change.
-			Action action = new Action(state.tool);
-			// If not done, do something.
-			if (!done(state)) {
-				// Go to the right place.
-				Item liveItem = state.items.get(item);
-				if (liveItem != null) {
-					Point2D graspPoint;
-					double deviation = 0.5;
-					while (true) {
-						graspPoint = added(
-							liveItem.getPosition(),
-							point(
-								deviation * random.nextGaussian(),
-								deviation * random.nextGaussian()
-							)
-						);
-						if (liveItem.contains(graspPoint)) {
-							break;
-						}
-					}
-					action.tool.position.setLocation(graspPoint);
-					// And grasp or ungrasp as appropriate.
-					// If we aren't grasping, we need to grasp.
-					// If we are grasping (but not done), we must be grasping
-					// the wrong thing.
-					// So just negate the active mode here.
-					// World update order is: (1) release, (2) move, (3) grasp.
-					// Can't do all three at once, however, since a change in
-					// tool mode (active) needs to be registered.
-					action.tool.active = !state.tool.active;
-				}
+		public Point2D chooseGraspPoint(Item item) {
+			// Presuming rotational symmetry at 180, see if we are rotated more
+			// 0 or 90.
+			if (Math.abs(Math.abs(item.getAngle()) - 0.5) < 0.25) {
+				// Rotated 90.
+			} else {
+				// Original orientation.
 			}
-			return action;
+			return super.chooseGraspPoint(item);
 		}
 
 		@Override
@@ -611,14 +589,8 @@ public class Options {
 		}
 
 		@Override
-		public boolean done(State state) {
-			Item graspedItem = state.graspedItem;
-			return graspedItem != null && graspedItem.getSoul() == item;
-		}
-
-		@Override
 		public String toString() {
-			return "Grasp(" + item + ")";
+			return "Rotate(" + item + ")";
 		}
 
 	}

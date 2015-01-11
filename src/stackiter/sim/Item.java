@@ -12,6 +12,9 @@ public interface Item extends Cloneable {
 
 	public boolean contains(Point2D point);
 
+	/**
+	 * @return angle in rats (radians / pi).
+	 */
 	public double getAngle();
 
 	public double getAngularAcceleration();

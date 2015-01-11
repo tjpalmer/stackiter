@@ -136,6 +136,13 @@ public class ExternalOptionAgent implements OptionAgent {
 				} else {
 					System.out.println("Usage: put id targetId");
 				}
+			} else if (command.equals("rotate")) {
+				if (args.size() == 2) {
+					Soul item = textLogger.getSoul(parseInt(args.get(1)));
+					option = options.rotate(item);
+				} else {
+					System.out.println("Usage: rotate id");
+				}
 			} else if (command.equals("quit")) {
 				world.requestQuit();
 			}
