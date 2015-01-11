@@ -628,6 +628,10 @@ public class Options {
 		@Override
 		protected void chooseGoal(State state) {
 			Item item = state.items.get(this.item);
+			// We're already up the current vertical, so add the new vertical.
+			// I keep wanting to think I should add twice for diameter, but for
+			// some reason that's too much most of the time.
+			// Just leave it as is for now, since it usually works.
 			if (Math.abs(Math.abs(item.getAngle()) - 0.5) < 0.25) {
 				// Rotated 90. Vertical is horizontal, but will be vertical.
 				amount = item.getExtent().getY();
@@ -635,9 +639,6 @@ public class Options {
 				// Original orientation. The width will be vertical.
 				amount = item.getExtent().getX();
 			}
-			// Double the amount for diameter.
-			// Since we don't grab at the very edge, this should be enough.
-			amount *= 1;
 			// Now let super take it from here.
 			super.chooseGoal(state);
 		}
