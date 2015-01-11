@@ -576,7 +576,7 @@ public class Options {
 			// Presuming rotational symmetry at 180, see if we are rotated more
 			// 0 or 90.
 			Point2D point;
-			double offsetFraction = 0.9;
+			double offsetFraction = 0.8;
 			double offsetSize;
 			double angle = item.getAngle();
 			if (angle < 0) {
@@ -588,14 +588,18 @@ public class Options {
 				offsetSize = item.getExtent().getY();
 				point = point(0, offsetSize * offsetFraction);
 			} else {
-				// Original orientation. Grab at right to
+				// Original orientation. Grab at right to swing it.
 				offsetSize = item.getExtent().getX();
 				point = point(offsetSize * offsetFraction, 0);
 			}
+			// Now rotate the point with the item.
+			AffineTransform rotation =
+				AffineTransform.getRotateInstance(angle * Math.PI);
+			point = added(applied(rotation, point), item.getPosition());
 			// Update the deviation to be some fraction of the offset.
 			// Don't let it be too big, or else this might fail too often.
 			deviation = 0.025 * offsetSize;
-			return super.chooseGraspPoint(item);
+			return point;
 		}
 
 		@Override
