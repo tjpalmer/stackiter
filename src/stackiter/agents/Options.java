@@ -575,11 +575,26 @@ public class Options {
 		public Point2D chooseGraspPoint(Item item) {
 			// Presuming rotational symmetry at 180, see if we are rotated more
 			// 0 or 90.
-			if (Math.abs(Math.abs(item.getAngle()) - 0.5) < 0.25) {
-				// Rotated 90.
-			} else {
-				// Original orientation.
+			Point2D point;
+			double offsetFraction = 0.9;
+			double offsetSize;
+			double angle = item.getAngle();
+			if (angle < 0) {
+				// Always grab from global right.
+				offsetFraction *= -1;
 			}
+			if (Math.abs(Math.abs(angle) - 0.5) < 0.25) {
+				// Rotated 90. Vertical is horizontal.
+				offsetSize = item.getExtent().getY();
+				point = point(0, offsetSize * offsetFraction);
+			} else {
+				// Original orientation. Grab at right to
+				offsetSize = item.getExtent().getX();
+				point = point(offsetSize * offsetFraction, 0);
+			}
+			// Update the deviation to be some fraction of the offset.
+			// Don't let it be too big, or else this might fail too often.
+			deviation = 0.025 * offsetSize;
 			return super.chooseGraspPoint(item);
 		}
 
