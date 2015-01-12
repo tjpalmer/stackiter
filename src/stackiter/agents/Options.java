@@ -41,6 +41,39 @@ public class Options {
 	private Random random;
 
 	/**
+	 * Lifts enough to be above all blocks not already above it.
+	 * Well, it also needs to get at least above the target.
+	 */
+	public static class AboveLift extends Lift {
+
+		public AboveLift(Soul item, Random random) {
+			super(item, random);
+		}
+
+		@Override
+		protected void chooseGoal(State state) {
+			Item item = state.items.get(this.item);
+			Rectangle2D bounds = applied(item.getTransform(), item.getBounds());
+			double minY = bounds.getMinY();
+			// In finding the top, include the item to be moved.
+			// Just get above everything.
+			// Because the lift amount is only selected once, there's no fear of
+			// infinite ascent chasing a carried block.
+			double topY = 0;
+			for (Item other: state.items.values()) {
+				Rectangle2D otherBounds =
+					applied(other.getTransform(), other.getBounds());
+				topY = Math.max(otherBounds.getMaxY(), topY);
+			}
+			// Add some units to be on the likely safe side.
+			amount = topY + 5 - minY;
+			// Now let super take it from here.
+			super.chooseGoal(state);
+		}
+
+	}
+
+	/**
 	 * Carry(x) carries an item to a goal position and waits for it to slow down
 	 * enough.
 	 */
@@ -494,6 +527,7 @@ public class Options {
 		public double amount;
 
 		public Lift(Soul item, Random random) {
+			// For default, just go to a rather tall height.
 			this(item, random, 30);
 		}
 
@@ -506,13 +540,78 @@ public class Options {
 		@Override
 		protected void chooseGoal(State state) {
 			// Still need to choose a lift goal.
-			// For now, just go to a rather tall height.
-			// TODO Base this on max height of items not resting on current
-			// TODO item?
 			Item item = state.items.get(this.item);
 			Point2D position = added(item.getPosition(), point(0, amount));
 			// Noise will already have been added to the existing "0" goal.
 			goal = added(goal, position);
+		}
+
+		@Override
+		public Meta meta() {
+			return new Meta(name, item);
+		}
+
+	}
+
+	/**
+	 * A constrained carry that lowers to just above the nearest beneath.
+	 */
+	public static class Lower extends DeferredGoalCarry {
+
+		/**
+		 * Amount to lift by.
+		 */
+		public double amount;
+
+		/**
+		 * If specified, use its x for the goal rather than the x of the moved
+		 * item.
+		 */
+		private Soul target;
+
+		public Lower(Soul item, Soul target, Random random) {
+			super(item, random);
+			name = "lower";
+			this.target = target;
+		}
+
+		@Override
+		protected void chooseGoal(State state) {
+			Item item = state.items.get(this.item);
+			Rectangle2D bounds = applied(item.getTransform(), item.getBounds());
+			// The ground level is 0.
+			double topY = 0;
+			List<Item> others = listOverlappers(item, state.items.values());
+			for (Item other: others) {
+				Rectangle2D otherBounds =
+					applied(other.getTransform(), other.getBounds());
+				// Find the highest point among such items.
+				// Note that the highest point might not be beneath us, but
+				// this should be good enough most of the time.
+				topY = Math.max(topY, otherBounds.getMaxY());
+			}
+			// Give an extra unit for some safety margin.
+			// We might still sometimes choose to slam down, but that's life.
+			double distance = bounds.getMinY() - (topY + 1);
+			if (distance < 0) {
+				// Already below the top???
+				// This shouldn't be common, given our common behavior, but just
+				// just we're good in this case.
+				distance = 0;
+			}
+			// Figure out if we base x on target or on item.
+			Point2D offset;
+			if (target != null) {
+				offset = point(
+					state.items.get(target).getPosition().getX(),
+					item.getPosition().getY()
+				);
+			} else {
+				offset = item.getPosition();
+			}
+			offset = added(offset, point(0, -distance));
+			// Noise will already have been added to the existing "0" goal.
+			goal = added(goal, offset);
 		}
 
 		@Override
@@ -710,6 +809,32 @@ public class Options {
 		return true;
 	}
 
+	/**
+	 * Return a list of those items which overlap item horizontally.
+	 */
+	private static List<Item> listOverlappers(
+		Item item, Collection<Item> items
+	) {
+		List<Item> overlappers = new ArrayList<Item>();
+		Rectangle2D bounds = applied(item.getTransform(), item.getBounds());
+		double minX = bounds.getMinX();
+		double maxX = bounds.getMaxX();
+		for (Item other: items) {
+			if (other == item) continue;
+			Rectangle2D otherBounds =
+				applied(other.getTransform(), other.getBounds());
+			if (
+				between(otherBounds.getMinX(), minX, maxX) ||
+				between(otherBounds.getCenterX(), minX, maxX) ||
+				between(otherBounds.getMaxX(), minX, maxX)
+			) {
+				// Some kind of x overlap exists.
+				overlappers.add(other);
+			}
+		}
+		return overlappers;
+	}
+
 	public Options(Random random) {
 		this.random = random;
 	}
@@ -758,9 +883,9 @@ public class Options {
 		place.name = "put";
 		return new Composed(place,
 			prepare(new Grasp(item, random)),
-			prepare(new Lift(item, random)),
+			prepare(new AboveLift(item, random)),
 			prepare(place),
-			// TODO Lower before dropping?
+			prepare(new Lower(item, target, random)),
 			prepare(new Drop(item))
 		);
 	}

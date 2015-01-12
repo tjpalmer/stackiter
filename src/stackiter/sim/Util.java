@@ -30,7 +30,9 @@ public class Util {
 	}
 
 	/**
-	 * Assumes no rotation.
+	 * Returns bounds after transformation, which aren't guaranteed to be tight.
+	 * If no rotation, the output really is just a transformed version of the
+	 * input.
 	 */
 	public static Rectangle2D applied(AffineTransform transform, Rectangle2D rectangle) {
 		// TODO Handle this manually more efficiently?
@@ -53,6 +55,10 @@ public class Util {
 
 	public static boolean approx(Point2D a, Point2D b, double epsilon) {
 		return a.distanceSq(b) < epsilon*epsilon;
+	}
+
+	public static boolean between(double x, double min, double max) {
+		return min <= x && x <= max;
 	}
 
 	public static AffineTransform copy(AffineTransform transform) {
@@ -162,7 +168,7 @@ public class Util {
 		}
 		while (true) {
 			double x = random.nextGaussian() * deviation + mean;
-			if (min <= x && x <= max) {
+			if (between(x, min, max)) {
 				return x;
 			}
 		}

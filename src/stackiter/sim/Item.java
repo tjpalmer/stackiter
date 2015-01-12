@@ -44,6 +44,8 @@ public interface Item extends Cloneable {
 
 	public Point2D getPosition();
 
+	public AffineTransform getTransform();
+
 	/**
 	 * A way of tracking object identity across copies (and time). When exposing
 	 * world state, you aren't guaranteed to get original objects, but the soul

@@ -75,7 +75,9 @@ public class BasicItem implements Item {
 	public Rectangle2D getBounds() {
 		// TODO Merge with Block#getBounds() sometime.
 		Point2D extent = getExtent();
-		Rectangle2D rectangle = rectangle(-extent.getX(), -extent.getY(), 2 * extent.getX(), 2 * extent.getY());
+		Rectangle2D rectangle = rectangle(
+			-extent.getX(), -extent.getY(), 2 * extent.getX(), 2 * extent.getY()
+		);
 		return rectangle;
 	}
 
@@ -112,6 +114,14 @@ public class BasicItem implements Item {
 	@Override
 	public Soul getSoul() {
 		return soul;
+	}
+
+	@Override
+	public AffineTransform getTransform() {
+		AffineTransform transform = new AffineTransform();
+		transform.translate(position.getX(), position.getY());
+		transform.rotate(angle * Math.PI);
+		return transform;
 	}
 
 	@Override
