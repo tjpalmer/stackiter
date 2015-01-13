@@ -44,27 +44,6 @@ public class ExternalOptionAgent implements OptionAgent {
 
 	@Override
 	public Option act(State state) {
-		// I had implemented this for explicit state output, but I never
-		// committed it, and then I implemented the push thing later, which sort
-		// of does the same thing.
-		// I'm not sure which I prefer at the moment, though, so I'm keeping
-		// this one around for now.
-		if (false) {
-			// Output the full current state of the blocks.
-			// Start with blank line for visual parsing.
-			System.out.println();
-			// We purposely don't close the logger. It would close system out.
-			@SuppressWarnings("resource")
-			TextLogger logger = new TextLogger(new Formatter(System.out));
-			logger.logSimTime(state.steps, state.simTime);
-			for (Item item: state.items.values()) {
-				logger.logItem(item);
-			}
-			logger.flush();
-			// Another blank line after.
-			System.out.println();
-		}
-
 		// Push out state before asking for the next command.
 		logger.push();
 		// Presumably the logger will flush things anyway, but just for good

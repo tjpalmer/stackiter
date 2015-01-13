@@ -462,7 +462,9 @@ public class Options {
 				Item liveItem = state.items.get(item);
 				if (liveItem != null) {
 					Point2D graspPoint = chooseGraspPoint(liveItem);
-					while (true) {
+					// Limited number of loops to avoid the infinite I've seen.
+					boolean done = false;
+					for (int i = 0; i < 30; i++) {
 						graspPoint = added(
 							graspPoint,
 							point(
@@ -471,8 +473,13 @@ public class Options {
 							)
 						);
 						if (liveItem.contains(graspPoint)) {
+							done = true;
 							break;
 						}
+					}
+					if (!done) {
+						// Failed to grasp for some reason. Just fail out.
+						return action;
 					}
 					action.tool.position.setLocation(graspPoint);
 					// And grasp or ungrasp as appropriate.

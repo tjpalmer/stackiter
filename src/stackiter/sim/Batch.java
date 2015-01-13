@@ -181,8 +181,14 @@ public class Batch implements Runnable {
 					);
 				}
 			}
+		} catch (Throwable e) {
+			e.printStackTrace();
 		} finally {
 			logger.close();
+			if (doDisplay) {
+				// Kill AWT/Swing threads.
+				System.exit(0);
+			}
 		}
 	}
 
