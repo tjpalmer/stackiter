@@ -53,6 +53,7 @@ public class BasicItem implements Item {
 
 	@Override
 	public boolean contains(Point2D point) {
+		// TODO Support rotation here?
 		return rectangle(position, extent).contains(point);
 	}
 

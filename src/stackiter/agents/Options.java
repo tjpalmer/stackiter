@@ -318,7 +318,7 @@ public class Options {
 		 * TODO Choose something centering around 5 instead and remove the other
 		 * TODO timeout?
 		 */
-		private static final double DELAY_MEAN = 100.0;
+		private static final double DEFAULT_DELAY_MEAN = 10.0;
 
 		/**
 		 * Ensure at least half a second (which changes the average).
@@ -335,13 +335,22 @@ public class Options {
 		 */
 		private double delayDuration;
 
+		/**
+		 * For easy override.
+		 */
+		public String name = "delay";
+
 		public Delay(Random random) {
+			this(random, DEFAULT_DELAY_MEAN);
+		}
+
+		public Delay(Random random, double delayMean) {
 			beginTime = Double.POSITIVE_INFINITY;
 			// Loop to force at least some wait.
 			// This probably pushes the mean up some, but oh well.
 			do {
 				delayDuration =
-					DELAY_DEVIATION * random.nextGaussian() + DELAY_MEAN;
+					DELAY_DEVIATION * random.nextGaussian() + delayMean;
 			} while (delayDuration < DELAY_MIN);
 		}
 
@@ -362,7 +371,7 @@ public class Options {
 
 		@Override
 		public Meta meta() {
-			return new Meta("delay");
+			return new Meta(name);
 		}
 
 	}
@@ -463,23 +472,29 @@ public class Options {
 				if (liveItem != null) {
 					Point2D graspPoint = chooseGraspPoint(liveItem);
 					// Limited number of loops to avoid the infinite I've seen.
+					// The actual number is arbitrary, though.
 					boolean done = false;
 					for (int i = 0; i < 30; i++) {
-						graspPoint = added(
+						// Within the loop, always start with the initial goal.
+						Point2D noisyPoint = added(
 							graspPoint,
 							point(
 								deviation * random.nextGaussian(),
 								deviation * random.nextGaussian()
 							)
 						);
-						if (liveItem.contains(graspPoint)) {
+						if (liveItem.contains(noisyPoint)) {
+							graspPoint = noisyPoint;
 							done = true;
 							break;
 						}
 					}
 					if (!done) {
 						// Failed to grasp for some reason. Just fail out.
-						return action;
+						System.err.println(
+							"Failed to grasp in " + liveItem.getBounds()
+						);
+						return null;
 					}
 					action.tool.position.setLocation(graspPoint);
 					// And grasp or ungrasp as appropriate.
@@ -608,10 +623,10 @@ public class Options {
 			}
 			// Figure out if we base x on target or on item.
 			Point2D offset;
-			if (target != null) {
+			Item targetItem = target == null ? null : state.items.get(target);
+			if (targetItem != null) {
 				offset = point(
-					state.items.get(target).getPosition().getX(),
-					item.getPosition().getY()
+					targetItem.getPosition().getX(), item.getPosition().getY()
 				);
 			} else {
 				offset = item.getPosition();
@@ -864,6 +879,19 @@ public class Options {
 
 	public Option delay() {
 		return prepare(new Delay(random));
+	}
+
+	public Option done() {
+		// Short delay with custom name.
+		// This is a subjective action, indicating that the agent thinks its job
+		// is done.
+		// It's the client software's job to interpret this in any special way.
+		// For example, the client might choose to issue a clear or some such.
+		// By coming through here, though, we do get a delay, and the action
+		// ends up in the logs.
+		Delay done = new Delay(random, 1.0);
+		done.name = "done";
+		return prepare(done);
 	}
 
 	public Option drop(State state) {

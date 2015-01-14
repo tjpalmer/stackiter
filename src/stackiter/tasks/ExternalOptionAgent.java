@@ -83,6 +83,8 @@ public class ExternalOptionAgent implements OptionAgent {
 				}
 			} else if (command.equals("clear")) {
 				option = options.clear();
+			} else if (command.equals("done")) {
+				option = options.done();
 			} else if (command.equals("drop")) {
 				if (args.size() == 2) {
 					int id = parseInt(args.get(1));
