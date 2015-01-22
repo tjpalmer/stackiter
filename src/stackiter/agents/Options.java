@@ -539,6 +539,55 @@ public class Options {
 	}
 
 	/**
+	 * Move an item horizontally to place it above another.
+	 */
+	public static class Isolate extends DeferredGoalCarry {
+
+		public Isolate(Soul item, Random random) {
+			super(item, random);
+			name = "isolate";
+		}
+
+		@Override
+		protected void chooseGoal(State state) {
+			// TODO What if it's null?
+			Item item = state.items.get(this.item);
+			// Set things up for looking into.
+			double biggestGap = 0.0;
+			double gapX = 0.0;
+			double minX = Double.POSITIVE_INFINITY;
+			double maxX = Double.NEGATIVE_INFINITY;
+			// Was going to do squared search, but that might not work either.
+			// Maybe need to sort extremities???
+			for (Item a: state.items.values()) {
+				if (a == item) continue;
+				for (Item b: state.items.values()) {
+					if (a == item || a == b) continue;
+					//
+				}
+			}
+			Item target = state.items.get(this.target);
+			if (target == null) {
+				// Just give up and target where we already are.
+				// TODO What if item is null?
+				// TODO Seems less likely for current cases.
+				target = item;
+			}
+			goal = added(
+				// Noise will already have been added to the existing "0" goal.
+				goal,
+				point(target.getPosition().getX(), item.getPosition().getY())
+			);
+		}
+
+		@Override
+		public Meta meta() {
+			return new Meta(name, item, target);
+		}
+
+	}
+
+	/**
 	 * A constrained carry that just lifts vertically.
 	 */
 	public static class Lift extends DeferredGoalCarry {
@@ -591,10 +640,24 @@ public class Options {
 		 */
 		private Soul target;
 
-		public Lower(Soul item, Soul target, Random random) {
+		/**
+		 * An alternative goal at a specific coordinate.
+		 */
+		private Double x;
+
+		public Lower(Soul item, Random random) {
 			super(item, random);
 			name = "lower";
+		}
+
+		public Lower(Soul item, Soul target, Random random) {
+			this(item, random);
 			this.target = target;
+		}
+
+		public Lower(Soul item, double x, Random random) {
+			this(item, random);
+			this.x = x;
 		}
 
 		@Override
@@ -628,7 +691,10 @@ public class Options {
 				offset = point(
 					targetItem.getPosition().getX(), item.getPosition().getY()
 				);
+			} else if (x != null) {
+				offset = point(x, item.getPosition().getY());
 			} else {
+				// Just keep our current x.
 				offset = item.getPosition();
 			}
 			offset = added(offset, point(0, -distance));
@@ -679,6 +745,34 @@ public class Options {
 		@Override
 		public Meta meta() {
 			return new Meta(name, item, target);
+		}
+
+	}
+
+	/**
+	 * Move an item horizontally to position it at a specific x coordinate.
+	 */
+	public static class Posit extends DeferredGoalCarry {
+
+		private double x;
+
+		public Posit(Soul item, double x, Random random) {
+			super(item, random);
+			this.x = x;
+			name = "posit";
+		}
+
+		@Override
+		protected void chooseGoal(State state) {
+			// TODO What if it's is null?
+			Item item = state.items.get(this.item);
+			// Noise will already have been added to the existing "0" goal.
+			goal = added(goal, point(x, item.getPosition().getY()));
+		}
+
+		@Override
+		public Meta meta() {
+			return new Meta(name, item, x);
 		}
 
 	}
@@ -739,6 +833,8 @@ public class Options {
 
 	/**
 	 * Lifts just enough for a rotate, or at least that's the idea.
+	 * Since it's staying in place, it doesn't need lifted enough to clear other
+	 * objects.
 	 */
 	public static class RotateLift extends Lift {
 
@@ -750,9 +846,6 @@ public class Options {
 		protected void chooseGoal(State state) {
 			Item item = state.items.get(this.item);
 			// We're already up the current vertical, so add the new vertical.
-			// I keep wanting to think I should add twice for diameter, but for
-			// some reason that's too much most of the time.
-			// Just leave it as is for now, since it usually works.
 			if (Math.abs(Math.abs(item.getAngle()) - 0.5) < 0.25) {
 				// Rotated 90. Vertical is horizontal, but will be vertical.
 				amount = item.getExtent().getY();
@@ -760,6 +853,13 @@ public class Options {
 				// Original orientation. The width will be vertical.
 				amount = item.getExtent().getX();
 			}
+			// I keep wanting to think I should add twice for diameter, but for
+			// some reason that's too much most of the time.
+			// Still, not multiplying seems to fail too often, and with the
+			// Lower option, we can get things low enough often enough for safe
+			// setdown.
+			// So go ahead and double.
+			amount *= 2;
 			// Now let super take it from here.
 			super.chooseGoal(state);
 		}
@@ -902,6 +1002,22 @@ public class Options {
 		return prepare(new Grasp(item, random));
 	}
 
+	/**
+	 * Put an item on an empty spot on the table, if possible.
+	 */
+	public Option isolate(Soul item) {
+		return null;
+		//		PlaceX place = new PlaceX(item, target, random);
+		//		place.name = "put";
+		//		return new Composed(place,
+		//			prepare(new Grasp(item, random)),
+		//			prepare(new AboveLift(item, random)),
+		//			prepare(place),
+		//			prepare(new Lower(item, target, random)),
+		//			prepare(new Drop(item))
+		//		);
+	}
+
 	public Option lift(Soul item) {
 		// To simplify sequencing, make lift also grasp.
 		// See the carry method for more info on the mechanisms here.
@@ -910,10 +1026,23 @@ public class Options {
 	}
 
 	/**
+	 * Place an item on a specific x coordinate.
+	 */
+	public Option posit(Soul item, double x) {
+		Posit posit = new Posit(item, x, random);
+		return new Composed(posit,
+			prepare(new Grasp(item, random)),
+			prepare(new AboveLift(item, random)),
+			prepare(posit),
+			prepare(new Lower(item, x, random)),
+			prepare(new Drop(item))
+		);
+	}
+
+	/**
 	 * Put one item on another.
 	 */
 	public Option put(Soul item, Soul target) {
-		// TODO What for meta??? Custom type????
 		PlaceX place = new PlaceX(item, target, random);
 		place.name = "put";
 		return new Composed(place,
@@ -938,6 +1067,8 @@ public class Options {
 			prepare(rotate),
 			// TODO Do we need a specialized life that can see how far?
 			prepare(new RotateLift(item, random)),
+			// TODO Option to remember where item started? Does it matter?
+			prepare(new Lower(item, random)),
 			prepare(new Drop(item))
 		);
 	}

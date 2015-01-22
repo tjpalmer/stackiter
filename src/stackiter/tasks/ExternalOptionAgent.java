@@ -101,6 +101,13 @@ public class ExternalOptionAgent implements OptionAgent {
 				} else {
 					System.out.println("Usage: drop id");
 				}
+			} else if (command.equals("isolate")) {
+				if (args.size() == 2) {
+					Soul item = textLogger.getSoul(parseInt(args.get(1)));
+					option = options.isolate(item);
+				} else {
+					System.out.println("Usage: rotate id");
+				}
 			} else if (command.equals("lift")) {
 				if (args.size() == 2) {
 					int id = parseInt(args.get(1));
@@ -108,6 +115,14 @@ public class ExternalOptionAgent implements OptionAgent {
 					option = options.lift(item);
 				} else {
 					System.out.println("Usage: lift id");
+				}
+			} else if (command.equals("posit")) {
+				if (args.size() == 3) {
+					Soul item = textLogger.getSoul(parseInt(args.get(1)));
+					double x = parseDouble(args.get(2));
+					option = options.posit(item, x);
+				} else {
+					System.out.println("Usage: put id targetId");
 				}
 			} else if (command.equals("put")) {
 				if (args.size() == 3) {
