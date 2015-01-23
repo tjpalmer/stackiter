@@ -1,5 +1,6 @@
 package stackiter.agents;
 
+import static java.lang.Math.*;
 import static stackiter.sim.Util.*;
 
 import java.awt.geom.*;
@@ -63,7 +64,7 @@ public class Options {
 			for (Item other: state.items.values()) {
 				Rectangle2D otherBounds =
 					applied(other.getTransform(), other.getBounds());
-				topY = Math.max(otherBounds.getMaxY(), topY);
+				topY = max(otherBounds.getMaxY(), topY);
 			}
 			// Add some units to be on the likely safe side.
 			amount = topY + 5 - minY;
@@ -539,9 +540,104 @@ public class Options {
 	}
 
 	/**
+	 * Allows sequenced options as also suggested by Precup et al. (1998).
+	 */
+	public static class If implements Option {
+
+		public static interface Condition {
+			boolean check(State state);
+		}
+
+		Condition condition;
+
+		Option falseCase;
+
+		Option trueCase;
+
+		Option option;
+
+		Provider metaProvider;
+
+		public If(
+			Meta.Provider metaProvider,
+			Condition condition,
+			Option trueCase,
+			Option falseCase
+		) {
+			this.condition = condition;
+			this.metaProvider = metaProvider;
+			this.falseCase = falseCase;
+			this.trueCase = trueCase;
+			// And be explicit.
+			this.option = null;
+		}
+
+		@Override
+		public Action act(State state) {
+			if (option == null) {
+				// Check just once up front.
+				// For cases I care about, we don't want to reconsider the
+				// condition once action is underway.
+				option = condition.check(state) ? trueCase : falseCase;
+			}
+			return option.act(state);
+		}
+
+		@Override
+		public boolean done(State state) {
+			return option != null && option.done(state);
+		}
+
+		@Override
+		public Meta meta() {
+			return metaProvider.meta();
+		}
+
+	}
+
+	public static class IsIsolated implements If.Condition {
+
+		Soul item;
+
+		public IsIsolated(Soul item) {
+			this.item = item;
+		}
+
+		@Override
+		public boolean check(State state) {
+			// TODO What if it's null?
+			Item item = state.items.get(this.item);
+			List<Item> others = listOverlappers(item, state.items.values());
+			return others.isEmpty();
+		}
+
+	}
+
+	/**
 	 * Move an item horizontally to place it above another.
 	 */
 	public static class Isolate extends DeferredGoalCarry {
+
+		/**
+		 * Just a convenience for our sorting algorithm to find open space.
+		 */
+		static class Edge implements Comparable<Edge> {
+			enum Side {BEGIN, END}
+			Side side;
+			double x;
+			public Edge(Side side, double x) {
+				this.side = side;
+				this.x = x;
+			}
+			@Override
+			public int compareTo(Edge other) {
+				return Double.compare(x, other.x);
+			}
+			@Override
+			public String toString() {
+				return "Edge(" + side + ", " + x + ")";
+			}
+		}
 
 		public Isolate(Soul item, Random random) {
 			super(item, random);
@@ -552,37 +648,69 @@ public class Options {
 		protected void chooseGoal(State state) {
 			// TODO What if it's null?
 			Item item = state.items.get(this.item);
-			// Set things up for looking into.
+			// First get a sorted list of edges of other items.
+			// TODO Also exclude things that might be atop this item?
+			List<Edge> edges = new ArrayList<Edge>();
+			for (Item other: state.items.values()) {
+				if (other == item) continue;
+				Rectangle2D bounds =
+					applied(other.getTransform(), other.getBounds());
+				// Min and max x should be different unless we're zero width.
+				// That shouldn't happen. TODO Assert against it?
+				edges.add(new Edge(Edge.Side.BEGIN, bounds.getMinX()));
+				edges.add(new Edge(Edge.Side.END, bounds.getMaxX()));
+			}
+			Collections.sort(edges);
+			// Loop through for the biggest gap, and record the middle of it.
 			double biggestGap = 0.0;
 			double gapX = 0.0;
-			double minX = Double.POSITIVE_INFINITY;
-			double maxX = Double.NEGATIVE_INFINITY;
-			// Was going to do squared search, but that might not work either.
-			// Maybe need to sort extremities???
-			for (Item a: state.items.values()) {
-				if (a == item) continue;
-				for (Item b: state.items.values()) {
-					if (a == item || a == b) continue;
-					//
+			int depth = 0;
+			// Deal with extremeties only if we don't find a big enough gap.
+			boolean inGap = false;
+			double lastX = Double.NEGATIVE_INFINITY;
+			for (Edge edge: edges) {
+				if (inGap) {
+					// Should be a begin. TODO Assert this?
+					double gap = edge.x - lastX;
+					if (gap > biggestGap) {
+						biggestGap = gap;
+						gapX = lastX + gap / 2;
+					}
+				}
+				depth += edge.side == Edge.Side.BEGIN ? 1 : -1;
+				inGap = depth == 0;
+				if (inGap) {
+					lastX = edge.x;
 				}
 			}
-			Item target = state.items.get(this.target);
-			if (target == null) {
-				// Just give up and target where we already are.
-				// TODO What if item is null?
-				// TODO Seems less likely for current cases.
-				target = item;
+			// See if the gap is big enough for our item.
+			double size =
+				applied(item.getTransform(), item.getBounds()).getWidth();
+			// How much space do we prefer extra on each side of our block.
+			double wiggleRoom = 2;
+			if (biggestGap < size + 2 * wiggleRoom) {
+				// Not big enough to fit with at least a small margin.
+				// Find the extremity nearest zero.
+				double minX = edges.get(0).x;
+				double maxX = edges.get(edges.size() - 1).x;
+				// If I have lots of space, give more of a gap perhaps than
+				// what I'm willing to put up with for slotting something in.
+				double offset = 4;
+				if (abs(minX) < abs(maxX)) {
+					// Go min.
+					gapX = minX - offset - size / 2;
+				} else {
+					// Go max.
+					gapX = maxX + offset + size / 2;
+				}
 			}
-			goal = added(
-				// Noise will already have been added to the existing "0" goal.
-				goal,
-				point(target.getPosition().getX(), item.getPosition().getY())
-			);
+			// Noise will already have been added to the existing "0" goal.
+			goal = added(goal, point(gapX, item.getPosition().getY()));
 		}
 
 		@Override
 		public Meta meta() {
-			return new Meta(name, item, target);
+			return new Meta(name, item);
 		}
 
 	}
@@ -673,11 +801,12 @@ public class Options {
 				// Find the highest point among such items.
 				// Note that the highest point might not be beneath us, but
 				// this should be good enough most of the time.
-				topY = Math.max(topY, otherBounds.getMaxY());
+				topY = max(topY, otherBounds.getMaxY());
 			}
-			// Give an extra unit for some safety margin.
+			// Give extra space for some safety margin.
 			// We might still sometimes choose to slam down, but that's life.
-			double distance = bounds.getMinY() - (topY + 1);
+			double dropGap = 2;
+			double distance = bounds.getMinY() - (topY + dropGap);
 			if (distance < 0) {
 				// Already below the top???
 				// This shouldn't be common, given our common behavior, but just
@@ -800,7 +929,7 @@ public class Options {
 				// Always grab from global right.
 				offsetFraction *= -1;
 			}
-			if (Math.abs(Math.abs(angle) - 0.5) < 0.25) {
+			if (abs(abs(angle) - 0.5) < 0.25) {
 				// Rotated 90. Vertical is horizontal.
 				offsetSize = item.getExtent().getY();
 				point = point(0, -offsetSize * offsetFraction);
@@ -811,7 +940,7 @@ public class Options {
 			}
 			// Now rotate the point with the item.
 			AffineTransform rotation =
-				AffineTransform.getRotateInstance(angle * Math.PI);
+				AffineTransform.getRotateInstance(angle * PI);
 			point = added(applied(rotation, point), item.getPosition());
 			// Update the deviation to be some fraction of the offset.
 			// Don't let it be too big, or else this might fail too often.
@@ -846,7 +975,7 @@ public class Options {
 		protected void chooseGoal(State state) {
 			Item item = state.items.get(this.item);
 			// We're already up the current vertical, so add the new vertical.
-			if (Math.abs(Math.abs(item.getAngle()) - 0.5) < 0.25) {
+			if (abs(abs(item.getAngle()) - 0.5) < 0.25) {
 				// Rotated 90. Vertical is horizontal, but will be vertical.
 				amount = item.getExtent().getY();
 			} else {
@@ -923,7 +1052,7 @@ public class Options {
 				return false;
 			}
 			// TODO Different epsilon for angular?
-			if (Math.abs(item.getAngularVelocity()) >= EPSILON) {
+			if (abs(item.getAngularVelocity()) >= EPSILON) {
 				return false;
 			}
 		}
@@ -1006,16 +1135,22 @@ public class Options {
 	 * Put an item on an empty spot on the table, if possible.
 	 */
 	public Option isolate(Soul item) {
-		return null;
-		//		PlaceX place = new PlaceX(item, target, random);
-		//		place.name = "put";
-		//		return new Composed(place,
-		//			prepare(new Grasp(item, random)),
-		//			prepare(new AboveLift(item, random)),
-		//			prepare(place),
-		//			prepare(new Lower(item, target, random)),
-		//			prepare(new Drop(item))
-		//		);
+		Isolate isolate = new Isolate(item, random);
+		return new If(isolate,
+			// Only bother to move things if the item isn't already alone.
+			new IsIsolated(item),
+			// Use done here for a canonically short delay, since we'll always
+			// want a short delay there, too.
+			done(),
+			new Composed(isolate,
+				prepare(new Grasp(item, random)),
+				prepare(new AboveLift(item, random)),
+				prepare(isolate),
+				// TODO Tie the goal x from isolate into this somehow?
+				prepare(new Lower(item, random)),
+				prepare(new Drop(item))
+			)
+		);
 	}
 
 	public Option lift(Soul item) {

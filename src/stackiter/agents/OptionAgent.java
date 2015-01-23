@@ -15,6 +15,8 @@ import static stackiter.sim.ToolMode.*;
  *
  * This is also related to SMDP (Semi-Markov Decision Process) perspectives,
  * although for now I have no reward signal baked in.
+ *
+ * It's also connected to the idea of behavior trees from game AI.
  */
 public interface OptionAgent {
 
