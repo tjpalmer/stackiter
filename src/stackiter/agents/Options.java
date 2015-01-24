@@ -839,6 +839,34 @@ public class Options {
 	}
 
 	/**
+	 * Move an item horizontally to position it at a specific x coordinate.
+	 */
+	public static class Move extends DeferredGoalCarry {
+
+		private double x;
+
+		public Move(Soul item, double x, Random random) {
+			super(item, random);
+			this.x = x;
+			name = "move";
+		}
+
+		@Override
+		protected void chooseGoal(State state) {
+			// TODO What if it's is null?
+			Item item = state.items.get(this.item);
+			// Noise will already have been added to the existing "0" goal.
+			goal = added(goal, point(x, item.getPosition().getY()));
+		}
+
+		@Override
+		public Meta meta() {
+			return new Meta(name, item, x);
+		}
+
+	}
+
+	/**
 	 * Move an item horizontally to place it above another.
 	 */
 	public static class PlaceX extends DeferredGoalCarry {
@@ -874,34 +902,6 @@ public class Options {
 		@Override
 		public Meta meta() {
 			return new Meta(name, item, target);
-		}
-
-	}
-
-	/**
-	 * Move an item horizontally to position it at a specific x coordinate.
-	 */
-	public static class Move extends DeferredGoalCarry {
-
-		private double x;
-
-		public Move(Soul item, double x, Random random) {
-			super(item, random);
-			this.x = x;
-			name = "move";
-		}
-
-		@Override
-		protected void chooseGoal(State state) {
-			// TODO What if it's is null?
-			Item item = state.items.get(this.item);
-			// Noise will already have been added to the existing "0" goal.
-			goal = added(goal, point(x, item.getPosition().getY()));
-		}
-
-		@Override
-		public Meta meta() {
-			return new Meta(name, item, x);
 		}
 
 	}
