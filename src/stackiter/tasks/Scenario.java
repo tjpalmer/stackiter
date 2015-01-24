@@ -26,6 +26,17 @@ public class Scenario {
 	}
 
 	/**
+	 * Always drop new arch-building blocks when the world is empty.
+	 * TODO Parameterize quantity or other aspects?
+	 */
+	public static class ArchRefill extends Scenario {
+		@Override
+		public void buildWorld(World world) {
+			world.addAgent(new ArchRefillAgent());
+		}
+	}
+
+	/**
 	 * Adds a random dropper agent and one that clears the world every 30
 	 * seconds.
 	 */

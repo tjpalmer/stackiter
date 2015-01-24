@@ -224,7 +224,6 @@ public class Tray {
 		block.setColor(randomColor());
 		// TODO Consider Gaussian mixture model on sizes.
 		// TODO Extract min and max sizes for less hardcoding on decorations and flusher.
-		// For now, keep the block size constant, so only orientation matters.
 		Point2D spread = subtracted(maxBlockExtent, minBlockExtent);
 		block.setExtent(
 			spread.getX() * random.nextDouble() + minBlockExtent.getX(),

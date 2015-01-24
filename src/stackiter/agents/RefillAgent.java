@@ -36,12 +36,16 @@ public class RefillAgent extends BasicAgent {
 		// TODO Could also do this on individual block size.
 		double maxRadius = norm(world.getTray().getMaxBlockExtent());
 		for (int i = 0; i < count; i++) {
-			Block block = world.getTray().randomBlock();
+			Block block = generateBlock();
 			double x = randInRange(random, -30, 30);
 			double y = randInRange(random, maxRadius, 40);
 			block.setPosition(x, y);
 			world.addBlock(block);
 		}
+	}
+
+	public Block generateBlock() {
+		return getWorld().getTray().randomBlock();
 	}
 
 }
