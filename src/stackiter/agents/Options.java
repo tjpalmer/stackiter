@@ -881,14 +881,14 @@ public class Options {
 	/**
 	 * Move an item horizontally to position it at a specific x coordinate.
 	 */
-	public static class Posit extends DeferredGoalCarry {
+	public static class Move extends DeferredGoalCarry {
 
 		private double x;
 
-		public Posit(Soul item, double x, Random random) {
+		public Move(Soul item, double x, Random random) {
 			super(item, random);
 			this.x = x;
-			name = "posit";
+			name = "move";
 		}
 
 		@Override
@@ -1163,12 +1163,12 @@ public class Options {
 	/**
 	 * Place an item on a specific x coordinate.
 	 */
-	public Option posit(Soul item, double x) {
-		Posit posit = new Posit(item, x, random);
-		return new Composed(posit,
+	public Option move(Soul item, double x) {
+		Move move = new Move(item, x, random);
+		return new Composed(move,
 			prepare(new Grasp(item, random)),
 			prepare(new AboveLift(item, random)),
-			prepare(posit),
+			prepare(move),
 			prepare(new Lower(item, x, random)),
 			prepare(new Drop(item))
 		);

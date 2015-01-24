@@ -116,11 +116,11 @@ public class ExternalOptionAgent implements OptionAgent {
 				} else {
 					System.out.println("Usage: lift id");
 				}
-			} else if (command.equals("posit")) {
+			} else if (command.equals("move")) {
 				if (args.size() == 3) {
 					Soul item = textLogger.getSoul(parseInt(args.get(1)));
 					double x = parseDouble(args.get(2));
-					option = options.posit(item, x);
+					option = options.move(item, x);
 				} else {
 					System.out.println("Usage: put id targetId");
 				}
