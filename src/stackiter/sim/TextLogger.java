@@ -357,7 +357,9 @@ public class TextLogger extends AtomicLogger {
 			// Need a loop to build args text because the quantity is variable.
 			StringBuilder args = new StringBuilder();
 			for (Object arg: meta.args) {
-				if (arg instanceof Point2D) {
+				if (arg instanceof Double) {
+					args.append(format(" %.3f", arg));
+				} else if (arg instanceof Point2D) {
 					// Wrapping in parens is clearer, but unwrapped looks more
 					// like other log lines.
 					// TODO Okay to leave implied that this is a single arg?
@@ -377,7 +379,7 @@ public class TextLogger extends AtomicLogger {
 					args.append(" null");
 				} else {
 					throw new RuntimeException(
-						"Only points and item souls for now, not " +
+						"Only doubles, points, and item souls for now, not " +
 							arg.getClass()
 					);
 				}
