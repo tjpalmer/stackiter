@@ -52,8 +52,9 @@ public class Options {
 		}
 
 		@Override
-		protected void chooseGoal(State state) {
+		protected boolean chooseGoal(State state) {
 			Item item = state.items.get(this.item);
+			if (item == null) return false;
 			Rectangle2D bounds = applied(item.getTransform(), item.getBounds());
 			double minY = bounds.getMinY();
 			// In finding the top, include the item to be moved.
@@ -69,7 +70,7 @@ public class Options {
 			// Add some units to be on the likely safe side.
 			amount = topY + 5 - minY;
 			// Now let super take it from here.
-			super.chooseGoal(state);
+			return super.chooseGoal(state);
 		}
 
 	}
@@ -136,6 +137,10 @@ public class Options {
 		@Override
 		public boolean done(State state) {
 			// Check sanity.
+			if (!state.items.containsKey(item)) {
+				// Lost our item along the way. Nothing to do.
+				return true;
+			}
 			if (goal.getY() > MAX_HEIGHT) {
 				// Not sane. Live items get stuck outside bounds.
 				return true;
@@ -290,12 +295,11 @@ public class Options {
 			return super.done(state);
 		}
 
-		protected abstract void chooseGoal(State state);
+		protected abstract boolean chooseGoal(State state);
 
 		private void chooseGoalIfNeeded(State state) {
 			if (goalChosen) return;
-			chooseGoal(state);
-			goalChosen = true;
+			goalChosen = chooseGoal(state);
 		}
 
 	}
@@ -524,7 +528,10 @@ public class Options {
 		@Override
 		public boolean done(State state) {
 			Item graspedItem = state.graspedItem;
-			return graspedItem != null && graspedItem.getSoul() == item;
+			// Either our item is gone or someone else has it.
+			return !state.items.containsKey(item) || (
+				graspedItem != null && graspedItem.getSoul() == item
+			);
 		}
 
 		@Override
@@ -605,8 +612,11 @@ public class Options {
 
 		@Override
 		public boolean check(State state) {
-			// TODO What if it's null?
 			Item item = state.items.get(this.item);
+			if (item == null) {
+				// Well, it's not with anything else in the state ...
+				return true;
+			}
 			List<Item> others = listOverlappers(item, state.items.values());
 			return others.isEmpty();
 		}
@@ -645,9 +655,10 @@ public class Options {
 		}
 
 		@Override
-		protected void chooseGoal(State state) {
+		protected boolean chooseGoal(State state) {
 			// TODO What if it's null?
 			Item item = state.items.get(this.item);
+			if (item == null) return false;
 			// First get a sorted list of edges of other items.
 			// TODO Also exclude things that might be atop this item?
 			List<Edge> edges = new ArrayList<Edge>();
@@ -706,6 +717,7 @@ public class Options {
 			}
 			// Noise will already have been added to the existing "0" goal.
 			goal = added(goal, point(gapX, item.getPosition().getY()));
+			return true;
 		}
 
 		@Override
@@ -737,12 +749,14 @@ public class Options {
 		}
 
 		@Override
-		protected void chooseGoal(State state) {
+		protected boolean chooseGoal(State state) {
 			// Still need to choose a lift goal.
 			Item item = state.items.get(this.item);
+			if (item == null) return false;
 			Point2D position = added(item.getPosition(), point(0, amount));
 			// Noise will already have been added to the existing "0" goal.
 			goal = added(goal, position);
+			return true;
 		}
 
 		@Override
@@ -789,8 +803,9 @@ public class Options {
 		}
 
 		@Override
-		protected void chooseGoal(State state) {
+		protected boolean chooseGoal(State state) {
 			Item item = state.items.get(this.item);
+			if (item == null) return false;
 			Rectangle2D bounds = applied(item.getTransform(), item.getBounds());
 			// The ground level is 0.
 			double topY = 0;
@@ -829,6 +844,7 @@ public class Options {
 			offset = added(offset, point(0, -distance));
 			// Noise will already have been added to the existing "0" goal.
 			goal = added(goal, offset);
+			return true;
 		}
 
 		@Override
@@ -852,11 +868,13 @@ public class Options {
 		}
 
 		@Override
-		protected void chooseGoal(State state) {
+		protected boolean chooseGoal(State state) {
 			// TODO What if it's is null?
 			Item item = state.items.get(this.item);
+			if (item == null) return false;
 			// Noise will already have been added to the existing "0" goal.
 			goal = added(goal, point(x, item.getPosition().getY()));
+			return true;
 		}
 
 		@Override
@@ -882,14 +900,12 @@ public class Options {
 		}
 
 		@Override
-		protected void chooseGoal(State state) {
-			// TODO What if either is null?
+		protected boolean chooseGoal(State state) {
 			Item item = state.items.get(this.item);
+			if (item == null) return false;
 			Item target = state.items.get(this.target);
 			if (target == null) {
 				// Just give up and target where we already are.
-				// TODO What if item is null?
-				// TODO Seems less likely for current cases.
 				target = item;
 			}
 			goal = added(
@@ -897,6 +913,7 @@ public class Options {
 				goal,
 				point(target.getPosition().getX(), item.getPosition().getY())
 			);
+			return true;
 		}
 
 		@Override
@@ -972,8 +989,9 @@ public class Options {
 		}
 
 		@Override
-		protected void chooseGoal(State state) {
+		protected boolean chooseGoal(State state) {
 			Item item = state.items.get(this.item);
+			if (item == null) return false;
 			// We're already up the current vertical, so add the new vertical.
 			if (abs(abs(item.getAngle()) - 0.5) < 0.25) {
 				// Rotated 90. Vertical is horizontal, but will be vertical.
@@ -990,7 +1008,7 @@ public class Options {
 			// So go ahead and double.
 			amount *= 2;
 			// Now let super take it from here.
-			super.chooseGoal(state);
+			return super.chooseGoal(state);
 		}
 
 	}

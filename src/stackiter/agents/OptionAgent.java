@@ -85,7 +85,19 @@ public interface OptionAgent {
 			State state = new State();
 			state.fillFrom(getWorld(), tool);
 			// See if we need to select a new option.
-			if (option == null || option.done(state)) {
+			boolean done;
+			if (option == null) {
+				done = true;
+			} else {
+				try {
+					done = option.done(state);
+				} catch (RuntimeException e) {
+					// Turn off the option if we have problems.
+					option = null;
+					throw e;
+				}
+			}
+			if (done) {
 				// Note that the agent itself only chooses options at this
 				// point.
 				// Options do the rest.
@@ -97,7 +109,14 @@ public interface OptionAgent {
 			// If the option thinks it's already done, let it tell us that next
 			// time around.
 			if (option != null) {
-				Action action = option.act(state);
+				Action action;
+				try {
+					action = option.act(state);
+				} catch (RuntimeException e) {
+					// Turn off the option if we have problems.
+					option = null;
+					throw e;
+				}
 				if (action != null) {
 					action.tool.fillTo(tool);
 					if (action.clear) {
