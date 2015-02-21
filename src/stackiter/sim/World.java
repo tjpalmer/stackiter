@@ -242,6 +242,13 @@ public class World {
 	}
 
 	/**
+	 * The number of simulation steps that have passed.
+	 */
+	public long getSimSteps() {
+		return steps;
+	}
+
+	/**
 	 * The amount of simulation time that has passed in seconds.
 	 */
 	public double getSimTime() {

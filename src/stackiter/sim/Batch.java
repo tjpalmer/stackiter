@@ -6,8 +6,11 @@ import static stackiter.sim.Util.*;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.awt.image.*;
+import java.io.*;
 import java.util.*;
 
+import javax.imageio.*;
 import javax.swing.*;
 
 import stackiter.tasks.*;
@@ -49,6 +52,8 @@ public class Batch implements Runnable {
 	private Map<String, String> args;
 
 	private JComponent display;
+	
+	private String logDir;
 
 	private Map<String, Iterable<Scenario>> scenariosMap;
 
@@ -78,21 +83,7 @@ public class Batch implements Runnable {
 		display = new JComponent() {
 			@Override
 			protected void paintComponent(Graphics graphics) {
-				Graphics2D g = copy(graphics);
-				try {
-					AffineTransform transform = worldToDisplayTransform();
-					g.transform(transform);
-					world.paintItems(g);
-				} finally {
-					g.dispose();
-				}
-			}
-			private AffineTransform worldToDisplayTransform() {
-				AffineTransform transform = new AffineTransform();
-				transform.translate(0.5 * getWidth(), getHeight());
-				double scale = 5.0;
-				transform.scale(scale, -scale);
-				return transform;
+				paintFrame(graphics, getSize());
 			}
 		};
 		frame.add(display, BorderLayout.CENTER);
@@ -119,6 +110,23 @@ public class Batch implements Runnable {
 		));
 	}
 
+	private void paintFrame(Graphics graphics, Dimension size) {
+		paintFrame(graphics, size, 1.0);
+	}
+
+	private void paintFrame(Graphics graphics, Dimension size, double scale) {
+		Graphics2D g = copy(graphics);
+		try {
+			AffineTransform transform = worldToFrameTransform(size);
+			g.transform(transform);
+			// Additional custom scale.
+			g.scale(scale, scale);
+			world.paint(g);
+		} finally {
+			g.dispose();
+		}
+	}
+
 	@Override
 	public void run() {
 		world = new World();
@@ -126,13 +134,14 @@ public class Batch implements Runnable {
 		// Logger.
 		//Logger logger = new FilterLogger(new TextLogger());
 		//Logger logger = new TextLogger();
-		String logDir = arg("log-dir", "");
+		logDir = arg("log-dir", "");
 		String logSuffix = arg("log-suffix", "");
 		boolean compressLog = parseBoolean(arg("compress-log", "true"));
 		Logger logger =
 			new EpisodicLogger(new TextLogger(logDir, logSuffix, compressLog));
 		// Display.
-		final boolean doDisplay = false; // TODO parse arg!
+		boolean doDisplay = parseBoolean(arg("display", "false"));
+		boolean saveFrames = parseBoolean(arg("save-frames", "false"));
 		if (doDisplay) initDisplay();
 		try {
 			logger.waitForEpisodeStart();
@@ -178,6 +187,7 @@ public class Batch implements Runnable {
 					e.printStackTrace();
 				}
 				if (doDisplay) display.repaint();
+				if (saveFrames) saveFrame();
 				// Simple status.
 				steps++;
 				if (steps % stepsPerMinute == 0) {
@@ -200,4 +210,33 @@ public class Batch implements Runnable {
 		}
 	}
 
+	private void saveFrame() {
+		BufferedImage image =
+			new BufferedImage(320, 200, BufferedImage.TYPE_INT_RGB);
+		Graphics2D graphics = image.createGraphics();
+		try {
+			graphics.setBackground(Color.WHITE);
+			graphics.clearRect(0, 0, image.getWidth(), image.getHeight());
+			Dimension size = new Dimension(image.getWidth(), image.getHeight());
+			paintFrame(graphics, size, 0.5);
+			String name = String.format("frame%05d.png", world.getSimSteps());
+			File file = new File(logDir, name);
+			ImageIO.write(image, "png", file);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			graphics.dispose();
+		}
+	}
+	
+	private AffineTransform worldToFrameTransform(Dimension size) {
+		AffineTransform transform = new AffineTransform();
+		transform.translate(0.5 * size.getWidth(), size.getHeight());
+		// Ideally, we just know what scale to use, but this at least
+		// seems to be a sane one for common cases.
+		double scale = 10.0;
+		transform.scale(scale, -scale);
+		return transform;
+	}
+	
 }
