@@ -2,6 +2,7 @@ package stackiter.sim;
 
 import static java.lang.Boolean.*;
 import static java.lang.Integer.*;
+import static java.lang.Math.*;
 import static stackiter.sim.Util.*;
 
 import java.awt.*;
@@ -52,7 +53,15 @@ public class Batch implements Runnable {
 	private Map<String, String> args;
 
 	private JComponent display;
-	
+
+	private int frameIndex = 0;
+
+	private double lastClearCount = -1;
+
+	private double lastDisplayTranslate = 0.0;
+
+	private double lastDisplayTranslateGoal = 0.0;
+
 	private String logDir;
 
 	private Map<String, Iterable<Scenario>> scenariosMap;
@@ -118,10 +127,87 @@ public class Batch implements Runnable {
 		Graphics2D g = copy(graphics);
 		try {
 			AffineTransform transform = worldToFrameTransform(size);
-			g.transform(transform);
 			// Additional custom scale.
-			g.scale(scale, scale);
+			transform.scale(scale, scale);
+			g.transform(transform);
+			if (true) {
+				// Center on blocks if outside display bounds.
+				transform.translate(lastDisplayTranslateGoal, 0);
+				Rectangle2D displayBounds = applied(
+					transform.createInverse(),
+					new Rectangle2D.Double(
+						0, 0, size.getWidth(), size.getHeight()
+					)
+				);
+				double minX = world.getGround().getExtent().getX();
+				double maxX = -minX;
+				for (Item item: world.getItems()) {
+					if (item.getPosition().getY() >= 0) {
+						Rectangle2D bounds =
+							applied(item.getTransform(), item.getBounds());
+						minX = Math.min(minX, bounds.getMinX());
+						maxX = Math.max(maxX, bounds.getMaxX());
+					}
+				}
+				double midX = (minX + maxX) / 2;
+				if (
+					minX < displayBounds.getMinX() ||
+					maxX > displayBounds.getMaxX()
+				) {
+					// New goal.
+					lastDisplayTranslateGoal = -midX;
+				}
+				double translateError =
+					lastDisplayTranslateGoal - lastDisplayTranslate;
+				if (abs(translateError) > 1e-2) {
+					if (lastClearCount != world.getClearCount()) {
+						// New episode. Just jump.
+						lastDisplayTranslate = lastDisplayTranslateGoal;
+					} else {
+						// Pan over gradually to maintain context.
+						double step = 0.1;
+						if (abs(translateError) < step) {
+							step = abs(translateError);
+						}
+						lastDisplayTranslate += signum(translateError) * step;
+					}
+					lastClearCount = world.getClearCount();
+				}
+				g.translate(lastDisplayTranslate, 0);
+				// Show key x coords for debugging.
+				boolean showMarkers = false;
+				if (showMarkers) {
+					// Display bounds based on old translate goal.
+					g.setColor(Color.BLUE);
+					g.draw(displayBounds);
+					double top = displayBounds.getMaxY();
+					// X origin.
+					g.setColor(Color.BLACK);
+					g.draw(new Line2D.Double(0, 0, 0, top));
+					// Relative to blocks.
+					g.setColor(Color.RED);
+					g.draw(new Line2D.Double(minX, 0, minX, top));
+					g.setColor(Color.GREEN);
+					g.draw(new Line2D.Double(maxX, 0, maxX, top));
+					g.setColor(Color.ORANGE);
+					g.draw(new Line2D.Double(midX, 0, midX, top));
+					// Translate goals.
+					g.setColor(Color.MAGENTA);
+					g.draw(new Line2D.Double(
+						-lastDisplayTranslateGoal, 0,
+						-lastDisplayTranslateGoal, top
+					));
+					g.setColor(Color.PINK);
+					g.draw(new Line2D.Double(
+						-lastDisplayTranslate, 0,
+						// Only part-way up, so we can see when they align.
+						-lastDisplayTranslate, top / 2
+					));
+				}
+			}
 			world.paint(g);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		} finally {
 			g.dispose();
 		}
@@ -187,7 +273,7 @@ public class Batch implements Runnable {
 					e.printStackTrace();
 				}
 				if (doDisplay) display.repaint();
-				if (saveFrames) saveFrame();
+				if (saveFrames && world.getSimSteps() % 4 == 0) saveFrame();
 				// Simple status.
 				steps++;
 				if (steps % stepsPerMinute == 0) {
@@ -219,16 +305,17 @@ public class Batch implements Runnable {
 			graphics.clearRect(0, 0, image.getWidth(), image.getHeight());
 			Dimension size = new Dimension(image.getWidth(), image.getHeight());
 			paintFrame(graphics, size, 0.5);
-			String name = String.format("frame%05d.png", world.getSimSteps());
+			String name = String.format("frame%05d.png", frameIndex);
 			File file = new File(logDir, name);
 			ImageIO.write(image, "png", file);
+			frameIndex++;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		} finally {
 			graphics.dispose();
 		}
 	}
-	
+
 	private AffineTransform worldToFrameTransform(Dimension size) {
 		AffineTransform transform = new AffineTransform();
 		transform.translate(0.5 * size.getWidth(), size.getHeight());
@@ -238,5 +325,5 @@ public class Batch implements Runnable {
 		transform.scale(scale, -scale);
 		return transform;
 	}
-	
+
 }
